@@ -1,0 +1,29 @@
+# 개인 정보 및 민감 데이터 - 절대 Git에 올리지 않음
+.env
+config.yaml
+assets.csv
+*.db
+*.db-shm
+*.db-wal
+
+# 백업 및 히스토리
+history/
+backup/
+logs/
+
+# Jupyter 임시 파일
+iframe_figures/
+
+# Python 캐시
+__pycache__/
+*.pyc
+*.pyo
+.ipynb_checkpoints/
+
+# 리포트 출력
+reports/
+*.pdf
+
+# OS
+.DS_Store
+Thumbs.db
