@@ -27,3 +27,17 @@ reports/
 # OS
 .DS_Store
 Thumbs.db
+
+# Node.js
+frontend/node_modules/
+frontend/dist/
+frontend/.env.local
+
+# Python 가상환경
+backend/venv/
+backend/.venv/
+backend/__pycache__/
+backend/*.pyc
+
+# Claude 작업 폴더
+.claude/
