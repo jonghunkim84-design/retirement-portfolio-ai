@@ -66,26 +66,26 @@ else:
         allow_headers=["*"],
     )
 
-app.include_router(assets.router,     prefix="/api/assets",     tags=["assets"])
-app.include_router(dashboard.router,  prefix="/api/dashboard",  tags=["dashboard"])
-app.include_router(risk.router,       prefix="/api/risk",       tags=["risk"])
-app.include_router(rebalance.router,  prefix="/api/rebalance",  tags=["rebalance"])
-app.include_router(price.router,      prefix="/api/price",      tags=["price"])
-app.include_router(summary.router,    prefix="/api/summary",    tags=["summary"])
-app.include_router(withdrawal.router, prefix="/api/withdrawal", tags=["withdrawal"])
-app.include_router(config.router,     prefix="/api/config",     tags=["config"])
-app.include_router(returns.router,    prefix="/api/returns",    tags=["returns"])
-app.include_router(cashflow.router,   prefix="/api/cashflow",   tags=["cashflow"])
-app.include_router(income.router,     prefix="/api/income",     tags=["income"])
-app.include_router(networth.router,   prefix="/api/networth",   tags=["networth"])
+app.include_router(assets.router,     prefix="/assets",     tags=["assets"])
+app.include_router(dashboard.router,  prefix="/dashboard",  tags=["dashboard"])
+app.include_router(risk.router,       prefix="/risk",       tags=["risk"])
+app.include_router(rebalance.router,  prefix="/rebalance",  tags=["rebalance"])
+app.include_router(price.router,      prefix="/price",      tags=["price"])
+app.include_router(summary.router,    prefix="/summary",    tags=["summary"])
+app.include_router(withdrawal.router, prefix="/withdrawal", tags=["withdrawal"])
+app.include_router(config.router,     prefix="/config",     tags=["config"])
+app.include_router(returns.router,    prefix="/returns",    tags=["returns"])
+app.include_router(cashflow.router,   prefix="/cashflow",   tags=["cashflow"])
+app.include_router(income.router,     prefix="/income",     tags=["income"])
+app.include_router(networth.router,   prefix="/networth",   tags=["networth"])
 
 
-@app.get("/api/health")
+@app.get("/health")
 def health():
     return {"status": "ok", "service": "은퇴포트폴리오 AI v2"}
 
 
-@app.post("/api/alert/test")
+@app.post("/alert/test")
 def test_alert():
     """알림 즉시 발송 테스트용 엔드포인트 (개발/검증용)"""
     from notifier import collect_alerts, send_alert_email
@@ -102,7 +102,7 @@ def test_alert():
     }
 
 
-@app.post("/api/alert/daily")
+@app.post("/alert/daily")
 def daily_alert_cron():
     """Vercel Cron Job 전용 엔드포인트 — 매일 오전 8시 KST (23:00 UTC) 자동 호출
     vercel.json의 crons 설정에 의해 호출됨.

@@ -8,7 +8,12 @@ export default defineConfig({
     port: 5173,
     allowedHosts: true,
     proxy: {
-      '/api': { target: 'http://127.0.0.1:8000', changeOrigin: true }
+      '/api': {
+        target: 'http://127.0.0.1:8000',
+        changeOrigin: true,
+        // Vercel이 /api prefix를 제거하고 백엔드에 전달하는 것과 동일하게 맞춤
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     }
   }
 })
