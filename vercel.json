@@ -1,36 +1,14 @@
 {
-  "version": 2,
-  "builds": [
-    {
-      "src": "backend/main.py",
-      "use": "@vercel/python"
+  "experimentalServices": {
+    "backend": {
+      "entrypoint": "backend/main.py",
+      "routePrefix": "/api"
     },
-    {
-      "src": "frontend/package.json",
-      "use": "@vercel/static-build",
-      "config": {
-        "distDir": "dist"
-      }
-    }
-  ],
-  "functions": {
-    "backend/main.py": {
-      "maxDuration": 30
+    "frontend": {
+      "entrypoint": "frontend",
+      "routePrefix": "/"
     }
   },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "backend/main.py"
-    },
-    {
-      "handle": "filesystem"
-    },
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
-  ],
   "crons": [
     {
       "path": "/api/alert/daily",
