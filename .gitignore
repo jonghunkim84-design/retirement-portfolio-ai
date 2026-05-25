@@ -41,3 +41,6 @@ backend/*.pyc
 
 # Claude 작업 폴더
 .claude/
+
+# Vercel
+.vercel/
