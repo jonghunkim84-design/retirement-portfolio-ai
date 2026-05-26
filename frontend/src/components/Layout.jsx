@@ -1,5 +1,6 @@
 import { NavLink, useLocation } from 'react-router-dom'
 import { useState, useEffect } from 'react'
+import { useAuth } from '../context/AuthContext'
 
 // ── 내비게이션 구조 ───────────────────────────────────────────────
 const GROUPS = [
@@ -59,7 +60,8 @@ function activeGroupKeys(pathname) {
 }
 
 export default function Layout({ children }) {
-  const location = useLocation()
+  const location       = useLocation()
+  const { user, signOut } = useAuth()
 
   const [openGroups, setOpenGroups] = useState(() => {
     try {
@@ -156,7 +158,7 @@ export default function Layout({ children }) {
           </div>
         </nav>
 
-        <div className="px-3 pb-4 flex-shrink-0 border-t border-white/10 pt-3">
+        <div className="px-3 pb-4 flex-shrink-0 border-t border-white/10 pt-3 space-y-1">
           <NavLink to="/settings"
             className={({ isActive }) =>
               `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
@@ -164,14 +166,42 @@ export default function Layout({ children }) {
             }>
             <span>⚙️</span>설정
           </NavLink>
-          <p className="text-[10px] text-blue-400/60 px-3 mt-2">v2.0 · Supabase + FastAPI</p>
+
+          {/* 사용자 정보 + 로그아웃 */}
+          <div className="px-3 pt-2 border-t border-white/10 mt-1">
+            <p className="text-[11px] text-blue-300/70 truncate mb-1.5" title={user?.email}>
+              👤 {user?.email}
+            </p>
+            <button
+              onClick={signOut}
+              className="w-full text-left text-xs text-blue-300/60 hover:text-red-300 hover:bg-white/5
+                         px-2 py-1.5 rounded-lg transition-colors flex items-center gap-1.5"
+            >
+              <span>🚪</span>로그아웃
+            </button>
+          </div>
         </div>
       </aside>
 
+      {/* ── 모바일 상단 헤더 (md 미만에서만 표시) ──────────────── */}
+      <header className="md:hidden fixed top-0 left-0 right-0 z-20
+                         bg-[#1e3a5f] border-b border-white/10
+                         flex items-center justify-between px-4 py-3">
+        <div>
+          <span className="text-white font-bold text-sm">🏦 은퇴포트폴리오</span>
+        </div>
+        <button
+          onClick={signOut}
+          className="text-blue-300/70 hover:text-red-300 text-xs flex items-center gap-1 transition-colors"
+        >
+          <span>🚪</span>로그아웃
+        </button>
+      </header>
+
       {/* ── 메인 콘텐츠 ─────────────────────────────────────────── */}
-      {/* 모바일: 전체 너비, 하단 탭바 공간 확보 (pb-20) */}
+      {/* 모바일: 상단 헤더(pt-14) + 하단 탭바 공간(pb-24) 확보 */}
       {/* 데스크탑: 사이드바 너비만큼 밀기 (md:ml-52) */}
-      <main className="w-full md:ml-52 flex-1 p-4 md:p-6 min-h-screen pb-24 md:pb-6">
+      <main className="w-full md:ml-52 flex-1 p-4 md:p-6 min-h-screen pt-16 md:pt-6 pb-24 md:pb-6">
         {children}
       </main>
 
