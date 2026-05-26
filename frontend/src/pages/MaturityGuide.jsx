@@ -174,6 +174,13 @@ const PRODUCT_CATALOG = {
   },
 }
 
+// ── 버킷 서브 라벨 ────────────────────────────────────────────────
+const BUCKET_SUB = {
+  B1: '예금, CMA, MMF',
+  B2: '채권 ETF, TDF, 펀드',
+  B3: '주식형 ETF, 개별주식, 리츠, 배당 ETF',
+}
+
 // ── 색상 매핑 ─────────────────────────────────────────────────────
 const BUCKET_STYLE = {
   B1: { bar: 'bg-blue-500',   text: 'text-blue-600',   border: 'border-blue-400',   badge: 'bg-blue-100 text-blue-700'   },
@@ -393,6 +400,129 @@ export default function MaturityGuide() {
           ))}
         </ul>
       </div>
+
+      {/* ── 포트폴리오 조정 현황 테이블 (엑셀 형식) ──────────────── */}
+      {bucket_status.length > 0 && (() => {
+        const total = bucket_status.reduce((s, b) => s + (b.current_amt || 0), 0)
+        return (
+          <div className="card overflow-hidden">
+            {/* 헤더 */}
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-semibold text-gray-700">📋 포트폴리오 조정 현황</h3>
+              <div className="flex items-center gap-3 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-blue-500"/>매수 필요
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-red-400"/>매도 필요
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="inline-block w-2.5 h-2.5 rounded-full bg-green-400"/>적정
+                </span>
+              </div>
+            </div>
+
+            {/* 총 자산 배너 */}
+            <div className="bg-[#1e3a5f] text-white rounded-lg px-4 py-2.5 mb-3 flex items-center gap-3">
+              <span className="text-xs text-blue-200">현재 총 자산</span>
+              <span className="font-bold text-base">{Math.round(total).toLocaleString('ko-KR')}원</span>
+            </div>
+
+            {/* 테이블 */}
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm border-collapse">
+                <thead>
+                  <tr className="bg-gray-100 text-gray-600">
+                    <th className="px-4 py-2.5 text-left text-xs font-semibold border border-gray-200 min-w-[130px]">
+                      자산 유형
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold border border-gray-200 w-20">
+                      목표비율
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold border border-gray-200 min-w-[130px]">
+                      목표금액
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold border border-gray-200 w-20">
+                      현재비율
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold border border-gray-200 min-w-[130px]">
+                      현재 보유금액
+                    </th>
+                    <th className="px-4 py-2.5 text-right text-xs font-semibold border border-gray-200 min-w-[130px]">
+                      조정 필요금액
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {bucket_status.map((b, i) => {
+                    const adj    = b.target_amt - b.current_amt   // + 부족(매수), - 초과(매도)
+                    const adjAbs = Math.abs(adj)
+                    const isBuy  = adj >  50_000   // 5만원 이상 부족 → 매수
+                    const isSell = adj < -50_000   // 5만원 이상 초과 → 매도
+
+                    return (
+                      <tr key={b.bucket}
+                        className={`border border-gray-200 ${i % 2 === 0 ? 'bg-white' : 'bg-gray-50/50'} hover:bg-blue-50/40 transition-colors`}>
+                        {/* 자산 유형 */}
+                        <td className="px-4 py-3 border border-gray-200">
+                          <div className="font-semibold text-gray-800 text-sm">{b.name}</div>
+                          <div className="text-[11px] text-gray-400 mt-0.5">{BUCKET_SUB[b.bucket]}</div>
+                        </td>
+                        {/* 목표비율 */}
+                        <td className="px-4 py-3 text-right font-medium text-gray-700 border border-gray-200">
+                          {b.target_pct}%
+                        </td>
+                        {/* 목표금액 */}
+                        <td className="px-4 py-3 text-right text-gray-700 border border-gray-200 tabular-nums">
+                          {Math.round(b.target_amt).toLocaleString('ko-KR')}
+                        </td>
+                        {/* 현재비율 */}
+                        <td className={`px-4 py-3 text-right font-bold border border-gray-200 ${
+                          isBuy  ? 'text-blue-600' :
+                          isSell ? 'text-red-500'  : 'text-green-600'
+                        }`}>
+                          {b.current_pct}%
+                        </td>
+                        {/* 현재 보유금액 */}
+                        <td className="px-4 py-3 text-right font-medium text-gray-800 border border-gray-200 tabular-nums">
+                          {Math.round(b.current_amt).toLocaleString('ko-KR')}
+                        </td>
+                        {/* 조정 필요금액 */}
+                        <td className={`px-4 py-3 text-right font-bold border border-gray-200 tabular-nums ${
+                          isBuy  ? 'text-blue-600 bg-blue-50'   :
+                          isSell ? 'text-red-500 bg-red-50'     : 'text-green-600 bg-green-50'
+                        }`}>
+                          {isBuy  ? `▲ ${Math.round(adjAbs).toLocaleString('ko-KR')}` :
+                           isSell ? `▼ ${Math.round(adjAbs).toLocaleString('ko-KR')}` :
+                           '✓ 적정'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+                <tfoot>
+                  <tr className="bg-gray-100 border-t-2 border-gray-400 font-bold">
+                    <td className="px-4 py-3 text-gray-700 font-bold border border-gray-200">합계</td>
+                    <td className="px-4 py-3 text-right text-gray-700 border border-gray-200">100%</td>
+                    <td className="px-4 py-3 text-right text-gray-700 border border-gray-200 tabular-nums">
+                      {Math.round(total).toLocaleString('ko-KR')}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700 border border-gray-200">100%</td>
+                    <td className="px-4 py-3 text-right text-gray-700 border border-gray-200 tabular-nums">
+                      {Math.round(total).toLocaleString('ko-KR')}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-400 border border-gray-200">-</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <p className="text-[11px] text-gray-400 mt-3">
+              ▲ 매수 필요 = 목표 대비 부족 · ▼ 매도 필요 = 목표 대비 초과
+            </p>
+          </div>
+        )
+      })()}
 
       {/* ── 버킷 현황 ────────────────────────────────────────────── */}
       <div className="card">
