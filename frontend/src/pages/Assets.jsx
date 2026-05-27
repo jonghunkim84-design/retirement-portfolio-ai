@@ -103,7 +103,8 @@ function AssetForm({ init, onSave, onCancel, saving }) {
 export default function Assets() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState({ type: '', active: 'active', account: '' })
-  const [modal, setModal] = useState(null) // null | { mode: 'add'|'edit', data }
+  const [modal,  setModal]  = useState(null)   // null | { mode: 'add'|'edit', data }
+  const [saveErr, setSaveErr] = useState('')    // 저장 오류 메시지
 
   const { data: assets = [], isLoading } = useQuery({
     queryKey: ['assets'],
@@ -112,11 +113,17 @@ export default function Assets() {
 
   const createMut = useMutation({
     mutationFn: body => api.post('/assets', body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); setModal(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); setModal(null); setSaveErr('') },
+    onError:   (err) => setSaveErr(err.response?.data?.detail
+                          ? JSON.stringify(err.response.data.detail)
+                          : err.message || '저장 중 오류가 발생했습니다.'),
   })
   const updateMut = useMutation({
     mutationFn: ({ id, body }) => api.put(`/assets/${id}`, body),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); setModal(null) },
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); setModal(null); setSaveErr('') },
+    onError:   (err) => setSaveErr(err.response?.data?.detail
+                          ? JSON.stringify(err.response.data.detail)
+                          : err.message || '수정 중 오류가 발생했습니다.'),
   })
   const deleteMut = useMutation({
     mutationFn: id => api.delete(`/assets/${id}`),
@@ -137,9 +144,24 @@ export default function Assets() {
 
   const total = filtered.filter(a => a.is_active).reduce((s, a) => s + a.current_value, 0)
 
+  // 빈 문자열 → null 변환 (백엔드 Pydantic 타입 오류 방지)
+  const cleanForm = (form) => ({
+    ...form,
+    ticker:            form.ticker            || null,
+    purchase_date:     form.purchase_date     || null,
+    maturity_date:     form.maturity_date     || null,
+    investment_amount: (form.investment_amount !== '' && form.investment_amount != null)
+                         ? Number(form.investment_amount) : null,
+    quantity:    Number(form.quantity)    || 0,
+    unit_price:  Number(form.unit_price)  || 0,
+    current_value: Number(form.current_value) || 0,
+  })
+
   const handleSave = (form) => {
-    if (modal.mode === 'add') createMut.mutate(form)
-    else updateMut.mutate({ id: modal.data.id, body: form })
+    setSaveErr('')
+    const body = cleanForm(form)
+    if (modal.mode === 'add') createMut.mutate(body)
+    else updateMut.mutate({ id: modal.data.id, body })
   }
 
   return (
@@ -224,11 +246,18 @@ export default function Assets() {
 
       {/* 모달 */}
       {modal && (
-        <Modal title={modal.mode === 'add' ? '자산 추가' : '자산 수정'} onClose={() => setModal(null)}>
+        <Modal title={modal.mode === 'add' ? '자산 추가' : '자산 수정'}
+               onClose={() => { setModal(null); setSaveErr('') }}>
+          {saveErr && (
+            <div className="mb-3 bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg px-3 py-2 flex items-start gap-2">
+              <span className="flex-shrink-0">⚠️</span>
+              <span>{saveErr}</span>
+            </div>
+          )}
           <AssetForm
             init={modal.data}
             onSave={handleSave}
-            onCancel={() => setModal(null)}
+            onCancel={() => { setModal(null); setSaveErr('') }}
             saving={createMut.isPending || updateMut.isPending}
           />
         </Modal>
