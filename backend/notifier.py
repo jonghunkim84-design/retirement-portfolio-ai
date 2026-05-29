@@ -246,11 +246,54 @@ def send_alert_email(alerts: dict) -> bool:
         return False
 
 
+# ── 만기 자산 자동 비활성화 ───────────────────────────────────────────────────
+def auto_deactivate_expired() -> list:
+    """만기일이 오늘 이전인 활성 자산을 자동으로 비활성 처리한다.
+    Returns: 비활성 처리된 자산 목록
+    """
+    from database import supabase
+    from datetime import datetime
+
+    today_str = date.today().isoformat()   # "2025-05-29"
+
+    # 만기일이 어제 이전이고 현재 활성인 자산 조회
+    res = (
+        supabase.table("assets")
+        .select("id, asset_name, account_name, maturity_date")
+        .eq("is_active", True)
+        .not_.is_("maturity_date", "null")
+        .lt("maturity_date", today_str)   # maturity_date < today
+        .execute()
+    )
+    expired = res.data or []
+
+    if not expired:
+        logger.info("[자동비활성] 만기 도래 자산 없음")
+        return []
+
+    ids = [a["id"] for a in expired]
+    supabase.table("assets").update({
+        "is_active": False,
+        "updated_at": datetime.now().isoformat(),
+    }).in_("id", ids).execute()
+
+    for a in expired:
+        logger.info(f"[자동비활성] {a['asset_name']} ({a['account_name']}) 만기 {a['maturity_date']} → 비활성 처리")
+
+    return expired
+
+
 # ── 스케줄러에서 호출하는 진입점 ─────────────────────────────────────────────
 def run_daily_alert():
     """APScheduler job — 매일 오전 8시 실행"""
     logger.info("[알림] 일일 점검 시작")
     try:
+        # 1) 만기 도래 자산 자동 비활성화 (알림 발송 전에 먼저 처리)
+        deactivated = auto_deactivate_expired()
+        if deactivated:
+            logger.info(f"[알림] 자동 비활성 처리 완료 — {len(deactivated)}건")
+
+        # 2) 이메일 알림 발송
         alerts = collect_alerts()
         send_alert_email(alerts)
     except Exception as e:

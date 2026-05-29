@@ -102,6 +102,21 @@ def test_alert():
     }
 
 
+@app.post("/assets/deactivate-expired")
+def deactivate_expired():
+    """만기 도래 자산 수동 비활성화 — 앱에서 직접 호출 가능"""
+    from notifier import auto_deactivate_expired
+    deactivated = auto_deactivate_expired()
+    return {
+        "deactivated_count": len(deactivated),
+        "deactivated": [
+            {"id": a["id"], "asset_name": a["asset_name"],
+             "account_name": a["account_name"], "maturity_date": a["maturity_date"]}
+            for a in deactivated
+        ],
+    }
+
+
 @app.post("/alert/daily")
 def daily_alert_cron():
     """Vercel Cron Job 전용 엔드포인트 — 매일 오전 8시 KST (23:00 UTC) 자동 호출

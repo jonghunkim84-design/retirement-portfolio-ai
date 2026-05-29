@@ -133,6 +133,16 @@ export default function Assets() {
     mutationFn: id => api.patch(`/assets/${id}/toggle`),
     onSuccess: () => qc.invalidateQueries({ queryKey: ['assets'] }),
   })
+  const expireMut = useMutation({
+    mutationFn: () => api.post('/assets/deactivate-expired'),
+    onSuccess: (res) => {
+      qc.invalidateQueries({ queryKey: ['assets'] })
+      const cnt = res.data.deactivated_count
+      alert(cnt > 0
+        ? `만기 도래 자산 ${cnt}건을 비활성 처리했습니다.`
+        : '비활성 처리할 만기 자산이 없습니다.')
+    },
+  })
 
   const filtered = assets.filter(a => {
     if (filter.type && a.asset_type !== filter.type) return false
@@ -166,11 +176,21 @@ export default function Assets() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h1 className="text-xl font-bold text-gray-800">📋 자산 관리</h1>
-        <button className="btn-primary" onClick={() => setModal({ mode: 'add', data: EMPTY })}>
-          + 자산 추가
-        </button>
+        <div className="flex gap-2">
+          <button
+            className="btn-secondary text-sm flex items-center gap-1"
+            onClick={() => expireMut.mutate()}
+            disabled={expireMut.isPending}
+            title="만기일이 지난 자산을 자동으로 비활성 처리합니다"
+          >
+            {expireMut.isPending ? '처리 중...' : '🔄 만기 자산 정리'}
+          </button>
+          <button className="btn-primary" onClick={() => setModal({ mode: 'add', data: EMPTY })}>
+            + 자산 추가
+          </button>
+        </div>
       </div>
 
       {/* 필터 */}
