@@ -309,6 +309,12 @@ export default function PensionPlan() {
     return calcProjections(dash.config, dash.buckets.total, returnRate / 100, homePension)
   }, [dash, returnRate, homePension])
 
+  // ⚠️ useMemo는 early return 이전에 선언 (Rules of Hooks)
+  const rowsWithout = useMemo(() => {
+    if (!dash || !homePension.enabled) return []
+    return calcProjections(dash.config, dash.buckets.total, returnRate / 100, { ...homePension, enabled: false })
+  }, [dash, returnRate, homePension])
+
   if (isLoading) return <div className="flex items-center justify-center h-64 text-gray-400">불러오는 중...</div>
   if (error)     return <div className="text-red-500 p-4">오류: {error.message}</div>
 
@@ -347,10 +353,6 @@ export default function PensionPlan() {
   const lastRow    = rows[rows.length - 1]
 
   // 주택연금 없는 시나리오와 비교
-  const rowsWithout = useMemo(() => {
-    if (!dash || !homePension.enabled) return []
-    return calcProjections(dash.config, dash.buckets.total, returnRate / 100, { ...homePension, enabled: false })
-  }, [dash, returnRate, homePension])
   const exhaustWithout = rowsWithout.find(r => r.portfolioBalance === 0)
 
   // 주택연금 활성화 시 예상 월지급금 (시작 시점)
