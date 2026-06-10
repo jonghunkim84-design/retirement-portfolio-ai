@@ -1,10 +1,12 @@
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator, model_validator
 from typing import Optional
-from datetime import datetime
+from datetime import date, datetime
 from database import supabase
 
 router = APIRouter()
+
+_TAX_ACCOUNT_TYPES = {'pension_savings', 'retirement_pension', 'isa', 'regular'}
 
 
 class AssetIn(BaseModel):
@@ -18,7 +20,29 @@ class AssetIn(BaseModel):
     purchase_date: Optional[str] = None
     is_active: bool = True
     maturity_date: Optional[str] = None
-    investment_amount: Optional[float] = None   # 입금액 (매수 원금)
+    investment_amount: Optional[float] = None
+    tax_account_type: Optional[str] = None
+
+    @field_validator('purchase_date')
+    @classmethod
+    def purchase_not_future(cls, v):
+        if v and v > str(date.today()):
+            raise ValueError('매입일은 오늘 이후 날짜를 입력할 수 없습니다.')
+        return v
+
+    @field_validator('tax_account_type')
+    @classmethod
+    def tax_type_valid(cls, v):
+        if v is not None and v not in _TAX_ACCOUNT_TYPES:
+            raise ValueError(f'세제 분류 값이 유효하지 않습니다: {v}')
+        return v
+
+    @model_validator(mode='after')
+    def check_maturity_after_purchase(self):
+        if self.maturity_date and self.purchase_date:
+            if self.maturity_date <= self.purchase_date:
+                raise ValueError('만기일은 매입일보다 이후여야 합니다.')
+        return self
 
 
 @router.get("")

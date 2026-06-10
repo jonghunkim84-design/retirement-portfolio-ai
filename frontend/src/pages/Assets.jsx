@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import api, { fmt, ASSET_TYPE_LABEL } from '../api/client.js'
 
@@ -6,19 +6,52 @@ const EMPTY = {
   account_name: '', asset_name: '', ticker: '', asset_type: 'cash',
   quantity: 0, unit_price: 0, current_value: 0,
   purchase_date: '', is_active: true, maturity_date: '',
-  investment_amount: '',
+  investment_amount: '', tax_account_type: null,
 }
 
 const ASSET_TYPES = ['cash', 'bond', 'tdf', 'fund', 'equity', 'income']
 
-// 만기일이 오늘~7일 이내이면 true
+const TAX_TYPE_LABELS = {
+  pension_savings:    '연금저축',
+  retirement_pension: '퇴직연금(IRP)',
+  isa:               'ISA',
+  regular:           '일반',
+}
+
+const TAX_TYPE_BADGE = {
+  pension_savings:    'badge-blue',
+  retirement_pension: 'badge-green',
+  isa:               'badge-yellow',
+  regular:           'badge-gray',
+}
+
+const TYPE_BADGE = {
+  cash: 'badge-blue', bond: 'badge-green', tdf: 'badge-green',
+  fund: 'badge-green', equity: 'badge-yellow', income: 'badge-yellow',
+}
+
 function isExpiringSoon(dateStr) {
   if (!dateStr) return false
   const diff = (new Date(dateStr) - new Date()) / (1000 * 60 * 60 * 24)
   return diff >= 0 && diff <= 7
 }
-const TYPE_BADGE  = { cash:'badge-blue', bond:'badge-green', tdf:'badge-green',
-                      fund:'badge-green', equity:'badge-yellow', income:'badge-yellow' }
+
+function suggestTaxType(accountName) {
+  const n = (accountName || '').toLowerCase()
+  if (/irp|퇴직연금|dc형|db형/.test(n)) return 'retirement_pension'
+  if (/연금저축/.test(n)) return 'pension_savings'
+  if (/isa/.test(n)) return 'isa'
+  return null
+}
+
+function extractApiError(err) {
+  const detail = err.response?.data?.detail
+  if (Array.isArray(detail)) {
+    return detail[0]?.msg?.replace(/^Value error, /i, '') || '저장 중 오류가 발생했습니다.'
+  }
+  if (typeof detail === 'string') return detail
+  return err.message || '저장 중 오류가 발생했습니다.'
+}
 
 function Modal({ title, onClose, children }) {
   return (
@@ -34,12 +67,48 @@ function Modal({ title, onClose, children }) {
   )
 }
 
-function AssetForm({ init, onSave, onCancel, saving }) {
+function AssetForm({ init, mode, onSave, onCancel, saving }) {
   const [form, setForm] = useState(init)
+  const [formError, setFormError] = useState('')
+  const taxTouched = useRef(init.tax_account_type !== null)
   const set = (k, v) => setForm(f => ({ ...f, [k]: v }))
 
+  const today = new Date().toISOString().split('T')[0]
+
+  // 신규 자산: 계좌명 기반 세제분류 자동 제안 (사용자가 직접 변경하지 않은 경우에만)
+  useEffect(() => {
+    if (mode !== 'add' || taxTouched.current) return
+    const suggested = suggestTaxType(form.account_name)
+    if (suggested) set('tax_account_type', suggested)
+  }, [form.account_name])
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (form.purchase_date && form.purchase_date > today) {
+      setFormError('매입일은 오늘 이후 날짜를 입력할 수 없습니다.')
+      return
+    }
+    if (form.maturity_date && form.purchase_date && form.maturity_date <= form.purchase_date) {
+      setFormError('만기일은 매입일보다 이후여야 합니다.')
+      return
+    }
+    setFormError('')
+    onSave(form)
+  }
+
   return (
-    <form onSubmit={e => { e.preventDefault(); onSave(form) }} className="space-y-3">
+    <form onSubmit={handleSubmit} className="space-y-3">
+      {/* 수정 화면에서 저장된 매입일이 미래인 경우 경고 */}
+      {mode === 'edit' && form.purchase_date && form.purchase_date > today && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs rounded-lg px-3 py-2">
+          ⚠️ 매입일이 미래 날짜입니다. 확인 후 수정해 주세요.
+        </div>
+      )}
+      {formError && (
+        <div className="bg-red-50 border border-red-200 text-red-600 text-xs rounded-lg px-3 py-2">
+          ⚠️ {formError}
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="text-xs text-gray-500 block mb-1">계좌명 *</label>
@@ -59,6 +128,25 @@ function AssetForm({ init, onSave, onCancel, saving }) {
           <label className="text-xs text-gray-500 block mb-1">종목 코드 (있을 때만)</label>
           <input value={form.ticker} onChange={e => set('ticker', e.target.value)} placeholder="예: 379800" className="w-full" />
         </div>
+        <div className="col-span-2">
+          <label className="text-xs text-gray-500 block mb-1">세제 분류</label>
+          <select
+            value={form.tax_account_type || ''}
+            onChange={e => {
+              taxTouched.current = true
+              set('tax_account_type', e.target.value || null)
+            }}
+            className="w-full"
+          >
+            <option value="">— 미분류 —</option>
+            {Object.entries(TAX_TYPE_LABELS).map(([v, l]) => (
+              <option key={v} value={v}>{l}</option>
+            ))}
+          </select>
+          {mode === 'add' && !taxTouched.current && (
+            <p className="text-[10px] text-gray-400 mt-0.5">계좌명 입력 시 자동 제안됩니다</p>
+          )}
+        </div>
         <div>
           <label className="text-xs text-gray-500 block mb-1">수량</label>
           <input type="number" value={form.quantity} onChange={e => set('quantity', +e.target.value)} className="w-full" />
@@ -73,7 +161,8 @@ function AssetForm({ init, onSave, onCancel, saving }) {
         </div>
         <div>
           <label className="text-xs text-gray-500 block mb-1">매입일 (시작일)</label>
-          <input type="date" value={form.purchase_date || ''} onChange={e => set('purchase_date', e.target.value)} className="w-full" />
+          <input type="date" value={form.purchase_date || ''} max={today}
+            onChange={e => set('purchase_date', e.target.value)} className="w-full" />
         </div>
         <div>
           <label className="text-xs text-gray-500 block mb-1">입금액 (원) — 매수 원금</label>
@@ -103,8 +192,10 @@ function AssetForm({ init, onSave, onCancel, saving }) {
 export default function Assets() {
   const qc = useQueryClient()
   const [filter, setFilter] = useState({ type: '', active: 'active', account: '' })
-  const [modal,  setModal]  = useState(null)   // null | { mode: 'add'|'edit', data }
-  const [saveErr, setSaveErr] = useState('')    // 저장 오류 메시지
+  const [modal,  setModal]  = useState(null)
+  const [saveErr, setSaveErr] = useState('')
+
+  const today = new Date().toISOString().split('T')[0]
 
   const { data: assets = [], isLoading } = useQuery({
     queryKey: ['assets'],
@@ -114,16 +205,12 @@ export default function Assets() {
   const createMut = useMutation({
     mutationFn: body => api.post('/assets', body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); setModal(null); setSaveErr('') },
-    onError:   (err) => setSaveErr(err.response?.data?.detail
-                          ? JSON.stringify(err.response.data.detail)
-                          : err.message || '저장 중 오류가 발생했습니다.'),
+    onError:   (err) => setSaveErr(extractApiError(err)),
   })
   const updateMut = useMutation({
     mutationFn: ({ id, body }) => api.put(`/assets/${id}`, body),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['assets'] }); setModal(null); setSaveErr('') },
-    onError:   (err) => setSaveErr(err.response?.data?.detail
-                          ? JSON.stringify(err.response.data.detail)
-                          : err.message || '수정 중 오류가 발생했습니다.'),
+    onError:   (err) => setSaveErr(extractApiError(err)),
   })
   const deleteMut = useMutation({
     mutationFn: id => api.delete(`/assets/${id}`),
@@ -153,8 +240,8 @@ export default function Assets() {
   })
 
   const total = filtered.filter(a => a.is_active).reduce((s, a) => s + a.current_value, 0)
+  const unclassifiedCount = assets.filter(a => a.is_active && !a.tax_account_type).length
 
-  // 빈 문자열 → null 변환 (백엔드 Pydantic 타입 오류 방지)
   const cleanForm = (form) => ({
     ...form,
     ticker:            form.ticker            || null,
@@ -162,9 +249,10 @@ export default function Assets() {
     maturity_date:     form.maturity_date     || null,
     investment_amount: (form.investment_amount !== '' && form.investment_amount != null)
                          ? Number(form.investment_amount) : null,
-    quantity:    Number(form.quantity)    || 0,
-    unit_price:  Number(form.unit_price)  || 0,
+    quantity:      Number(form.quantity)      || 0,
+    unit_price:    Number(form.unit_price)    || 0,
     current_value: Number(form.current_value) || 0,
+    tax_account_type: form.tax_account_type || null,
   })
 
   const handleSave = (form) => {
@@ -193,6 +281,14 @@ export default function Assets() {
         </div>
       </div>
 
+      {/* 세제 미분류 배너 */}
+      {unclassifiedCount > 0 && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
+          <span className="flex-shrink-0">⚠️</span>
+          <span>세제 미분류 자산 <strong>{unclassifiedCount}건</strong> — 연금소득세 계산을 위해 분류해 주세요</span>
+        </div>
+      )}
+
       {/* 필터 */}
       <div className="card flex gap-3 items-center flex-wrap">
         <select value={filter.type} onChange={e => setFilter(f => ({ ...f, type: e.target.value }))} className="text-sm">
@@ -218,7 +314,7 @@ export default function Assets() {
         ) : (
           <table>
             <thead><tr>
-              <th>계좌</th><th>자산명</th><th>유형</th><th>티커</th>
+              <th>계좌</th><th>자산명</th><th>유형</th><th>세제분류</th><th>티커</th>
               <th className="text-right">수량</th><th className="text-right">현재가</th>
               <th className="text-right">입금액</th>
               <th className="text-right">평가액</th>
@@ -229,23 +325,43 @@ export default function Assets() {
                 <tr key={a.id} className={!a.is_active ? 'opacity-40' : ''}>
                   <td className="font-medium text-gray-700">{a.account_name}</td>
                   <td>{a.asset_name}</td>
-                  <td><span className={TYPE_BADGE[a.asset_type] || 'badge-gray'}>{ASSET_TYPE_LABEL[a.asset_type] || a.asset_type}</span></td>
+                  <td>
+                    <span className={TYPE_BADGE[a.asset_type] || 'badge-gray'}>
+                      {ASSET_TYPE_LABEL[a.asset_type] || a.asset_type}
+                    </span>
+                  </td>
+                  <td>
+                    {a.tax_account_type
+                      ? <span className={TAX_TYPE_BADGE[a.tax_account_type] || 'badge-gray'}>{TAX_TYPE_LABELS[a.tax_account_type]}</span>
+                      : <span className="badge-gray text-gray-400">미분류</span>
+                    }
+                  </td>
                   <td className="font-mono text-xs text-gray-500">{a.ticker || '-'}</td>
                   <td className="text-right">{a.quantity > 0 ? a.quantity.toLocaleString() : '-'}</td>
                   <td className="text-right">{a.unit_price > 0 ? fmt.won(a.unit_price) : '-'}</td>
-                  <td className="text-right text-blue-600">{a.investment_amount ? fmt.won(a.investment_amount) : <span className="text-gray-300">-</span>}</td>
+                  <td className="text-right text-blue-600">
+                    {a.investment_amount ? fmt.won(a.investment_amount) : <span className="text-gray-300">-</span>}
+                  </td>
                   <td className="text-right font-medium">{fmt.won(a.current_value)}</td>
-                  <td className="text-xs text-gray-400">{fmt.date(a.purchase_date)}</td>
                   <td className={`text-xs font-medium ${
-                    isExpiringSoon(a.maturity_date)
-                      ? 'text-red-600 animate-pulse'
-                      : 'text-gray-400'}`}>
+                    a.purchase_date && a.purchase_date > today
+                      ? 'text-yellow-600'
+                      : 'text-gray-400'
+                  }`}>
+                    {fmt.date(a.purchase_date)}
+                    {a.purchase_date && a.purchase_date > today && <span className="ml-1">⚠️</span>}
+                  </td>
+                  <td className={`text-xs font-medium ${
+                    isExpiringSoon(a.maturity_date) ? 'text-red-600 animate-pulse' : 'text-gray-400'
+                  }`}>
                     {fmt.date(a.maturity_date)}
                     {isExpiringSoon(a.maturity_date) && <span className="ml-1">⚠️</span>}
                   </td>
                   <td>
                     <button onClick={() => toggleMut.mutate(a.id)}
-                      className={`text-xs px-2 py-0.5 rounded-full border ${a.is_active ? 'border-green-300 text-green-600' : 'border-gray-300 text-gray-400'}`}>
+                      className={`text-xs px-2 py-0.5 rounded-full border ${
+                        a.is_active ? 'border-green-300 text-green-600' : 'border-gray-300 text-gray-400'
+                      }`}>
                       {a.is_active ? '활성' : '비활성'}
                     </button>
                   </td>
@@ -276,6 +392,7 @@ export default function Assets() {
           )}
           <AssetForm
             init={modal.data}
+            mode={modal.mode}
             onSave={handleSave}
             onCancel={() => { setModal(null); setSaveErr('') }}
             saving={createMut.isPending || updateMut.isPending}
