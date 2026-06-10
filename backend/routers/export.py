@@ -48,12 +48,16 @@ def _fetch():
         supabase.table("income_log").select("*")
         .order("income_date", desc=True).execute().data or []
     )
+    withdrawals = (
+        supabase.table("withdrawals").select("*")
+        .order("withdrawal_date", desc=True).execute().data or []
+    )
     cfg_rows = (
         supabase.table("user_config").select("value")
         .eq("key", "config").execute().data or [{}]
     )
     cfg = cfg_rows[0].get("value", {}) if cfg_rows else {}
-    return assets, incomes, cfg
+    return assets, incomes, withdrawals, cfg
 
 
 def _cfg_items(cfg: dict):
@@ -148,6 +152,20 @@ def _sheet_income(ws, incomes: list):
     _auto_width(ws)
 
 
+def _sheet_withdrawals(ws, withdrawals: list):
+    ws.append(["날짜", "계좌명", "세제분류", "금액", "메모"])
+    _header_style(ws)
+    for w in withdrawals:
+        ws.append([
+            w.get("withdrawal_date", ""),
+            w.get("account_name", ""),
+            _TAX_TYPE_KO.get(w.get("tax_account_type") or "", "미분류"),
+            float(w.get("amount") or 0),
+            w.get("memo") or "",
+        ])
+    _auto_width(ws)
+
+
 def _sheet_config(ws, cfg: dict):
     ws.append(["항목", "값"])
     _header_style(ws)
@@ -161,7 +179,7 @@ def export_xlsx():
     today = datetime.now().strftime("%Y%m%d")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    assets, incomes, cfg = _fetch()
+    assets, incomes, withdrawals, cfg = _fetch()
 
     wb = openpyxl.Workbook()
     ws0 = wb.active
@@ -170,6 +188,7 @@ def export_xlsx():
 
     _sheet_assets(wb.create_sheet("자산 목록"), assets)
     _sheet_income(wb.create_sheet("수입 기록"), incomes)
+    _sheet_withdrawals(wb.create_sheet("인출 기록"), withdrawals)
     _sheet_config(wb.create_sheet("설정"), cfg)
 
     buf = io.BytesIO()
@@ -188,7 +207,7 @@ def export_xlsx():
 def export_csv():
     today = datetime.now().strftime("%Y%m%d")
 
-    assets, incomes, cfg = _fetch()
+    assets, incomes, withdrawals, cfg = _fetch()
 
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -224,6 +243,20 @@ def export_csv():
                 inc.get("note") or "",
             ])
         zf.writestr("income.csv", buf.getvalue().encode("utf-8-sig"))
+
+        # withdrawals.csv
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["날짜", "계좌명", "세제분류", "금액", "메모"])
+        for wd in withdrawals:
+            w.writerow([
+                wd.get("withdrawal_date", ""),
+                wd.get("account_name", ""),
+                _TAX_TYPE_KO.get(wd.get("tax_account_type") or "", "미분류"),
+                wd.get("amount", 0) or 0,
+                wd.get("memo") or "",
+            ])
+        zf.writestr("withdrawals.csv", buf.getvalue().encode("utf-8-sig"))
 
         # config.csv
         buf = io.StringIO()

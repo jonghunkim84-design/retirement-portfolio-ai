@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import assets, dashboard, risk, rebalance, price, summary, withdrawal, config, returns, cashflow, income, networth, ai_advisor, tax, export
+from routers import assets, dashboard, risk, rebalance, price, summary, withdrawal, config, returns, cashflow, income, networth, ai_advisor, tax, export, withdrawals as withdrawals_router, pension_tax
 from notifier import run_daily_alert
 
 logging.basicConfig(level=logging.INFO)
@@ -79,8 +79,10 @@ app.include_router(cashflow.router,   prefix="/cashflow",   tags=["cashflow"])
 app.include_router(income.router,     prefix="/income",     tags=["income"])
 app.include_router(networth.router,    prefix="/networth",    tags=["networth"])
 app.include_router(ai_advisor.router, prefix="/ai",           tags=["ai"])
-app.include_router(tax.router,        prefix="/tax",           tags=["tax"])
-app.include_router(export.router,     prefix="/export",        tags=["export"])
+app.include_router(tax.router,              prefix="/tax",          tags=["tax"])
+app.include_router(export.router,          prefix="/export",       tags=["export"])
+app.include_router(withdrawals_router.router, prefix="/withdrawals", tags=["withdrawals"])
+app.include_router(pension_tax.router,     prefix="/pension-tax",  tags=["pension-tax"])
 
 
 @app.get("/health")
@@ -125,12 +127,19 @@ def daily_alert_cron():
     """Vercel Cron Job 전용 엔드포인트 — 매일 오전 8시 KST (23:00 UTC) 자동 호출
     vercel.json의 crons 설정에 의해 호출됨.
     """
-    from notifier import collect_alerts, send_alert_email
+    from notifier import collect_alerts, collect_pension_alerts, send_alert_email, _record_pension_alert
+    from datetime import date as _date
     alerts = collect_alerts()
-    sent   = send_alert_email(alerts)
-    logger.info(f"[Cron] 일일 알림 발송 완료 — sent={sent}, maturing={len(alerts['maturing'])}, losing={len(alerts['losing'])}")
+    pension_alerts = collect_pension_alerts()
+    alerts["pension_alerts"] = pension_alerts
+    sent = send_alert_email(alerts)
+    if sent and pension_alerts:
+        for pa in pension_alerts:
+            _record_pension_alert(pa["type"], _date.today().year)
+    logger.info(f"[Cron] 일일 알림 발송 완료 — sent={sent}, maturing={len(alerts['maturing'])}, losing={len(alerts['losing'])}, pension={len(pension_alerts)}")
     return {
-        "sent": sent,
+        "sent":           sent,
         "maturing_count": len(alerts["maturing"]),
         "losing_count":   len(alerts["losing"]),
+        "pension_count":  len(pension_alerts),
     }

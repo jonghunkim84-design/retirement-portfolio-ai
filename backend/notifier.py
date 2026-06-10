@@ -4,6 +4,8 @@
 - 알림 조건:
   1. 만기일이 7일 이내인 자산
   2. 연환산 수익률 < 0% (손실 전환) — 보유 1년 미만은 총수익률 기준
+  3. 연금소득세 한도 80% 도달 (연내 1회)
+  4. 연금소득세 한도 100% 초과 (연내 1회)
 """
 
 import os
@@ -78,7 +80,106 @@ def collect_alerts() -> dict:
     return {"maturing": maturing, "losing": losing, "today": today}
 
 
+# ── 연금소득세 한도 알림 ──────────────────────────────────────────
+
+def _pension_alert_already_sent(notification_type: str, year: int) -> bool:
+    """notification_log 테이블로 연내 중복 발송 여부 확인."""
+    from database import supabase
+    res = supabase.table("notification_log").select("id") \
+        .eq("notification_type", notification_type) \
+        .eq("year", year).execute()
+    return bool(res.data)
+
+
+def _record_pension_alert(notification_type: str, year: int):
+    """발송 이력 기록 (UNIQUE 제약으로 중복 무시)."""
+    from database import supabase
+    try:
+        supabase.table("notification_log").insert({
+            "notification_type": notification_type,
+            "year":              year,
+        }).execute()
+    except Exception:
+        pass  # UNIQUE 충돌 시 무시
+
+
+def collect_pension_alerts() -> list:
+    """
+    연금소득세 한도 알림 대상 수집.
+    반환: [{"type": "pension_80pct"|"pension_100pct", "pct": float, "ytd": float}] 또는 []
+    """
+    from routers.pension_tax import calc_retirement_pension_limit_ytd
+    from tax_constants import PRIVATE_PENSION_ANNUAL_LIMIT
+    from utils import get_config
+    from database import supabase
+
+    today  = date.today()
+    year   = today.year
+    config = get_config()
+    plan   = config.get("pension_plan") or {}
+
+    pension_start_date_str = plan.get("pension_start_date")
+    severance_principal    = plan.get("severance_principal")
+
+    pension_start_date = date.fromisoformat(pension_start_date_str) if pension_start_date_str else None
+
+    all_withdrawals = (
+        supabase.table("withdrawals").select("*").order("withdrawal_date").execute().data or []
+    )
+
+    ps_ytd = sum(
+        float(r["amount"]) for r in all_withdrawals
+        if r["tax_account_type"] == "pension_savings"
+        and date.fromisoformat(r["withdrawal_date"]).year == year
+    )
+    rp_ytd = calc_retirement_pension_limit_ytd(
+        year,
+        all_withdrawals,
+        pension_start_date,
+        float(severance_principal) if severance_principal else None,
+    )
+    ytd_total = ps_ytd + rp_ytd
+    pct = ytd_total / PRIVATE_PENSION_ANNUAL_LIMIT * 100
+
+    alerts = []
+
+    if pct >= 100 and not _pension_alert_already_sent("pension_100pct", year):
+        alerts.append({"type": "pension_100pct", "pct": pct, "ytd": ytd_total})
+    elif pct >= 80 and not _pension_alert_already_sent("pension_80pct", year):
+        alerts.append({"type": "pension_80pct", "pct": pct, "ytd": ytd_total})
+
+    return alerts
+
+
 # ── HTML 이메일 본문 생성 ──────────────────────────────────────────────────────
+def _build_pension_html(pension_alerts: list, today_str: str) -> str:
+    """연금소득세 한도 알림 HTML 섹션 생성."""
+    sections = []
+    for a in pension_alerts:
+        pct_str  = f"{a['pct']:.1f}%"
+        ytd_str  = f"₩{int(a['ytd']):,}"
+        if a["type"] == "pension_100pct":
+            sections.append(f"""
+            <h3 style="color:#dc2626;margin:24px 0 8px">🚨 사적연금 한도 초과</h3>
+            <p style="font-size:14px;color:#374151;margin:0 0 8px">
+              올해 사적연금 수령액(<strong>{ytd_str}</strong>, {pct_str})이 연 1,500만원 한도를 초과했습니다.
+            </p>
+            <p style="font-size:13px;color:#6b7280;margin:0">
+              한도 초과분을 포함한 <strong>전액</strong>이 16.5% 분리과세 또는 종합과세 선택 대상이 됩니다.
+              세무사 상담을 권장합니다.
+            </p>""")
+        else:
+            sections.append(f"""
+            <h3 style="color:#d97706;margin:24px 0 8px">⚠️ 사적연금 한도 80% 도달</h3>
+            <p style="font-size:14px;color:#374151;margin:0 0 8px">
+              올해 사적연금 수령액(<strong>{ytd_str}</strong>)이 연 1,500만원 한도의 {pct_str}에 도달했습니다.
+            </p>
+            <p style="font-size:13px;color:#6b7280;margin:0">
+              잔여 한도: ₩{int(15_000_000 - a['ytd']):,} — 한도 이내로 수령을 유지하면 저율 분리과세가 적용됩니다.
+            </p>""")
+    return "\n".join(sections)
+
+
 def _build_html(alerts: dict) -> str:
     today_str = alerts["today"].strftime("%Y년 %m월 %d일")
     maturing  = alerts["maturing"]
@@ -161,7 +262,12 @@ def _build_html(alerts: dict) -> str:
           * 1년 미만 보유 자산은 총수익률 기준 / 1년 이상은 연환산 수익률 기준
         </p>""")
 
-    body_content = "\n".join(sections)
+    # 연금소득세 알림 섹션 (alerts dict에 pension_alerts 키가 있으면 추가)
+    pension_section = ""
+    if alerts.get("pension_alerts"):
+        pension_section = _build_pension_html(alerts["pension_alerts"], today_str)
+
+    body_content = "\n".join(sections) + pension_section
 
     return f"""<!DOCTYPE html>
 <html lang="ko">
@@ -199,7 +305,7 @@ def _build_html(alerts: dict) -> str:
 # ── 이메일 발송 ───────────────────────────────────────────────────────────────
 def send_alert_email(alerts: dict) -> bool:
     """알림 메일 발송. 알림 없으면 발송 생략 → False 반환."""
-    if not alerts["maturing"] and not alerts["losing"]:
+    if not alerts["maturing"] and not alerts["losing"] and not alerts.get("pension_alerts"):
         logger.info("[알림] 발송 대상 없음 — 오늘은 알림 생략")
         return False
 
@@ -212,8 +318,8 @@ def send_alert_email(alerts: dict) -> bool:
         return False
 
     today_str = alerts["today"].strftime("%Y.%m.%d")
-    cnt = len(alerts["maturing"]) + len(alerts["losing"])
-    subject = f"[은퇴포트폴리오] {today_str} 알림 — 주의 자산 {cnt}건"
+    cnt = len(alerts["maturing"]) + len(alerts["losing"]) + len(alerts.get("pension_alerts") or [])
+    subject = f"[은퇴포트폴리오] {today_str} 알림 — 주의 항목 {cnt}건"
 
     msg = MIMEMultipart("alternative")
     msg["Subject"] = subject
@@ -293,8 +399,17 @@ def run_daily_alert():
         if deactivated:
             logger.info(f"[알림] 자동 비활성 처리 완료 — {len(deactivated)}건")
 
-        # 2) 이메일 알림 발송
+        # 2) 기존 알림 + 연금소득세 한도 알림 수집 후 발송
         alerts = collect_alerts()
-        send_alert_email(alerts)
+        pension_alerts = collect_pension_alerts()
+        alerts["pension_alerts"] = pension_alerts
+
+        sent = send_alert_email(alerts)
+
+        # 3) 연금소득세 알림 발송 이력 기록 (연내 중복 방지)
+        if sent and pension_alerts:
+            for pa in pension_alerts:
+                _record_pension_alert(pa["type"], date.today().year)
+                logger.info(f"[알림] 연금소득세 알림 발송 완료 — type={pa['type']}, pct={pa['pct']:.1f}%")
     except Exception as e:
         logger.error(f"[알림] 예외 발생: {e}")
