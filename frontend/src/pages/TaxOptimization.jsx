@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import api from '../api/client.js'
 
 const FINANCIAL_THRESHOLD = 20_000_000
-const PENSION_THRESHOLD   = 15_000_000
 
 // 상태별 스타일 매핑
 const STATUS = {
@@ -139,13 +138,6 @@ export default function TaxOptimization() {
   const finPct       = data?.utilization_pct      ?? 0
   const finStatus    = data?.status               ?? 'safe'
 
-  // 연금소득
-  const penYtd       = data?.pension_income_ytd      ?? 0
-  const penRemaining = data?.pension_remaining        ?? PENSION_THRESHOLD
-  const penPct       = data?.pension_utilization_pct  ?? 0
-  const penStatus    = data?.pension_status           ?? 'safe'
-  const penOver      = penYtd > PENSION_THRESHOLD
-
   return (
     <div className="space-y-5">
 
@@ -171,69 +163,6 @@ export default function TaxOptimization() {
           danger:  '금융소득이 기준의 80%를 초과했습니다. 연내 배당 수령 조정이 필요합니다.',
         }}
       />
-
-      {/* ─── A2: 연금소득세 모니터 ─────────────────────────────── */}
-      <div className={`card border-l-4 ${(STATUS[penStatus] ?? STATUS.safe).border}`}>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-sm font-semibold text-gray-700">🏖 연금소득세 모니터 (사적연금)</h2>
-          <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${(STATUS[penStatus] ?? STATUS.safe).badge}`}>
-            {(STATUS[penStatus] ?? STATUS.safe).label}
-          </span>
-        </div>
-
-        {isLoading ? (
-          <div className="text-sm text-gray-400 py-4 text-center">불러오는 중...</div>
-        ) : (
-          <>
-            {/* 금액 요약 */}
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <div className="text-center">
-                <p className="text-[11px] text-gray-400 mb-0.5">올해 사적연금</p>
-                <p className={`text-lg font-bold ${(STATUS[penStatus] ?? STATUS.safe).text}`}>{won(penYtd)}</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[11px] text-gray-400 mb-0.5">분리과세 기준</p>
-                <p className="text-lg font-bold text-gray-700">1,500만원</p>
-              </div>
-              <div className="text-center">
-                <p className="text-[11px] text-gray-400 mb-0.5">잔여 한도</p>
-                <p className={`text-lg font-bold ${penRemaining >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
-                  {penRemaining >= 0 ? won(penRemaining) : `-${won(Math.abs(penRemaining))}`}
-                </p>
-              </div>
-            </div>
-
-            {/* 프로그레스바 */}
-            <div>
-              <div className="flex justify-between text-[11px] text-gray-400 mb-1">
-                <span>0원</span>
-                <span className="font-medium">{penPct.toFixed(1)}% 소진</span>
-                <span>1,500만원</span>
-              </div>
-              <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${(STATUS[penStatus] ?? STATUS.safe).bar} transition-all duration-500`}
-                     style={{ width: `${Math.min(penPct, 100)}%` }} />
-                {[60, 80].map(mark => (
-                  <div key={mark}
-                    className="absolute top-0 bottom-0 w-0.5 bg-gray-400 opacity-50 z-10"
-                    style={{ left: `${mark}%` }} />
-                ))}
-              </div>
-              <div className="flex justify-end gap-4 text-[10px] text-gray-400 mt-0.5 px-0.5">
-                <span>⚠ 60%</span>
-                <span>🔴 80%</span>
-              </div>
-            </div>
-
-            {/* 분리과세 / 종합소득 합산 상태 */}
-            <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${penOver ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
-              {penOver
-                ? '⚠️ 종합소득 합산 대상 — 세무사 상담이 필요합니다.'
-                : `✅ 분리과세 (3.3~5.5%) 적용 중 — 한도까지 ${won(penRemaining)} 여유가 있습니다.`}
-            </div>
-          </>
-        )}
-      </div>
 
       {/* ─── B: 절세 전략 카드 4개 ────────────────────────────── */}
       <div>

@@ -285,7 +285,7 @@ export default function Assets() {
       {unclassifiedCount > 0 && (
         <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3 flex items-center gap-2">
           <span className="flex-shrink-0">⚠️</span>
-          <span>세제 미분류 자산 <strong>{unclassifiedCount}건</strong> — 연금소득세 계산을 위해 분류해 주세요</span>
+          <span>세제 미분류 자산 <strong>{unclassifiedCount}건</strong> — 세제 유형을 분류해 주세요</span>
         </div>
       )}
 
