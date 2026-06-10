@@ -116,6 +116,18 @@ export default function Settings() {
         <FieldRow label="출생년도">
           <input type="number" value={form.user?.birth_year || ''} onChange={e => set('user.birth_year', +e.target.value)} className="w-full" />
         </FieldRow>
+        <FieldRow label="은퇴 나이" sub="예: 65 (세)">
+          <div>
+            <input type="number" min="40" max="100"
+              value={form.user?.retirement_age || ''}
+              onChange={e => set('user.retirement_age', e.target.value ? +e.target.value : null)}
+              className="w-full" />
+            {form.user?.retirement_age && form.user?.birth_year &&
+              (new Date().getFullYear() - form.user.birth_year) > form.user.retirement_age && (
+              <p className="text-xs text-blue-500 mt-1">ℹ️ 이미 은퇴하셨습니다</p>
+            )}
+          </div>
+        </FieldRow>
         <FieldRow label="월 생활비 (원)" sub="포트폴리오에서 인출할 월간 목표 금액">
           <input type="number" value={form.user?.monthly_expense || ''} onChange={e => set('user.monthly_expense', +e.target.value)} className="w-full" />
         </FieldRow>

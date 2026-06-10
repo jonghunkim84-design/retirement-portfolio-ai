@@ -369,11 +369,15 @@ export default function PensionPlan() {
     balance:      +(r.portfolioBalance / 1e8).toFixed(1),
   }))
 
+  const retireAge  = config.user?.retirement_age
+  const retireYear = retireAge ? birthYear + retireAge : null
+
   const age70year   = birthYear + 70
   const age80year   = birthYear + 80
   const hpStartYear = homePension.enabled ? birthYear + homePension.startAge : null
 
   const refLines = [
+    retireYear             && { x: retireYear,         color: '#7c3aed', label: `은퇴(${retireAge}세)` },
     pensionStartYear < 9999 && { x: pensionStartYear, color: '#16a34a', label: '국민연금' },
     hpStartYear            && { x: hpStartYear,       color: '#d97706', label: '주택연금' },
     { x: age70year,          color: '#9ca3af',         label: '70세'    },

@@ -16,6 +16,13 @@ router = APIRouter()
 _FILL = PatternFill(start_color="185FA5", end_color="185FA5", fill_type="solid")
 _FONT = Font(color="FFFFFF", bold=True)
 
+_TAX_TYPE_KO = {
+    'pension_savings':    '연금저축',
+    'retirement_pension': '퇴직연금(IRP)',
+    'isa':               'ISA',
+    'regular':           '일반',
+}
+
 
 def _header_style(ws, row: int = 1):
     for cell in ws[row]:
@@ -56,6 +63,7 @@ def _cfg_items(cfg: dict):
     age = (datetime.now().year - int(birth_year)) if birth_year else ""
     return [
         ("현재 나이",      age),
+        ("은퇴 나이",      user.get("retirement_age", "")),
         ("월 생활비 (원)", user.get("monthly_expense", "")),
         ("Cash 목표%",    round(float(portfolio.get("target_cash",   0)) * 100, 1)),
         ("Bond 목표%",    round(float(portfolio.get("target_bond",   0)) * 100, 1)),
@@ -108,13 +116,14 @@ def _sheet_summary(ws, assets: list, cfg: dict, now_str: str):
 
 
 def _sheet_assets(ws, assets: list):
-    ws.append(["계좌명", "자산명", "자산유형", "수량", "현재가", "평가액", "매입일", "만기일", "활성여부"])
+    ws.append(["계좌명", "자산명", "자산유형", "세제분류", "수량", "현재가", "평가액", "매입일", "만기일", "활성여부"])
     _header_style(ws)
     for a in assets:
         ws.append([
             a.get("account_name", ""),
             a.get("asset_name", ""),
             a.get("asset_type", ""),
+            _TAX_TYPE_KO.get(a.get("tax_account_type") or "", "미분류"),
             float(a.get("quantity") or 0),
             float(a.get("unit_price") or 0),
             float(a.get("current_value") or 0),
@@ -186,12 +195,13 @@ def export_csv():
         # assets.csv
         buf = io.StringIO()
         w = csv.writer(buf)
-        w.writerow(["계좌명", "자산명", "자산유형", "수량", "현재가", "평가액", "매입일", "만기일", "활성여부"])
+        w.writerow(["계좌명", "자산명", "자산유형", "세제분류", "수량", "현재가", "평가액", "매입일", "만기일", "활성여부"])
         for a in assets:
             w.writerow([
                 a.get("account_name", ""),
                 a.get("asset_name", ""),
                 a.get("asset_type", ""),
+                _TAX_TYPE_KO.get(a.get("tax_account_type") or "", "미분류"),
                 a.get("quantity", 0) or 0,
                 a.get("unit_price", 0) or 0,
                 a.get("current_value", 0) or 0,
