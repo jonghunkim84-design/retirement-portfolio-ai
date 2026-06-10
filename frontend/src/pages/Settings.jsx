@@ -23,8 +23,33 @@ function FieldRow({ label, sub, children }) {
   )
 }
 
+async function downloadFile(endpoint, ext) {
+  const res = await api.get(endpoint, { responseType: 'blob' })
+  const today = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+  const url = URL.createObjectURL(res.data)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `retirement_backup_${today}.${ext}`
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 export default function Settings() {
   const qc = useQueryClient()
+  const [xlsxLoading, setXlsxLoading] = useState(false)
+  const [csvLoading, setCsvLoading] = useState(false)
+
+  const handleExportXlsx = async () => {
+    setXlsxLoading(true)
+    try { await downloadFile('/export/xlsx', 'xlsx') } finally { setXlsxLoading(false) }
+  }
+  const handleExportCsv = async () => {
+    setCsvLoading(true)
+    try { await downloadFile('/export/csv', 'zip') } finally { setCsvLoading(false) }
+  }
+
   const { data: cfg, isLoading } = useQuery({
     queryKey: ['config'],
     queryFn: () => api.get('/config').then(r => r.data),
@@ -188,6 +213,22 @@ export default function Settings() {
             ❌ 오류: {priceMut.error?.message}
           </div>
         )}
+      </Section>
+
+      {/* 데이터 백업 */}
+      <Section title="💾 데이터 백업">
+        <p className="text-sm text-gray-600 mb-4">
+          직접 입력한 자산·수입·설정 데이터를 내보냅니다.<br />
+          계산 결과는 원본 데이터로 언제든 재계산되므로 제외됩니다.
+        </p>
+        <div className="flex gap-3">
+          <button className="btn-primary" onClick={handleExportXlsx} disabled={xlsxLoading}>
+            {xlsxLoading ? '다운로드 중...' : '📥 Excel로 내보내기'}
+          </button>
+          <button className="btn-primary" onClick={handleExportCsv} disabled={csvLoading}>
+            {csvLoading ? '다운로드 중...' : '📥 CSV로 내보내기'}
+          </button>
+        </div>
       </Section>
     </div>
   )
