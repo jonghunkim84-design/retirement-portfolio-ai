@@ -38,6 +38,7 @@ const GROUPS = [
     items: [
       { to: '/pension-plan',     icon: '📊', label: '연금 계획' },
       { to: '/pension-optimize', icon: '🏛',  label: '연금 최적화' },
+      { to: '/pension-tax',      icon: '🏖',  label: '연금 세금' },
     ],
   },
 ]
@@ -48,8 +49,8 @@ const MOBILE_TABS = [
   { to: '/assets',      icon: '📋', label: '자산' },
   { to: '/withdrawal',  icon: '💸', label: '인출' },
   { to: '/ai-advisor',  icon: '🤖', label: 'AI' },
-  { to: '/tax',         icon: '🧾', label: '세금' },
-  { to: '/settings',    icon: '⚙️', label: '설정' },
+  { to: '/pension-tax', icon: '🏖', label: '연금세금' },
+  { to: '/settings',   icon: '⚙️', label: '설정' },
 ]
 
 function activeGroupKeys(pathname) {

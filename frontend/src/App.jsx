@@ -17,6 +17,7 @@ import NetWorth      from './pages/NetWorth.jsx'
 import MaturityGuide from './pages/MaturityGuide.jsx'
 import AIAdvisor      from './pages/AIAdvisor.jsx'
 import TaxOptimization from './pages/TaxOptimization.jsx'
+import PensionTax      from './pages/PensionTax.jsx'
 
 // 로그인하지 않으면 /login 으로 리다이렉트
 function ProtectedLayout() {
@@ -66,6 +67,7 @@ export default function App() {
             <Route path="/pension-optimize" element={<PensionOptimize />} />
             <Route path="/ai-advisor"       element={<AIAdvisor />} />
             <Route path="/tax"              element={<TaxOptimization />} />
+            <Route path="/pension-tax"     element={<PensionTax />} />
             <Route path="/settings"         element={<Settings />} />
           </Route>
 
