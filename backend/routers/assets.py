@@ -56,7 +56,10 @@ def create_asset(body: AssetIn):
     data = body.model_dump()
     data["created_at"] = datetime.now().isoformat()
     data["updated_at"] = datetime.now().isoformat()
-    res = supabase.table("assets").insert(data).execute()
+    try:
+        res = supabase.table("assets").insert(data).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     return res.data[0]
 
 
@@ -64,7 +67,10 @@ def create_asset(body: AssetIn):
 def update_asset(asset_id: int, body: AssetIn):
     data = body.model_dump()
     data["updated_at"] = datetime.now().isoformat()
-    res = supabase.table("assets").update(data).eq("id", asset_id).execute()
+    try:
+        res = supabase.table("assets").update(data).eq("id", asset_id).execute()
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
     if not res.data:
         raise HTTPException(status_code=404, detail="자산을 찾을 수 없습니다")
     return res.data[0]
