@@ -127,6 +127,75 @@ function DeviationRow({ label, currentRatio, targetRatio }) {
   )
 }
 
+// ── 비상 유동성 카드 ──────────────────────────────────────────────
+function LiquidityCard({ liquidity }) {
+  const months         = liquidity?.months ?? null
+  const cashTotal      = liquidity?.cash_total      ?? 0
+  const monthlyExpenses = liquidity?.monthly_expenses ?? 0
+
+  const pct = months != null ? Math.min(Math.round((months / 12) * 100), 100) : 0
+
+  const status =
+    months == null  ? { label: '계산 불가', badge: 'bg-gray-100 text-gray-500',    border: 'border-gray-400',  bar: 'bg-gray-300',   text: 'text-gray-500' }
+    : months >= 12  ? { label: '안전',      badge: 'bg-green-100 text-green-700',  border: 'border-green-500', bar: 'bg-green-400',  text: 'text-green-600' }
+    : months >= 6   ? { label: '주의',      badge: 'bg-yellow-100 text-yellow-700',border: 'border-yellow-400',bar: 'bg-yellow-400', text: 'text-yellow-600' }
+                    : { label: '위험',      badge: 'bg-red-100 text-red-700',      border: 'border-red-500',   bar: 'bg-red-400',    text: 'text-red-600' }
+
+  return (
+    <div className={`card border-l-4 ${status.border}`}>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-gray-700">💧 비상 유동성 비율</h3>
+        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${status.badge}`}>
+          {status.label}
+        </span>
+      </div>
+
+      {/* 대형 개월 수 */}
+      <div className="flex items-end gap-2 mb-4">
+        <span className={`text-5xl font-bold leading-none ${status.text}`}>
+          {months != null ? months.toFixed(1) : '—'}
+        </span>
+        <div className="mb-1 leading-tight">
+          <div className="text-lg text-gray-600 font-medium">개월</div>
+          <div className="text-[11px] text-gray-400">/ 권장 12개월</div>
+        </div>
+      </div>
+
+      {/* 프로그레스바 */}
+      <div className="mb-4">
+        <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+          <div className={`h-full rounded-full ${status.bar} transition-all duration-500`}
+               style={{ width: `${pct}%` }} />
+          {/* 6개월(50%) · 12개월(100%) 마커 */}
+          <div className="absolute top-0 bottom-0 w-0.5 bg-gray-400 z-10 opacity-60"
+               style={{ left: '50%' }} />
+        </div>
+        <div className="flex justify-between text-[10px] text-gray-400 mt-1 px-0.5">
+          <span>0</span>
+          <span>6개월</span>
+          <span>12개월</span>
+        </div>
+      </div>
+
+      {/* 현금성 자산 / 월 생활비 상세 */}
+      <div className="space-y-2 text-xs border-t border-gray-100 pt-3">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-500">현금성 자산 합계</span>
+          <span className="font-semibold text-gray-800">
+            {Math.round(cashTotal / 10000).toLocaleString()}만원
+          </span>
+        </div>
+        <div className="flex justify-between items-center">
+          <span className="text-gray-500">월 생활비</span>
+          <span className="font-semibold text-gray-800">
+            {Math.round(monthlyExpenses / 10000).toLocaleString()}만원
+          </span>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 // ── KPI 카드 ──────────────────────────────────────────────────────
 function KpiCard({ icon, label, value, sub, borderColor, onClick }) {
   return (
@@ -184,7 +253,7 @@ export default function Dashboard() {
     config, buckets, risk, ai_summary, pension,
     recommended_withdrawal, emergency_liquidity,
     estimated_return_rate, withdrawal_rate,
-    bucket_deviations, maturing_60d,
+    bucket_deviations, maturing_60d, liquidity,
   } = data
 
   const name      = config?.user?.name          || '종헌'
@@ -581,7 +650,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ─── Zone 4: AI 요약 (접이식) ──────────────────────────── */}
+      {/* ─── Zone 4: 비상 유동성 비율 ─────────────────────────── */}
+      <LiquidityCard liquidity={liquidity} />
+
+      {/* ─── Zone 5: AI 요약 (접이식) ──────────────────────────── */}
       <div className="card border-l-4 border-blue-400">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

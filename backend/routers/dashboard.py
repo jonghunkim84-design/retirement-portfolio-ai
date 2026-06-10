@@ -80,6 +80,16 @@ def get_dashboard():
     )
     emergency_months = round(personal_savings_cash / monthly_expense, 1) if monthly_expense else 0
 
+    # ── 비상 유동성 비율 (전체 현금성 / 월 생활비) ───────────────────
+    cash_total       = sum(a["current_value"] for a in assets if a.get("asset_type") == "cash")
+    monthly_expenses = config.get("user", {}).get("monthly_expense", 0)
+    liquidity_months = round(cash_total / monthly_expenses, 1) if monthly_expenses else None
+    liquidity = {
+        "cash_total":       cash_total,
+        "monthly_expenses": monthly_expenses,
+        "months":           liquidity_months,
+    }
+
     # ── 이번달 실제 인출액 ────────────────────────────────────────
     current_month_prefix = f"{today_dt.year:04d}-{today_dt.month:02d}"
     current_wd = next(
@@ -119,4 +129,5 @@ def get_dashboard():
         "withdrawal_rate":    withdrawal_rate,
         "bucket_deviations":  bucket_deviations,
         "maturing_60d":       maturing_60d,
+        "liquidity":          liquidity,
     }
