@@ -46,7 +46,7 @@ const MOBILE_TABS = [
   { to: '/',            icon: '🏠', label: '홈' },
   { to: '/assets',      icon: '📋', label: '자산' },
   { to: '/withdrawal',  icon: '💸', label: '인출' },
-  { to: '/pension-plan',icon: '📊', label: '연금' },
+  { to: '/ai-advisor',  icon: '🤖', label: 'AI' },
   { to: '/settings',    icon: '⚙️', label: '설정' },
 ]
 
@@ -107,10 +107,18 @@ export default function Layout({ children }) {
         <nav className="flex-1 px-3 py-4">
           <NavLink to="/" end
             className={({ isActive }) =>
-              `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-3
+              `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors
                ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`
             }>
             <span>🏠</span>대시보드
+          </NavLink>
+
+          <NavLink to="/ai-advisor"
+            className={({ isActive }) =>
+              `flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors mb-3
+               ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10 hover:text-white'}`
+            }>
+            <span>🤖</span>AI 어드바이저
           </NavLink>
 
           <div className="space-y-1">

@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import assets, dashboard, risk, rebalance, price, summary, withdrawal, config, returns, cashflow, income, networth
+from routers import assets, dashboard, risk, rebalance, price, summary, withdrawal, config, returns, cashflow, income, networth, ai_advisor
 from notifier import run_daily_alert
 
 logging.basicConfig(level=logging.INFO)
@@ -77,7 +77,8 @@ app.include_router(config.router,     prefix="/config",     tags=["config"])
 app.include_router(returns.router,    prefix="/returns",    tags=["returns"])
 app.include_router(cashflow.router,   prefix="/cashflow",   tags=["cashflow"])
 app.include_router(income.router,     prefix="/income",     tags=["income"])
-app.include_router(networth.router,   prefix="/networth",   tags=["networth"])
+app.include_router(networth.router,    prefix="/networth",    tags=["networth"])
+app.include_router(ai_advisor.router, prefix="/ai",           tags=["ai"])
 
 
 @app.get("/health")

@@ -15,6 +15,7 @@ import Income        from './pages/Income.jsx'
 import PensionOptimize from './pages/PensionOptimize.jsx'
 import NetWorth      from './pages/NetWorth.jsx'
 import MaturityGuide from './pages/MaturityGuide.jsx'
+import AIAdvisor    from './pages/AIAdvisor.jsx'
 
 // 로그인하지 않으면 /login 으로 리다이렉트
 function ProtectedLayout() {
@@ -62,6 +63,7 @@ export default function App() {
             <Route path="/cashflow"         element={<CashFlow />} />
             <Route path="/income"           element={<Income />} />
             <Route path="/pension-optimize" element={<PensionOptimize />} />
+            <Route path="/ai-advisor"       element={<AIAdvisor />} />
             <Route path="/settings"         element={<Settings />} />
           </Route>
 
