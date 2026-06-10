@@ -29,6 +29,7 @@ const GROUPS = [
       { to: '/withdrawal', icon: '💸', label: '인출 관리' },
       { to: '/cashflow',   icon: '📅', label: '현금흐름' },
       { to: '/income',     icon: '💰', label: '수입 추적' },
+      { to: '/tax',        icon: '🧾', label: '세금 최적화' },
     ],
   },
   {
@@ -47,6 +48,7 @@ const MOBILE_TABS = [
   { to: '/assets',      icon: '📋', label: '자산' },
   { to: '/withdrawal',  icon: '💸', label: '인출' },
   { to: '/ai-advisor',  icon: '🤖', label: 'AI' },
+  { to: '/tax',         icon: '🧾', label: '세금' },
   { to: '/settings',    icon: '⚙️', label: '설정' },
 ]
 
