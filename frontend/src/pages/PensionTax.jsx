@@ -1,8 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import api, { fmt } from '../api/client.js'
-
-const LIMIT = 15_000_000
+import api from '../api/client.js'
 
 const STATUS = {
   safe:    { border: 'border-green-500',  bar: 'bg-green-400',  badge: 'bg-green-100 text-green-700',   label: '안전', text: 'text-green-600' },
@@ -11,16 +9,25 @@ const STATUS = {
 }
 
 const TAX_KO = {
-  pension_savings:    '연금저축',
+  pension_savings:    '개인연금(연금저축)',
   retirement_pension: '퇴직연금(IRP)',
   isa:                'ISA',
   regular:            '일반',
 }
 
+const ESTIMATE_TOOLTIP =
+  '수령액 변경, 연금수령한도(평가액 기준 연차별 한도), 인출 실적에 따라 달라질 수 있습니다'
+
 function won(v) {
   if (v == null) return '-'
   const abs = Math.round(Math.abs(v))
   return (v < 0 ? '-' : '') + abs.toLocaleString('ko-KR') + '원'
+}
+
+// 만 원 병기: "1,250,000원 (125만 원)"
+function wonMan(v) {
+  if (v == null) return '-'
+  return `${won(v)} (${Math.round(v / 10_000).toLocaleString('ko-KR')}만 원)`
 }
 
 function fmtYM(s) {
@@ -29,242 +36,387 @@ function fmtYM(s) {
   return `${y}년 ${parseInt(m)}월`
 }
 
-function timelinePct(startStr, endStr) {
-  if (!startStr || !endStr) return 0
-  const start = new Date(startStr).getTime()
-  const end   = new Date(endStr).getTime()
-  const now   = Date.now()
-  if (end <= start) return 100
-  if (now <= start) return 0
-  return Math.max(0, Math.min(99, (now - start) / (end - start) * 100))
+
+// ════════════════════════════════════════════════════════════════════════════
+// 블록 0: 연금 계획 입력 패널 (퇴직연금 / 개인연금 두 카드)
+// ════════════════════════════════════════════════════════════════════════════
+
+function Field({ label, tooltip, children }) {
+  return (
+    <div>
+      <label className="text-[11px] text-gray-500 block mb-1">
+        {label}
+        {tooltip && (
+          <span title={tooltip}
+                className="ml-1 inline-block text-blue-400 cursor-help select-none">ⓘ</span>
+        )}
+      </label>
+      {children}
+    </div>
+  )
 }
 
+const inputCls = 'w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300'
 
-// ── 연금 계획 설정 카드 ──────────────────────────────────────────────────────
-function PlanSetupCard({ existing, onSave, isSaving }) {
-  const init = {
-    severance_principal:         existing?.severance_principal ?? '',
-    pension_start_date:          existing?.pension_start_date  ?? '',
-    monthly_pension_amount:      existing?.monthly_pension_amount ?? '',
-    other_private_pension_annual: existing?.other_private_pension_annual ?? 0,
-  }
-  const [form, setForm] = useState(init)
-  useEffect(() => { setForm(init) }, [existing?.pension_start_date])
+function RpPlanCard({ track, onSave, isSaving }) {
+  const plan = track.plan
+  const [editing, setEditing] = useState(!track.active)
+  const [form, setForm] = useState({
+    severance_principal:    plan.principal ?? '',
+    pension_start_date:     plan.start_date ?? '',
+    monthly_pension_amount: plan.monthly_amount ?? '',
+  })
+  useEffect(() => {
+    setEditing(!track.active)
+    setForm({
+      severance_principal:    plan.principal ?? '',
+      pension_start_date:     plan.start_date ?? '',
+      monthly_pension_amount: plan.monthly_amount ?? '',
+    })
+  }, [track.active, plan.start_date, plan.principal, plan.monthly_amount])
 
   const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
   const valid = form.severance_principal && form.pension_start_date && form.monthly_pension_amount
 
   return (
     <div className="card border-l-4 border-blue-400">
-      <h2 className="text-sm font-semibold text-gray-700 mb-1">📋 연금 계획 입력</h2>
-      <p className="text-xs text-gray-400 mb-4">퇴직금 원금 소진 예측 및 월 수령액 가이드를 이용하려면 아래 정보를 입력하세요.</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <div>
-          <label className="text-[11px] text-gray-500 block mb-1">IRP 이체 퇴직금 원금 (원)</label>
-          <input type="number" placeholder="200000000" value={form.severance_principal}
-            onChange={e => set('severance_principal', e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-        </div>
-        <div>
-          <label className="text-[11px] text-gray-500 block mb-1">연금 수령 개시일</label>
-          <input type="date" value={form.pension_start_date}
-            onChange={e => set('pension_start_date', e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-        </div>
-        <div>
-          <label className="text-[11px] text-gray-500 block mb-1">계획 월 수령액 (원)</label>
-          <input type="number" placeholder="1000000" value={form.monthly_pension_amount}
-            onChange={e => set('monthly_pension_amount', e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-        </div>
-        <div>
-          <label className="text-[11px] text-gray-500 block mb-1">IRP 외 다른 사적연금 연간 수령액 (원)</label>
-          <input type="number" placeholder="0" value={form.other_private_pension_annual}
-            onChange={e => set('other_private_pension_annual', e.target.value)}
-            className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-          <p className="text-[10px] text-gray-400 mt-0.5">연금저축 등 IRP 외 사적연금 수령액 합계</p>
-        </div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-gray-700">🏦 퇴직연금(IRP)</h3>
+        {track.active && (
+          <button className="text-xs text-blue-500 underline" onClick={() => setEditing(p => !p)}>
+            {editing ? '취소' : '수정'}
+          </button>
+        )}
       </div>
-      <button className="mt-4 btn-primary w-full" disabled={!valid || isSaving}
-        onClick={() => onSave({
-          severance_principal:         Number(form.severance_principal) || null,
-          pension_start_date:          form.pension_start_date || null,
-          monthly_pension_amount:      Number(form.monthly_pension_amount) || null,
-          other_private_pension_annual: Number(form.other_private_pension_annual) || 0,
-        })}>
-        {isSaving ? '저장 중...' : '저장'}
-      </button>
+
+      {!editing ? (
+        <div className="text-xs text-gray-600 space-y-1.5">
+          <div className="flex justify-between"><span className="text-gray-400">퇴직금 원금</span><strong>{wonMan(plan.principal)}</strong></div>
+          <div className="flex justify-between"><span className="text-gray-400">연금 개시일</span><strong>{plan.start_date}</strong></div>
+          <div className="flex justify-between"><span className="text-gray-400">월 수령액</span><strong>{wonMan(plan.monthly_amount)}</strong></div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-[11px] text-gray-400">퇴직금 원금(이연퇴직소득)은 한도와 무관하게 수령되며, 소진 후 운용수익부터 과세 단계입니다.</p>
+          <Field label="IRP 이체 퇴직금 원금 (원)">
+            <input type="number" placeholder="200000000" value={form.severance_principal}
+              onChange={e => set('severance_principal', e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="연금 수령 개시일">
+            <input type="date" value={form.pension_start_date}
+              onChange={e => set('pension_start_date', e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="계획 월 수령액 (원)">
+            <input type="number" placeholder="1000000" value={form.monthly_pension_amount}
+              onChange={e => set('monthly_pension_amount', e.target.value)} className={inputCls} />
+          </Field>
+          <button className="btn-primary w-full text-sm" disabled={!valid || isSaving}
+            onClick={() => onSave({
+              severance_principal:    Number(form.severance_principal) || null,
+              pension_start_date:     form.pension_start_date || null,
+              monthly_pension_amount: Number(form.monthly_pension_amount) || null,
+            }, () => setEditing(false))}>
+            {isSaving ? '저장 중...' : '저장'}
+          </button>
+          {!track.active && (
+            <p className="text-[10px] text-gray-400">위 3개 값을 모두 입력하면 퇴직연금 트랙이 활성화됩니다.</p>
+          )}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const DEDUCTED_TOOLTIP =
+  '이 금액은 운용수익과 동일하게 과세되며, 과세 시작 시점에는 영향을 주지 않습니다'
+
+function PpPlanCard({ track, onSave, isSaving }) {
+  const plan = track.plan
+  const [editing, setEditing] = useState(!track.active)
+  const [form, setForm] = useState({
+    pp_non_deducted_principal: plan.non_deducted_principal ?? '',
+    pp_deducted_principal:     plan.deducted_principal ?? '',
+    pp_start_date:             plan.start_date ?? '',
+    pp_monthly_amount:         plan.monthly_amount ?? '',
+  })
+  useEffect(() => {
+    setEditing(!track.active)
+    setForm({
+      pp_non_deducted_principal: plan.non_deducted_principal ?? '',
+      pp_deducted_principal:     plan.deducted_principal ?? '',
+      pp_start_date:             plan.start_date ?? '',
+      pp_monthly_amount:         plan.monthly_amount ?? '',
+    })
+  }, [track.active, plan.start_date, plan.non_deducted_principal, plan.deducted_principal, plan.monthly_amount])
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const valid = form.pp_start_date && form.pp_monthly_amount
+
+  return (
+    <div className="card border-l-4 border-purple-400">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-semibold text-gray-700">💜 개인연금(연금저축)</h3>
+        {track.active && (
+          <button className="text-xs text-blue-500 underline" onClick={() => setEditing(p => !p)}>
+            {editing ? '취소' : '수정'}
+          </button>
+        )}
+      </div>
+
+      {!editing ? (
+        <div className="text-xs text-gray-600 space-y-1.5">
+          <div className="flex justify-between"><span className="text-gray-400">세액공제 받지 않은 원금</span><strong>{wonMan(plan.non_deducted_principal ?? 0)}</strong></div>
+          <div className="flex justify-between">
+            <span className="text-gray-400">세액공제 받은 원금 <span title={DEDUCTED_TOOLTIP} className="text-blue-400 cursor-help">ⓘ</span></span>
+            <strong>{plan.deducted_principal != null ? wonMan(plan.deducted_principal) : '- (참고값)'}</strong>
+          </div>
+          <div className="flex justify-between"><span className="text-gray-400">연금 개시일</span><strong>{plan.start_date}</strong></div>
+          <div className="flex justify-between"><span className="text-gray-400">월 수령액</span><strong>{wonMan(plan.monthly_amount)}</strong></div>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-[11px] text-gray-400">세액공제 받지 않은 납입 원금이 먼저 비과세로 인출되고, 소진 후 과세 단계가 시작됩니다.</p>
+          <Field label="세액공제 받지 않은 납입 원금 (원)">
+            <input type="number" placeholder="36000000" value={form.pp_non_deducted_principal}
+              onChange={e => set('pp_non_deducted_principal', e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="세액공제 받은 납입 원금 (원) — 참고값" tooltip={DEDUCTED_TOOLTIP}>
+            <input type="number" placeholder="50000000" value={form.pp_deducted_principal}
+              onChange={e => set('pp_deducted_principal', e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="연금 수령 개시일">
+            <input type="date" value={form.pp_start_date}
+              onChange={e => set('pp_start_date', e.target.value)} className={inputCls} />
+          </Field>
+          <Field label="계획 월 수령액 (원)">
+            <input type="number" placeholder="600000" value={form.pp_monthly_amount}
+              onChange={e => set('pp_monthly_amount', e.target.value)} className={inputCls} />
+          </Field>
+          <button className="btn-primary w-full text-sm" disabled={!valid || isSaving}
+            onClick={() => onSave({
+              pp_non_deducted_principal: form.pp_non_deducted_principal === '' ? null : Number(form.pp_non_deducted_principal),
+              pp_deducted_principal:     form.pp_deducted_principal === '' ? null : Number(form.pp_deducted_principal),
+              pp_start_date:             form.pp_start_date || null,
+              pp_monthly_amount:         Number(form.pp_monthly_amount) || null,
+            }, () => setEditing(false))}>
+            {isSaving ? '저장 중...' : '저장'}
+          </button>
+          {!track.active && (
+            <p className="text-[10px] text-gray-400">
+              개시일과 월 수령액을 입력하면 개인연금 트랙이 활성화됩니다.
+              개인연금을 쓰지 않으면 비워두세요 — 퇴직연금 단독으로 동작합니다.
+            </p>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
 
-// ── 블록 1: 퇴직금 원금 소진 타임라인 ────────────────────────────────────────
-function TimelineBlock({ depletion, plan }) {
-  const pct    = timelinePct(plan.pension_start_date, depletion.depletion_date)
-  const remain = depletion.remaining_principal
+// ════════════════════════════════════════════════════════════════════════════
+// 블록 1: 듀얼 타임라인
+// ════════════════════════════════════════════════════════════════════════════
+
+const MS_PER_MONTH = 30.44 * 24 * 3600 * 1000
+
+function DualTimeline({ tracks }) {
+  const rp = tracks.retirement_pension
+  const pp = tracks.pension_savings
+  const active = [rp, pp].filter(t => t.active && t.plan.start_date)
+
+  if (active.length === 0) return null
+
+  // 시간 축: 최초 개시일 ~ 최후 과세 전환 + 36개월 (전환 미상이면 개시 + 120개월)
+  const starts = active.map(t => new Date(t.plan.start_date).getTime())
+  const taxStarts = active.filter(t => t.tax_start_date).map(t => new Date(t.tax_start_date).getTime())
+  const axisStart = Math.min(...starts, Date.now())
+  const axisEnd = taxStarts.length
+    ? Math.max(...taxStarts) + 36 * MS_PER_MONTH
+    : Math.max(...starts) + 120 * MS_PER_MONTH
+  const pos = t => Math.max(0, Math.min(100, ((t - axisStart) / (axisEnd - axisStart)) * 100))
+
+  const nowPct = pos(Date.now())
+  // 동시 과세 구간: 두 트랙 모두 과세 전환 후
+  const dualFrom = (active.length === 2 && taxStarts.length === 2) ? Math.max(...taxStarts) : null
+
+  const Row = ({ track, label, freeLabel, color }) => {
+    const start = new Date(track.plan.start_date).getTime()
+    const taxStart = track.tax_start_date ? new Date(track.tax_start_date).getTime() : null
+    const startPct = pos(start)
+    const taxPct = taxStart != null ? pos(taxStart) : null
+    const isEstimate = track.depletion?.is_estimate
+
+    return (
+      <div className="mb-5 last:mb-1">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-[11px] font-medium text-gray-600">{label}</span>
+          {taxStart != null && (
+            <span className="text-[10px] text-gray-400">
+              ▼ 과세 전환 {isEstimate ? '예상 ' : ''}{fmtYM(track.tax_start_date)}
+              {isEstimate && <span title={ESTIMATE_TOOLTIP} className="ml-0.5 text-blue-400 cursor-help">ⓘ</span>}
+            </span>
+          )}
+        </div>
+        <div className="relative h-5 bg-gray-100 rounded">
+          {taxPct != null ? (
+            <>
+              <div className={`absolute top-0 bottom-0 ${color} rounded-l`}
+                   style={{ left: `${startPct}%`, width: `${Math.max(0, taxPct - startPct)}%` }} />
+              <div className="absolute top-0 bottom-0 bg-orange-300 rounded-r"
+                   style={{ left: `${taxPct}%`, width: `${100 - taxPct}%` }} />
+              <div className="absolute -top-1 bottom-0 w-0.5 bg-orange-600 z-10"
+                   style={{ left: `${taxPct}%` }} />
+            </>
+          ) : (
+            <div className={`absolute top-0 bottom-0 ${color} rounded`}
+                 style={{ left: `${startPct}%`, width: `${100 - startPct}%` }}
+                 title="과세 전환 시점 추정 불가 (월 수령액 확인 필요)" />
+          )}
+        </div>
+        <div className="flex justify-between text-[10px] text-gray-400 mt-0.5">
+          <span>개시 {fmtYM(track.plan.start_date)} · {freeLabel}</span>
+          {taxPct != null && <span className="text-orange-500">과세 구간 (한도 대상)</span>}
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="card">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-sm font-semibold text-gray-700">📊 퇴직금 원금 소진 타임라인</h2>
-        {depletion.is_estimate && (
-          <span title={depletion.assumption}
-                className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full cursor-default">
-            예상 ⓘ
-          </span>
-        )}
+        <h2 className="text-sm font-semibold text-gray-700">📊 과세 전환 듀얼 타임라인</h2>
+        <span title={ESTIMATE_TOOLTIP}
+              className="text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full cursor-default">예상 ⓘ</span>
       </div>
 
-      {depletion.is_depleted ? (
-        <div className="bg-orange-50 border border-orange-200 text-orange-700 text-sm rounded-lg px-4 py-3">
-          ⚠️ 퇴직금 원금이 소진되었습니다. 현재 <strong>운용수익 수령 단계</strong>입니다.
-        </div>
-      ) : (
-        <>
-          {/* 금액 요약 */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
-            {[
-              { label: '이체 원금',   val: plan.severance_principal,       color: 'text-gray-700' },
-              { label: '인출 누계',   val: depletion.withdrawn_principal,  color: 'text-gray-700' },
-              { label: '잔여 원금',   val: remain,                          color: 'text-blue-700' },
-              {
-                label: '잔여 기간',
-                val: depletion.months_remaining != null ? null : null,
-                extra: depletion.months_remaining != null
-                  ? `약 ${depletion.months_remaining}개월`
-                  : '-',
-                color: 'text-gray-700',
-              },
-            ].map(({ label, val, extra, color }) => (
-              <div key={label} className="text-center bg-gray-50 rounded-lg p-3">
-                <p className="text-[11px] text-gray-400 mb-0.5">{label}</p>
-                <p className={`text-sm font-bold ${color}`}>{extra ?? won(val)}</p>
-              </div>
-            ))}
-          </div>
-
-          {/* 진행 바 */}
-          <div className="mb-3">
-            <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden">
-              <div className="h-full bg-blue-400 rounded-full transition-all duration-500"
-                   style={{ width: `${pct}%` }} />
-              {/* 현재 위치 마커 */}
-              <div className="absolute top-0 bottom-0 w-0.5 bg-blue-700 z-10"
-                   style={{ left: `${pct}%` }} />
-            </div>
-            <div className="flex justify-between mt-1.5 text-[11px] text-gray-400">
-              <span>개시<br />{fmtYM(plan.pension_start_date)}</span>
-              <span className="text-blue-600 font-medium text-center">
-                ▲ 현재({pct.toFixed(0)}%)
-              </span>
-              <span className="text-right">
-                {depletion.is_estimate ? '예상 소진' : '소진'}<br />
-                {fmtYM(depletion.depletion_date)}
+      {/* 모바일: 가로 스크롤 */}
+      <div className="overflow-x-auto">
+        <div className="relative min-w-[520px] pt-5 pb-1">
+          {/* 동시 과세 구간 하이라이트 */}
+          {dualFrom != null && (
+            <div className="absolute top-0 bottom-0 bg-red-50 border-l-2 border-red-300 rounded-r z-0"
+                 style={{ left: `${pos(dualFrom)}%`, right: 0 }}>
+              <span className="absolute top-0 left-1 text-[9px] text-red-500 font-medium whitespace-nowrap">
+                동시 과세 구간
               </span>
             </div>
+          )}
+          {/* 현재 날짜 세로선 */}
+          <div className="absolute top-0 bottom-0 w-0.5 bg-blue-600 z-20" style={{ left: `${nowPct}%` }}>
+            <span className="absolute -top-0.5 left-1 text-[9px] text-blue-600 font-medium whitespace-nowrap">오늘</span>
           </div>
 
-          {/* 예상 안내 */}
-          <div className="bg-blue-50 rounded-lg px-3 py-2 text-xs text-blue-800 mb-3">
-            💡 현재 월 <strong>{won(plan.monthly_pension_amount)}</strong> 수령 기준,{' '}
-            <strong>{fmtYM(depletion.depletion_date)}경</strong> 원금 소진 예상.
-            {depletion.is_estimate && (
-              <span className="text-gray-500">
-                {' '}수령액 변경, 연금수령한도 제한, 추가 납입금 인출 순서에 따라 달라질 수 있습니다.
-              </span>
+          <div className="relative z-10">
+            {rp.active && rp.plan.start_date && (
+              <Row track={rp} label="퇴직연금(IRP)" freeLabel="원금 구간 (한도 무관)" color="bg-blue-300" />
+            )}
+            {pp.active && pp.plan.start_date && (
+              <Row track={pp} label="개인연금(연금저축)" freeLabel="비과세 원금 구간 (한도 무관)" color="bg-purple-300" />
             )}
           </div>
+        </div>
+      </div>
 
-          {/* 원금 구간 안내 */}
-          <div className="bg-green-50 border border-green-200 rounded-lg px-3 py-2 text-xs text-green-700">
-            ✅ <strong>이 기간의 수령액은 연 1,500만원 한도와 무관합니다</strong> — 이연퇴직소득(퇴직금 원금)은
-            퇴직소득세의 70%~60% 분리과세 적용. 한도 제한 없이 수령 가능합니다.
-          </div>
-        </>
+      {dualFrom != null && (
+        <div className="mt-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2">
+          🔴 <strong>동시 과세 구간 ({fmtYM(new Date(dualFrom).toISOString())}~)</strong> — 두 연금 합산
+          연 1,500만 원 관리 필요. 이 기간에는 두 계좌 인출이 모두 한도에 합산됩니다.
+        </div>
       )}
     </div>
   )
 }
 
 
-// ── 블록 2: 운용수익 단계 월 수령액 가이드 ───────────────────────────────────
-function MonthlyGuideBlock({ monthlyGuide, taxRate, onSaveOther }) {
-  const [editing, setEditing]   = useState(false)
-  const [otherVal, setOtherVal] = useState(monthlyGuide.other_annual)
+// ════════════════════════════════════════════════════════════════════════════
+// 블록 2: 구간별 권장 월 수령액 가이드
+// ════════════════════════════════════════════════════════════════════════════
 
-  useEffect(() => { setOtherVal(monthlyGuide.other_annual) }, [monthlyGuide.other_annual])
+const PHASE_META = {
+  tax_free: { icon: '🟢', title: '비과세 구간',  border: 'border-green-300',  desc: '모든 계좌가 비과세 풀(원금) 인출 중' },
+  single:   { icon: '🟡', title: '단독 과세 구간', border: 'border-yellow-300', desc: '한 계좌만 과세 단계' },
+  dual:     { icon: '🔴', title: '동시 과세 구간', border: 'border-red-300',    desc: '두 계좌 모두 과세 단계' },
+}
 
-  const S = monthlyGuide.over_other_pension ? STATUS.danger : STATUS.safe
-
+function PhaseGuideBlock({ phases, overWarning, taxRate, monthlyCap }) {
   return (
-    <div className={`card border-l-4 ${S.border}`}>
-      <h2 className="text-sm font-semibold text-gray-700 mb-4">🏖 운용수익 단계 월 수령액 가이드</h2>
+    <div className="card">
+      <h2 className="text-sm font-semibold text-gray-700 mb-1">🧭 구간별 권장 월 수령액</h2>
+      <p className="text-[11px] text-gray-400 mb-4">
+        과세 전환 시점을 기준으로 시간 축을 3개 구간으로 나눠 권장 상한을 제시합니다 (예상 ⓘ)
+      </p>
 
-      {/* 큰 숫자 */}
-      <div className="text-center py-4 mb-3">
-        <p className="text-xs text-gray-400 mb-1">원금 소진 후 권장 월 수령액 상한</p>
-        {monthlyGuide.over_other_pension ? (
-          <p className="text-2xl font-bold text-red-600">한도 초과</p>
-        ) : (
-          <p className="text-3xl font-bold text-blue-700">
-            월 {won(Math.round(monthlyGuide.monthly_limit))}
-          </p>
-        )}
-      </div>
-
-      {/* 계산 내역 */}
-      <div className="bg-gray-50 rounded-lg px-3 py-2 text-xs text-gray-500 mb-3">
-        (연 1,500만원 − 다른 사적연금 연{' '}
-        <strong className="text-gray-700">{won(monthlyGuide.other_annual)}</strong>) ÷ 12
-      </div>
-
-      {/* 다른 사적연금 인라인 수정 */}
-      <div className="flex items-center justify-between border-t pt-3 mb-3">
-        <div>
-          <p className="text-xs font-medium text-gray-600">IRP 외 다른 사적연금 연간 수령액</p>
-          <p className="text-[10px] text-gray-400">연금저축 등 합산</p>
+      {phases.length === 0 ? (
+        <p className="text-xs text-gray-400 py-4 text-center">
+          연금 계획(개시일·월 수령액)을 입력하면 구간별 가이드가 표시됩니다.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          {phases.map((p, i) => {
+            const meta = PHASE_META[p.phase]
+            return (
+              <div key={i} className={`border ${meta.border} rounded-lg p-3 flex flex-col`}>
+                <p className="text-xs font-semibold text-gray-700">{meta.icon} {meta.title}</p>
+                <p className="text-[10px] text-gray-400 mb-2">
+                  {fmtYM(p.from)} ~ {p.to ? fmtYM(p.to) : '이후'}
+                </p>
+                <p className="text-[10px] text-gray-500 mb-2">{meta.desc}
+                  {p.taxable_accounts.length > 0 && (
+                    <span> — {p.taxable_accounts.map(a => TAX_KO[a]).join(' + ')}</span>
+                  )}
+                </p>
+                <div className="mt-auto pt-2 border-t border-gray-100">
+                  {p.phase === 'tax_free' ? (
+                    <p className="text-sm font-bold text-green-600">제한 없음 <span className="font-normal text-[10px] text-gray-400">(한도 무관)</span></p>
+                  ) : p.phase === 'dual' ? (
+                    <>
+                      <p className="text-[10px] text-gray-400">두 연금 합계</p>
+                      <p className="text-lg font-bold text-red-600">월 125만 원 이내 권장</p>
+                    </>
+                  ) : (
+                    <>
+                      <p className="text-[10px] text-gray-400">과세 계좌 기준</p>
+                      <p className="text-sm font-bold text-yellow-600">월 {won(Math.round(p.monthly_cap))} 이내 권장</p>
+                    </>
+                  )}
+                </div>
+              </div>
+            )
+          })}
         </div>
-        {editing ? (
-          <div className="flex items-center gap-2">
-            <input type="number" value={otherVal} onChange={e => setOtherVal(Number(e.target.value))}
-              className="w-32 text-sm border border-gray-200 rounded-lg px-2 py-1 focus:outline-none focus:ring-2 focus:ring-blue-300" />
-            <button className="text-xs text-blue-600 font-medium"
-              onClick={() => { onSaveOther(otherVal); setEditing(false) }}>저장</button>
-            <button className="text-xs text-gray-400"
-              onClick={() => { setOtherVal(monthlyGuide.other_annual); setEditing(false) }}>취소</button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700">{won(monthlyGuide.other_annual)}</span>
-            <button className="text-xs text-blue-500 underline"
-              onClick={() => setEditing(true)}>수정</button>
-          </div>
-        )}
-      </div>
+      )}
 
-      {monthlyGuide.over_other_pension && (
-        <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-3">
-          ⚠️ 다른 사적연금만으로 이미 연 1,500만원 한도를 초과합니다. IRP 수령 시 전액 16.5% 분리과세 또는 종합과세 선택 대상이 됩니다.
+      {/* 초과 예상 경고 */}
+      {overWarning?.will_exceed && (
+        <div className="mt-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2.5">
+          🚨 <strong>현재 계획(합계 월 {wonMan(overWarning.planned_monthly_total)})대로면{' '}
+          {overWarning.first_over_year}년부터 연 1,500만 원을 초과합니다</strong>
+          {' '}— 초과 시 해당 연도 과세 대상 수령액 <strong>전액</strong>이 16.5% 분리과세 또는 종합과세 선택 대상이 됩니다.
+        </div>
+      )}
+      {overWarning && !overWarning.will_exceed && overWarning.planned_monthly_total > 0 && (
+        <div className="mt-3 bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg px-3 py-2">
+          ✅ 현재 계획(합계 월 {wonMan(overWarning.planned_monthly_total)}) 기준, 연 1,500만 원 한도 이내로 유지됩니다.
         </div>
       )}
 
       {/* 현재 세율 */}
-      {taxRate.rate_pct != null && (
-        <div className="border-t pt-3 text-xs text-gray-500">
-          현재 나이({taxRate.age}세) 기준 적용 세율:{' '}
-          <strong className="text-gray-700">{taxRate.rate_pct}% ({taxRate.bracket})</strong> — 한도 내 수령 시 적용
-        </div>
-      )}
-      {taxRate.rate_pct == null && (
-        <div className="border-t pt-3 text-xs text-gray-400">{taxRate.bracket}</div>
-      )}
+      <div className="mt-3 border-t pt-3 text-xs text-gray-500">
+        {taxRate.rate_pct != null ? (
+          <>현재 나이({taxRate.age}세) 기준 한도 내 세율:{' '}
+            <strong className="text-gray-700">{taxRate.rate_pct}% ({taxRate.bracket})</strong></>
+        ) : taxRate.bracket}
+      </div>
     </div>
   )
 }
 
 
-// ── 블록 3: 당해 연도 한도 게이지 + 인출 기록 ────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// 블록 3: 당해 연도 한도 게이지 + 인출 기록
+// ════════════════════════════════════════════════════════════════════════════
+
 function LimitGaugeBlock({ limitYtd, withdrawalsYtd, accounts, onAdd, onDelete, isAdding }) {
   const [showForm, setShowForm] = useState(false)
   const [form, setForm] = useState({
@@ -294,12 +446,12 @@ function LimitGaugeBlock({ limitYtd, withdrawalsYtd, accounts, onAdd, onDelete, 
       {/* 금액 요약 3열 */}
       <div className="grid grid-cols-3 gap-3 mb-4">
         <div className="text-center">
-          <p className="text-[11px] text-gray-400 mb-0.5">올해 수령액</p>
+          <p className="text-[11px] text-gray-400 mb-0.5">올해 한도 대상 수령액</p>
           <p className={`text-lg font-bold ${S.text}`}>{won(limitYtd.ytd_amount)}</p>
         </div>
         <div className="text-center">
           <p className="text-[11px] text-gray-400 mb-0.5">연간 한도</p>
-          <p className="text-lg font-bold text-gray-700">1,500만원</p>
+          <p className="text-lg font-bold text-gray-700">1,500만 원</p>
         </div>
         <div className="text-center">
           <p className="text-[11px] text-gray-400 mb-0.5">잔여 여유분</p>
@@ -314,7 +466,7 @@ function LimitGaugeBlock({ limitYtd, withdrawalsYtd, accounts, onAdd, onDelete, 
         <div className="flex justify-between text-[11px] text-gray-400 mb-1">
           <span>0원</span>
           <span className="font-medium">{limitYtd.pct.toFixed(1)}% 소진</span>
-          <span>1,500만원</span>
+          <span>1,500만 원</span>
         </div>
         <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden">
           <div className={`h-full rounded-full ${S.bar} transition-all duration-500`}
@@ -330,19 +482,19 @@ function LimitGaugeBlock({ limitYtd, withdrawalsYtd, accounts, onAdd, onDelete, 
       {/* 상태 메시지 */}
       {limitYtd.is_over_limit ? (
         <div className="bg-red-50 border border-red-200 text-red-700 text-xs rounded-lg px-3 py-2 mb-3">
-          🚨 <strong>한도 초과 — 올해 사적연금 수령액 전액이 16.5% 분리과세 또는 종합과세 선택 대상이 됩니다.</strong>
+          🚨 <strong>한도 초과 — 올해 과세 대상 수령액 전액이 16.5% 분리과세 또는 종합과세 선택 대상이 됩니다.</strong>
           세무사 상담을 권장합니다.
         </div>
       ) : limitYtd.remaining > 0 ? (
         <div className="bg-green-50 border border-green-200 text-green-700 text-xs rounded-lg px-3 py-2 mb-3">
-          ✅ 연말까지 저율(3.3~5.5%)로 더 수령 가능한 금액: <strong>{won(limitYtd.remaining)}</strong>
+          ✅ 연말까지 저율(3.3~5.5%)로 더 수령 가능: <strong>{wonMan(limitYtd.remaining)}</strong>
         </div>
       ) : null}
 
-      {/* 내역 분류 */}
+      {/* 계좌별 기여 내역 */}
       <div className="text-xs text-gray-500 flex gap-4 mb-3">
-        <span>연금저축: <strong className="text-gray-700">{won(limitYtd.pension_savings_ytd)}</strong></span>
-        <span>IRP 운용수익: <strong className="text-gray-700">{won(limitYtd.retirement_pension_ytd)}</strong></span>
+        <span>퇴직연금(IRP): <strong className="text-gray-700">{won(limitYtd.retirement_pension_ytd)}</strong></span>
+        <span>개인연금(연금저축): <strong className="text-gray-700">{won(limitYtd.pension_savings_ytd)}</strong></span>
       </div>
 
       {/* 인출 기록 */}
@@ -434,10 +586,12 @@ function LimitGaugeBlock({ limitYtd, withdrawalsYtd, accounts, onAdd, onDelete, 
 }
 
 
-// ── 메인 페이지 ──────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// 메인 페이지
+// ════════════════════════════════════════════════════════════════════════════
+
 export default function PensionTax() {
   const qc = useQueryClient()
-  const [showPlanForm, setShowPlanForm] = useState(false)
 
   const { data, isLoading } = useQuery({
     queryKey: ['pension-tax-summary'],
@@ -462,7 +616,7 @@ export default function PensionTax() {
 
   const planMut = useMutation({
     mutationFn: body => api.put('/pension-tax/plan', body),
-    onSuccess:  () => { invalidate(); setShowPlanForm(false) },
+    onSuccess:  invalidate,
   })
 
   const addMut = useMutation({
@@ -475,7 +629,7 @@ export default function PensionTax() {
     onSuccess:  invalidate,
   })
 
-  if (isLoading) {
+  if (isLoading || !data) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">불러오는 중...</div>
     )
@@ -491,74 +645,53 @@ export default function PensionTax() {
     }, { onSuccess: onDone })
   }
 
+  const handlePlanSave = (body, onDone) => {
+    planMut.mutate(body, { onSuccess: onDone })
+  }
+
   return (
     <div className="space-y-5">
 
       {/* 헤더 */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-gray-800">🏖 연금 세금 관리</h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            퇴직금 원금 소진 예측 · 운용수익 단계 월 수령액 가이드 · 연간 한도 관리
-          </p>
-        </div>
-        {data?.has_plan && (
-          <button className="text-xs text-blue-600 underline flex-shrink-0 mt-1"
-            onClick={() => setShowPlanForm(p => !p)}>
-            {showPlanForm ? '취소' : '계획 수정'}
-          </button>
-        )}
+      <div>
+        <h1 className="text-xl font-bold text-gray-800">🏖 연금 세금 관리</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
+          퇴직연금·개인연금 과세 전환 예측 · 구간별 월 수령액 가이드 · 연간 1,500만 원 한도 관리
+        </p>
       </div>
 
-      {/* 연금 계획 설정 폼 */}
-      {(!data?.has_plan || showPlanForm) && (
-        <PlanSetupCard
-          existing={data?.plan}
-          onSave={body => planMut.mutate(body)}
-          isSaving={planMut.isPending}
-        />
-      )}
+      {/* 블록 0: 연금 계획 두 카드 */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <RpPlanCard track={data.tracks.retirement_pension} onSave={handlePlanSave} isSaving={planMut.isPending} />
+        <PpPlanCard track={data.tracks.pension_savings}    onSave={handlePlanSave} isSaving={planMut.isPending} />
+      </div>
 
-      {/* 설정 완료 요약 배너 */}
-      {data?.has_plan && !showPlanForm && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-2 text-xs text-blue-700">
-          퇴직금 원금 <strong>{won(data.plan.severance_principal)}</strong> ·
-          개시일 <strong>{data.plan.pension_start_date}</strong> ·
-          월 <strong>{won(data.plan.monthly_pension_amount)}</strong> 수령 계획
-        </div>
-      )}
+      {/* 블록 1: 듀얼 타임라인 */}
+      {data.has_any_plan && <DualTimeline tracks={data.tracks} />}
 
-      {/* 블록 1: 타임라인 */}
-      {data?.has_plan && data?.depletion && (
-        <TimelineBlock depletion={data.depletion} plan={data.plan} />
-      )}
+      {/* 블록 2: 구간별 가이드 */}
+      <PhaseGuideBlock
+        phases={data.phases}
+        overWarning={data.over_warning}
+        taxRate={data.tax_rate}
+        monthlyCap={data.monthly_cap}
+      />
 
-      {/* 블록 2: 월 수령액 가이드 */}
-      {data && (
-        <MonthlyGuideBlock
-          monthlyGuide={data.monthly_guide}
-          taxRate={data.tax_rate}
-          onSaveOther={val => planMut.mutate({ other_private_pension_annual: val })}
-        />
-      )}
-
-      {/* 블록 3: 한도 게이지 */}
-      {data && (
-        <LimitGaugeBlock
-          limitYtd={data.limit_ytd}
-          withdrawalsYtd={data.withdrawals_ytd}
-          accounts={pensionAccounts}
-          onAdd={handleAdd}
-          onDelete={id => deleteMut.mutate(id)}
-          isAdding={addMut.isPending}
-        />
-      )}
+      {/* 블록 3: 한도 게이지 + 인출 기록 */}
+      <LimitGaugeBlock
+        limitYtd={data.limit_ytd}
+        withdrawalsYtd={data.withdrawals_ytd}
+        accounts={pensionAccounts}
+        onAdd={handleAdd}
+        onDelete={id => deleteMut.mutate(id)}
+        isAdding={addMut.isPending}
+      />
 
       {/* 면책 문구 */}
       <div className="rounded-xl bg-gray-50 border border-gray-200 px-4 py-3 text-xs text-gray-500 leading-relaxed">
         ⚠️ <span className="font-medium text-gray-600">주의사항</span> · 본 화면은 참고용 추정이며 세무 자문이 아닙니다.
         실제 세액은 금융기관 원천징수 내역 및 세무 전문가 상담으로 확인하세요.
-        (세법 기준: 2024년 개정 연 1,500만원)
+        (세법 기준: 2024년 개정 연 1,500만 원)
       </div>
 
     </div>
