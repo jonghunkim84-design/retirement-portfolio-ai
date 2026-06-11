@@ -92,12 +92,15 @@ export default function Settings() {
   )
   const totalOk = Math.abs(totalTarget - 1.0) < 0.001
 
+  const inflRate = form.inflation?.assumed_rate ?? 0.025
+  const inflOk   = inflRate >= 0
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800">⚙️ 설정</h1>
         <button className="btn-primary" onClick={() => saveMut.mutate(form)}
-          disabled={saveMut.isPending || !totalOk}>
+          disabled={saveMut.isPending || !totalOk || !inflOk}>
           {saveMut.isPending ? '저장 중...' : '💾 설정 저장'}
         </button>
       </div>
@@ -184,9 +187,14 @@ export default function Settings() {
 
       {/* 물가상승률 */}
       <Section title="📈 기타 설정">
-        <FieldRow label="물가상승률 가정" sub="예: 0.025 = 2.5%">
-          <input type="number" step="0.001" value={form.inflation?.assumed_rate || 0.025}
-            onChange={e => set('inflation.assumed_rate', +e.target.value)} className="w-full" />
+        <FieldRow label="물가상승률 가정" sub="예: 0.025 = 2.5% · 0 입력 가능 (민감도 확인용)">
+          <div>
+            <input type="number" step="0.001" min="0" value={inflRate}
+              onChange={e => set('inflation.assumed_rate', +e.target.value)} className="w-full" />
+            {!inflOk && (
+              <p className="text-xs text-red-500 mt-1">⚠️ 물가상승률은 0 이상이어야 합니다</p>
+            )}
+          </div>
         </FieldRow>
         <FieldRow label="알림 이메일">
           <input type="email" value={form.alert?.email || ''}

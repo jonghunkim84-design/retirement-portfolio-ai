@@ -462,10 +462,9 @@ export default function PensionPlan() {
       <div className="card">
         <h3 className="text-sm font-semibold text-gray-700 mb-1">월 현금흐름 추이</h3>
         <p className="text-xs text-gray-400 mb-4">
-          물가상승률 {(inflation * 100).toFixed(1)}% 반영 &nbsp;·&nbsp;
+          가정: 물가상승률 연 {(inflation * 100).toFixed(1)}% (생활비·국민연금 인상 반영, 사적연금 정액 수령은 명목 고정) &nbsp;·&nbsp;
           70세 생활비 10% 감액 &nbsp;·&nbsp;
-          80세 생활비 추가 10% 감액 &nbsp;·&nbsp;
-          국민연금 물가연동
+          80세 생활비 추가 10% 감액
           {homePension.enabled && ' · 주택연금 포함'}
         </p>
         <ResponsiveContainer width="100%" height={300}>

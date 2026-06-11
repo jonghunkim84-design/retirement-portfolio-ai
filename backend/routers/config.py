@@ -14,6 +14,11 @@ def read_config():
 
 @router.put("")
 def update_config(body: dict):
+    # 물가상승률: 0% 허용(민감도 확인용), 음수 거부
+    infl = (body.get("inflation") or {}).get("assumed_rate")
+    if infl is not None and infl < 0:
+        raise HTTPException(status_code=400, detail="물가상승률은 0 이상이어야 합니다")
+
     supabase.table("user_config").update({
         "value":      body,
         "updated_at": datetime.now().isoformat(),
