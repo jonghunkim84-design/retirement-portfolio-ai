@@ -143,6 +143,10 @@ export default function CashFlow() {
 
   const { months, summary, pension_income, monthly_expense, recommended_withdrawal } = data
 
+  // TODO: 사적연금 인출 기록(withdrawals 테이블, 연금 세금 화면) 연동은 스코프 제외.
+  // 현재 '인출'은 포트폴리오 인출 계획(withdrawal_log) 기준이라 단순 합산 시 이중 계산 위험 —
+  // 연동하려면 재원 구분(사적연금 수령 vs 포트폴리오 인출) 별도 설계 필요.
+
   // 차트: 현재+향후 13개월
   const chartMonths = months.filter(m => m.is_current || m.is_future).slice(0, 13)
   const chartData = chartMonths.map(m => ({
