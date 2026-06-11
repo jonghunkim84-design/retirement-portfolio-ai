@@ -4,10 +4,10 @@ import { useAuth } from '../context/AuthContext'
 import api, { fmt, LEVEL_COLOR } from '../api/client.js'
 
 const SUGGESTED = [
-  '지금 리밸런싱해야 하나요?',
-  '내 인출률이 안전한가요?',
-  '비상 유동성이 부족한데 어떻게 할까요?',
-  '내 포트폴리오 위험도가 적절한가요?',
+  '지금 리밸런싱이 필요한 상태인가요?',
+  '만기 예금을 어디로 재배분하면 좋을까요?',
+  '올해 연금 인출이 한도에 얼마나 가까운가요?',
+  '내 포트폴리오의 가장 큰 위험은 뭔가요?',
 ]
 
 // ── 컨텍스트 수치 카드 ────────────────────────────────────────────
@@ -47,7 +47,7 @@ export default function AIAdvisor() {
     onError: () => {
       setMessages(prev => [...prev, {
         role: 'assistant',
-        content: '죄송합니다. AI 응답 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요.',
+        content: '일시적으로 답변 생성에 실패했습니다. 다시 시도해 주세요.',
       }])
     },
   })
@@ -182,6 +182,11 @@ export default function AIAdvisor() {
 
         <div ref={bottomRef} />
       </div>
+
+      {/* ─── 면책 배너 ─────────────────────────────────────────── */}
+      <p className="text-[11px] text-gray-400 text-center -mt-2">
+        * AI 답변은 입력된 데이터 기반 참고 정보이며 투자·세무 자문이 아닙니다.
+      </p>
 
       {/* ─── 입력창 ────────────────────────────────────────────── */}
       <div className="card p-3 flex gap-2 items-end">
