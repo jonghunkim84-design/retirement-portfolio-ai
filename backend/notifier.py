@@ -164,6 +164,25 @@ def _build_pension_html(pension_alerts: list, today_str: str) -> str:
     return "\n".join(sections)
 
 
+def _price_summary_line(price_summary) -> str:
+    """시세 갱신 결과 한 줄 요약. 갱신 대상이 0건이면 빈 문자열."""
+    if not price_summary:
+        return ""
+    updated = price_summary.get("updated", 0)
+    failed  = price_summary.get("failed", 0)
+    if updated + failed == 0:
+        return ""
+    line = f"시세 갱신: {updated}종목 성공"
+    if failed:
+        failed_names = [
+            d.get("asset_name") or "?"
+            for d in (price_summary.get("details") or [])
+            if d.get("status") == "failed"
+        ]
+        line += f", {failed}종목 실패({', '.join(failed_names)})"
+    return line
+
+
 def _build_html(alerts: dict) -> str:
     today_str = alerts["today"].strftime("%Y년 %m월 %d일")
     maturing  = alerts["maturing"]
@@ -253,6 +272,14 @@ def _build_html(alerts: dict) -> str:
 
     body_content = "\n".join(sections) + pension_section
 
+    # 시세 갱신 요약 한 줄 (갱신 대상 0건이면 생략)
+    price_line = _price_summary_line(alerts.get("price_summary"))
+    if price_line:
+        body_content = (
+            f'<p style="font-size:12px;color:#6b7280;margin:0 0 4px">📈 {price_line}</p>'
+            + body_content
+        )
+
     return f"""<!DOCTYPE html>
 <html lang="ko">
 <head><meta charset="UTF-8"></head>
@@ -312,6 +339,9 @@ def send_alert_email(alerts: dict) -> bool:
 
     # plain-text fallback
     plain_lines = [f"은퇴포트폴리오 AI 알림 — {today_str}"]
+    price_line = _price_summary_line(alerts.get("price_summary"))
+    if price_line:
+        plain_lines.append(price_line)
     if alerts["maturing"]:
         plain_lines.append(f"\n[만기 임박 자산 {len(alerts['maturing'])}건]")
         for a in alerts["maturing"]:
@@ -373,27 +403,59 @@ def auto_deactivate_expired() -> list:
     return expired
 
 
-# ── 스케줄러에서 호출하는 진입점 ─────────────────────────────────────────────
-def run_daily_alert():
-    """APScheduler job — 매일 오전 8시 실행"""
+# ── 스케줄러·Cron 공용 진입점 ────────────────────────────────────────────────
+def run_daily_alert() -> dict:
+    """매일 오전 8시 일일 점검 — APScheduler(로컬)와 Vercel Cron(/alert/daily) 공용.
+
+    실행 순서: ① 시세 갱신 → ② 만기 자산 자동 비활성화 → ③ 이메일 알림.
+    시세를 먼저 갱신해야 손실 전환 알림이 당일 갱신가 기준으로 판정된다.
+    각 단계는 실패해도 다음 단계가 반드시 실행되도록 격리한다.
+    """
     logger.info("[알림] 일일 점검 시작")
+
+    # ① 시세 갱신 — 수동 버튼과 동일한 함수 사용
+    price_summary = None
     try:
-        # 1) 만기 도래 자산 자동 비활성화 (알림 발송 전에 먼저 처리)
+        from routers.price import run_price_update
+        price_summary = run_price_update()
+        logger.info(f"[알림] 시세 갱신 완료 — 성공 {price_summary['updated']}건 / 실패 {price_summary['failed']}건")
+    except Exception as e:
+        logger.error(f"[알림] 시세 갱신 단계 실패 (이후 단계는 계속 진행): {e}")
+
+    # ② 만기 도래 자산 자동 비활성화
+    deactivated = []
+    try:
         deactivated = auto_deactivate_expired()
         if deactivated:
             logger.info(f"[알림] 자동 비활성 처리 완료 — {len(deactivated)}건")
+    except Exception as e:
+        logger.error(f"[알림] 만기 비활성화 단계 실패 (알림은 계속 진행): {e}")
 
-        # 2) 기존 알림 + 연금소득세 한도 알림 수집 후 발송
+    # ③ 알림 수집 후 발송
+    sent = False
+    alerts = {"maturing": [], "losing": [], "pension_alerts": []}
+    try:
         alerts = collect_alerts()
         pension_alerts = collect_pension_alerts()
         alerts["pension_alerts"] = pension_alerts
+        alerts["price_summary"] = price_summary
 
         sent = send_alert_email(alerts)
 
-        # 3) 연금소득세 알림 발송 이력 기록 (연내 중복 방지)
+        # 연금소득세 알림 발송 이력 기록 (연내 중복 방지)
         if sent and pension_alerts:
             for pa in pension_alerts:
                 _record_pension_alert(pa["type"], date.today().year)
                 logger.info(f"[알림] 연금소득세 알림 발송 완료 — type={pa['type']}, pct={pa['pct']:.1f}%")
     except Exception as e:
-        logger.error(f"[알림] 예외 발생: {e}")
+        logger.error(f"[알림] 알림 발송 단계 실패: {e}")
+
+    return {
+        "sent":              sent,
+        "price_updated":     price_summary["updated"] if price_summary else None,
+        "price_failed":      price_summary["failed"] if price_summary else None,
+        "deactivated_count": len(deactivated),
+        "maturing_count":    len(alerts.get("maturing") or []),
+        "losing_count":      len(alerts.get("losing") or []),
+        "pension_count":     len(alerts.get("pension_alerts") or []),
+    }
