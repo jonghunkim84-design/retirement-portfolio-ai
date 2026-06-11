@@ -239,6 +239,15 @@ export default function Assets() {
     return true
   })
 
+  // 시세 기준 시각: 가장 최근 갱신 성공 시각 (마이그레이션 전에는 컬럼이 없어 표시 생략)
+  const priceBasis = (() => {
+    const times = assets.map(a => a.price_updated_at).filter(Boolean)
+    if (times.length === 0) return null
+    const latest = new Date(times.sort().at(-1))
+    const p = n => String(n).padStart(2, '0')
+    return `${latest.getFullYear()}-${p(latest.getMonth() + 1)}-${p(latest.getDate())} ${p(latest.getHours())}:${p(latest.getMinutes())}`
+  })()
+
   const total = filtered.filter(a => a.is_active).reduce((s, a) => s + a.current_value, 0)
   const unclassifiedCount = assets.filter(a => a.is_active && !a.tax_account_type).length
 
@@ -302,8 +311,13 @@ export default function Assets() {
         </select>
         <input value={filter.account} onChange={e => setFilter(f => ({ ...f, account: e.target.value }))}
           placeholder="계좌명 검색..." className="text-sm w-40" />
-        <div className="ml-auto text-sm text-gray-500">
-          {filtered.length}개 · 합계 <strong>{fmt.eok(total)}</strong>
+        <div className="ml-auto text-sm text-gray-500 flex items-center gap-3">
+          {priceBasis && (
+            <span className="text-xs text-gray-400" title="마지막 시세 갱신 성공 시각 (매일 아침 8시 자동 갱신 + 설정의 수동 갱신)">
+              시세 기준: {priceBasis}
+            </span>
+          )}
+          <span>{filtered.length}개 · 합계 <strong>{fmt.eok(total)}</strong></span>
         </div>
       </div>
 
@@ -338,7 +352,12 @@ export default function Assets() {
                   </td>
                   <td className="font-mono text-xs text-gray-500">{a.ticker || '-'}</td>
                   <td className="text-right">{a.quantity > 0 ? a.quantity.toLocaleString() : '-'}</td>
-                  <td className="text-right">{a.unit_price > 0 ? fmt.won(a.unit_price) : '-'}</td>
+                  <td className="text-right">
+                    {a.unit_price > 0 ? fmt.won(a.unit_price) : '-'}
+                    {a.price_update_failed && (
+                      <span className="ml-1 cursor-help" title="마지막 시세 갱신에 실패했습니다 — 티커를 확인하거나 설정에서 수동 갱신을 시도하세요">⚠️</span>
+                    )}
+                  </td>
                   <td className="text-right text-blue-600">
                     {a.investment_amount ? fmt.won(a.investment_amount) : <span className="text-gray-300">-</span>}
                   </td>
