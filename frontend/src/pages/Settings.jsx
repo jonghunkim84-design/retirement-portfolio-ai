@@ -78,7 +78,10 @@ export default function Settings() {
     setForm(prev => {
       const next = JSON.parse(JSON.stringify(prev))
       let obj = next
-      for (let i = 0; i < keys.length - 1; i++) obj = obj[keys[i]]
+      for (let i = 0; i < keys.length - 1; i++) {
+        if (obj[keys[i]] == null) obj[keys[i]] = {}  // 신규 섹션(plan 등) 경로 생성
+        obj = obj[keys[i]]
+      }
       obj[keys[keys.length - 1]] = val
       return next
     })
@@ -95,12 +98,16 @@ export default function Settings() {
   const inflRate = form.inflation?.assumed_rate ?? 0.025
   const inflOk   = inflRate >= 0
 
+  const targetReturn = form.plan?.target_annual_return ?? null
+  const targetOk     = targetReturn === null || (targetReturn >= 0 && targetReturn <= 15)
+  const targetHigh   = targetOk && targetReturn !== null && targetReturn > 8
+
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800">⚙️ 설정</h1>
         <button className="btn-primary" onClick={() => saveMut.mutate(form)}
-          disabled={saveMut.isPending || !totalOk || !inflOk}>
+          disabled={saveMut.isPending || !totalOk || !inflOk || !targetOk}>
           {saveMut.isPending ? '저장 중...' : '💾 설정 저장'}
         </button>
       </div>
@@ -193,6 +200,20 @@ export default function Settings() {
               onChange={e => set('inflation.assumed_rate', +e.target.value)} className="w-full" />
             {!inflOk && (
               <p className="text-xs text-red-500 mt-1">⚠️ 물가상승률은 0 이상이어야 합니다</p>
+            )}
+          </div>
+        </FieldRow>
+        <FieldRow label="계획용 목표 연수익률 (%)" sub="연금 계획 시뮬레이션 기본값 · 비우면 실현 수익률을 제안값으로 사용">
+          <div>
+            <input type="number" step="0.1" min="0" max="15"
+              value={targetReturn ?? ''}
+              onChange={e => set('plan.target_annual_return', e.target.value === '' ? null : +e.target.value)}
+              placeholder="예: 4.5" className="w-full" />
+            {!targetOk && (
+              <p className="text-xs text-red-500 mt-1">⚠️ 0~15% 범위로 입력하세요</p>
+            )}
+            {targetHigh && (
+              <p className="text-xs text-amber-600 mt-1">⚠️ 장기 계획 가정으로는 높은 수익률입니다</p>
             )}
           </div>
         </FieldRow>

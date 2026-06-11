@@ -19,6 +19,11 @@ def update_config(body: dict):
     if infl is not None and infl < 0:
         raise HTTPException(status_code=400, detail="물가상승률은 0 이상이어야 합니다")
 
+    # 계획용 목표 연수익률: 0~15% 범위만 허용 (null = 미설정)
+    target = (body.get("plan") or {}).get("target_annual_return")
+    if target is not None and not (0 <= target <= 15):
+        raise HTTPException(status_code=400, detail="목표 연수익률은 0~15% 범위여야 합니다")
+
     supabase.table("user_config").update({
         "value":      body,
         "updated_at": datetime.now().isoformat(),

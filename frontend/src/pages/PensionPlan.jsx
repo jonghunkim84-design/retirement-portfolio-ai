@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   LineChart, Line, AreaChart, Area,
   XAxis, YAxis, Tooltip, Legend,
@@ -270,6 +270,7 @@ function HomePensionPanel({ homePension, onChange, currentAge }) {
 
 // ── 메인 ────────────────────────────────────────────────────────
 export default function PensionPlan() {
+  const qc = useQueryClient()
   const [returnRate,   setReturnRate]   = useState(4)
   const [returnSource, setReturnSource] = useState('default')
   const [homePension,  setHomePension]  = useState({
@@ -290,8 +291,16 @@ export default function PensionPlan() {
     enabled: !isLoading,
   })
 
+  // 저장된 계획용 목표 수익률 (단일 출처: config.plan.target_annual_return)
+  const savedTarget = dash?.config?.plan?.target_annual_return ?? null
+
+  // 기본값 우선순위: ① 저장된 목표 수익률 → ② 실현 수익률 제안 → ③ 자산 배분 기대수익률
   useEffect(() => {
-    if (returnsData && returnSource === 'default') {
+    if (returnSource !== 'default') return
+    if (savedTarget !== null) {
+      setReturnRate(Math.round(savedTarget * 10) / 10)
+      setReturnSource('target')
+    } else if (returnsData) {
       const actual    = returnsData.portfolio_annual_return
       const estimated = dash?.estimated_return_rate
       if (actual !== null && actual !== undefined) {
@@ -302,7 +311,21 @@ export default function PensionPlan() {
         setReturnSource('estimated')
       }
     }
-  }, [returnsData, dash, returnSource])
+  }, [returnsData, dash, returnSource, savedTarget])
+
+  // 목표 수익률 저장 (config.plan.target_annual_return — 설정 화면과 공유)
+  const saveTargetMut = useMutation({
+    mutationFn: rate => {
+      const next = JSON.parse(JSON.stringify(dash.config))
+      next.plan  = { ...(next.plan || {}), target_annual_return: rate }
+      return api.put('/config', next)
+    },
+    onSuccess: () => {
+      setReturnSource('target')
+      qc.invalidateQueries({ queryKey: ['dashboard'] })
+      qc.invalidateQueries({ queryKey: ['config'] })
+    },
+  })
 
   const rows = useMemo(() => {
     if (!dash) return []
@@ -325,14 +348,20 @@ export default function PensionPlan() {
   const inflation    = config.inflation?.assumed_rate ?? 0.025
 
   const srcMeta = {
-    actual:    { label: '실현 수익률',  bg: 'bg-blue-600',   text: '포트폴리오 실제 연환산 수익률 자동 반영' },
+    target:    { label: '저장된 목표',  bg: 'bg-emerald-600', text: '저장한 계획용 목표 수익률 기준'          },
+    actual:    { label: '실현 수익률 제안', bg: 'bg-blue-600', text: '목표 미저장 — 실현 수익률을 초기 제안값으로 사용' },
     estimated: { label: '기대 수익률',  bg: 'bg-gray-400',   text: '자산 배분 기반 기대수익률 자동 반영'    },
-    manual:    { label: '수동 입력',    bg: 'bg-orange-400', text: '직접 입력한 수익률'                     },
+    manual:    { label: '수동 입력',    bg: 'bg-orange-400', text: '직접 입력한 수익률 (저장 전까지 일시 적용)' },
     default:   { label: '기본값',       bg: 'bg-gray-300',   text: '기본값 4%'                             },
   }
   const src = srcMeta[returnSource] || srcMeta.default
 
-  const resetToAuto = () => {
+  const resetToDefault = () => {
+    if (savedTarget !== null) {
+      setReturnRate(Math.round(savedTarget * 10) / 10)
+      setReturnSource('target')
+      return
+    }
     const actual    = returnsData?.portfolio_annual_return
     const estimated = dash?.estimated_return_rate
     if (actual !== null && actual !== undefined) {
@@ -343,6 +372,12 @@ export default function PensionPlan() {
       setReturnSource('estimated')
     }
   }
+
+  // 실현 수익률 (참고 표시용)
+  const actualReturn = returnsData?.portfolio_annual_return != null
+    ? Math.round(returnsData.portfolio_annual_return * 10) / 10
+    : null
+  const canSaveTarget = returnRate >= 0 && returnRate <= 15
 
   const pensionRaw       = config.income?.national_pension ?? {}
   const pensionStartStr  = typeof pensionRaw === 'object' ? pensionRaw.start_date : ''
@@ -408,13 +443,38 @@ export default function PensionPlan() {
             />
             <span className="text-gray-500 font-medium">%</span>
             {returnSource === 'manual' && (
-              <button onClick={resetToAuto}
+              <button onClick={resetToDefault}
                 className="text-[11px] text-blue-500 hover:text-blue-700 border border-blue-300 rounded px-1.5 py-0.5 ml-1">
-                ↺ 자동
+                ↺ 기본값
               </button>
             )}
+            <button
+              onClick={() => canSaveTarget && saveTargetMut.mutate(returnRate)}
+              disabled={!canSaveTarget || saveTargetMut.isPending}
+              title={canSaveTarget
+                ? '이 수익률을 계획 기본값으로 저장합니다 (이후 화면 진입 시 항상 이 값으로 시작)'
+                : '0~15% 범위만 저장할 수 있습니다'}
+              className="text-[11px] text-emerald-600 hover:text-emerald-700 border border-emerald-300 rounded px-1.5 py-0.5 ml-1 disabled:opacity-40 disabled:cursor-not-allowed">
+              {saveTargetMut.isPending ? '저장 중...' : saveTargetMut.isSuccess && returnSource === 'target' ? '✓ 저장됨' : '💾 기본값으로 저장'}
+            </button>
           </div>
           <p className="text-[11px] text-gray-400">{src.text}</p>
+          {returnRate > 8 && canSaveTarget && (
+            <p className="text-[11px] text-amber-600">⚠️ 장기 계획 가정으로는 높은 수익률입니다</p>
+          )}
+          {!canSaveTarget && (
+            <p className="text-[11px] text-red-500">저장 가능 범위: 0~15% (일시 변경은 계속 가능)</p>
+          )}
+          {actualReturn !== null && (
+            <p className="text-[11px] text-gray-400">
+              참고: 최근 실현 수익률 {actualReturn}%
+              <span
+                className="cursor-help ml-1"
+                title="과거 성과는 미래 수익률을 보장하지 않습니다. 계획은 보수적인 목표 수익률 기준을 권장합니다">
+                ⓘ
+              </span>
+            </p>
+          )}
         </div>
       </div>
 
