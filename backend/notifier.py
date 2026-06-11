@@ -108,7 +108,7 @@ def collect_pension_alerts() -> list:
     연금소득세 한도 알림 대상 수집.
     반환: [{"type": "pension_80pct"|"pension_100pct", "pct": float, "ytd": float}] 또는 []
     """
-    from routers.pension_tax import calc_retirement_pension_limit_ytd
+    from routers.pension_tax import calc_limit_breakdown
     from tax_constants import PRIVATE_PENSION_ANNUAL_LIMIT
     from utils import get_config
     from database import supabase
@@ -118,27 +118,11 @@ def collect_pension_alerts() -> list:
     config = get_config()
     plan   = config.get("pension_plan") or {}
 
-    pension_start_date_str = plan.get("pension_start_date")
-    severance_principal    = plan.get("severance_principal")
-
-    pension_start_date = date.fromisoformat(pension_start_date_str) if pension_start_date_str else None
-
     all_withdrawals = (
         supabase.table("withdrawals").select("*").order("withdrawal_date").execute().data or []
     )
 
-    ps_ytd = sum(
-        float(r["amount"]) for r in all_withdrawals
-        if r["tax_account_type"] == "pension_savings"
-        and date.fromisoformat(r["withdrawal_date"]).year == year
-    )
-    rp_ytd = calc_retirement_pension_limit_ytd(
-        year,
-        all_withdrawals,
-        pension_start_date,
-        float(severance_principal) if severance_principal else None,
-    )
-    ytd_total = ps_ytd + rp_ytd
+    ytd_total = calc_limit_breakdown(year, all_withdrawals, plan)["ytd_total"]
     pct = ytd_total / PRIVATE_PENSION_ANNUAL_LIMIT * 100
 
     alerts = []
