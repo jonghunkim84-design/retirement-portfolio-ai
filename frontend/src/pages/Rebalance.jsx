@@ -40,7 +40,7 @@ export default function Rebalance() {
   ]
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-x-hidden">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-bold text-gray-800">⚖️ 리밸런싱 분석</h1>
         <div className="flex items-center gap-3">
@@ -57,7 +57,7 @@ export default function Rebalance() {
       </div>
 
       {/* 차트 */}
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
         {/* Chart 1: 목표 vs 현재 */}
         <div className="card">
@@ -159,9 +159,10 @@ export default function Rebalance() {
                   </div>
                   <span className={`badge-${adj.action === '매수' ? 'blue' : 'red'}`}>{adj.action}</span>
                 </div>
-                <table className="text-xs w-full">
+                <div className="overflow-x-auto mt-2" style={{ WebkitOverflowScrolling: 'touch' }}>
+                <table className="text-xs min-w-[340px]">
                   <thead><tr className="text-gray-500">
-                    <th className="text-left py-1">자산명</th>
+                    <th className={`sticky left-0 z-10 text-left py-1 ${adj.action === '매수' ? 'bg-blue-50' : 'bg-red-50'}`}>자산명</th>
                     <th className="text-left py-1">계좌</th>
                     <th className="text-right py-1">현재 평가액</th>
                     <th className="text-right py-1">{adj.action} 금액</th>
@@ -170,7 +171,7 @@ export default function Rebalance() {
                   <tbody>
                     {adj.items.map(item => (
                       <tr key={item.id} className="border-t border-white/60">
-                        <td className="py-1">{item.asset_name}</td>
+                        <td className={`sticky left-0 z-10 py-1 ${adj.action === '매수' ? 'bg-blue-50' : 'bg-red-50'}`}>{item.asset_name}</td>
                         <td className="py-1">{item.account_name}</td>
                         <td className="text-right py-1">{fmt.won(item.current_value)}</td>
                         <td className="text-right py-1 font-medium">{fmt.won(item.trade_amount)}</td>
@@ -183,6 +184,7 @@ export default function Rebalance() {
                     ))}
                   </tbody>
                 </table>
+                </div>
               </div>
             ))}
           </div>
@@ -192,7 +194,7 @@ export default function Rebalance() {
       {/* 세금 효율 순서 */}
       <div className="card">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">💡 세금 효율적 리밸런싱 순서</h3>
-        <div className="grid grid-cols-3 gap-4 text-sm">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
           {[
             { step: '1단계', title: '연금저축·IRP 계좌 먼저', desc: '과세 이연으로 세금 없이 자유롭게 매도/매수 가능', icon: '🏆', color: 'green' },
             { step: '2단계', title: '신규 자금으로 매수', desc: '부족한 자산군을 신규 자금으로 직접 매수', icon: '💰', color: 'blue' },

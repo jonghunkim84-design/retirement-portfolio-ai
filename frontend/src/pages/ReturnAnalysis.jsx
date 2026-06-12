@@ -9,15 +9,15 @@ import api, { fmt } from '../api/client.js'
 // ── 수익률 계산기 ─────────────────────────────────────────────────
 function SliderRow({ label, value, min, max, step, display, onChange, badge }) {
   return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm text-gray-600 w-40 flex-shrink-0 flex items-center gap-1.5">
+    <div className="flex items-center gap-3">
+      <span className="text-xs text-gray-600 w-24 sm:w-36 flex-shrink-0 flex items-center gap-1.5">
         {label}
         {badge && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded bg-blue-600 text-white">{badge}</span>}
       </span>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(+e.target.value)}
-        className="flex-1 h-1.5 accent-blue-600 cursor-pointer" />
-      <span className="text-sm font-semibold text-gray-700 w-20 text-right">{display}</span>
+        className="flex-1 h-1.5 accent-blue-600 cursor-pointer min-w-0" />
+      <span className="text-sm font-semibold text-gray-700 w-14 sm:w-20 text-right flex-shrink-0">{display}</span>
     </div>
   )
 }
@@ -116,23 +116,23 @@ function ReturnCalc({ initNominal, initInflation, returnSource }) {
       </div>
 
       <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
           <div className="text-xs text-gray-500 mb-1">실질 수익률</div>
-          <div className={`text-2xl font-bold ${rateColor}`}>{realRate.toFixed(2)}%</div>
+          <div className={`text-xl font-bold ${rateColor}`}>{realRate.toFixed(2)}%</div>
           <div className="text-xs text-gray-400 mt-1">
             {tab === 0 ? '근사값' : tab === 1 ? '피셔 정확값' : '세금·수수료 반영'}
           </div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <div className="text-xs text-gray-500 mb-1">{principal}억 → {years}년 후 (명목)</div>
-          <div className={`text-2xl font-bold ${nominal < 0 ? 'text-red-600' : 'text-gray-800'}`}>
+        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
+          <div className="text-xs text-gray-500 mb-1">{principal}억→{years}년후(명목)</div>
+          <div className={`text-xl font-bold ${nominal < 0 ? 'text-red-600' : 'text-gray-800'}`}>
             {nominalFuture.toLocaleString()}만
           </div>
           <div className="text-xs text-gray-400 mt-1">명목 기준</div>
         </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
+        <div className="bg-white border border-gray-200 rounded-xl p-3 text-center shadow-sm">
           <div className="text-xs text-gray-500 mb-1">실질 구매력</div>
-          <div className={`text-2xl font-bold ${realFuture < principalMan ? 'text-red-600' : 'text-blue-600'}`}>
+          <div className={`text-xl font-bold ${realFuture < principalMan ? 'text-red-600' : 'text-blue-600'}`}>
             {realFuture.toLocaleString()}만
           </div>
           <div className="text-xs text-gray-400 mt-1">물가 차감 기준</div>
@@ -165,10 +165,8 @@ function ReturnBadge({ value }) {
 // 연환산 수익률 셀 — 1년 미만 보유 시 총수익률 + 안내 표시
 function AnnualReturnCell({ annualReturn, totalReturn, underOneYear, holdingDays }) {
   if (!underOneYear) {
-    // 1년 이상: 연환산 수익률 정상 표시
     return <ReturnBadge value={annualReturn} />
   }
-  // 1년 미만: 총수익률 표시 + 참고 안내
   if (totalReturn == null) return <span className="text-gray-300 text-xs">-</span>
   const color = totalReturn >= 0 ? 'text-blue-600' : 'text-red-500'
   return (
@@ -186,7 +184,7 @@ function SummaryCard({ label, value, sub, color = 'blue' }) {
   return (
     <div className={`card border-l-4 ${border[color]}`}>
       <p className="text-xs text-gray-500 font-medium uppercase tracking-wide">{label}</p>
-      <p className="text-2xl font-bold text-gray-800 mt-1">{value}</p>
+      <p className="text-xl font-bold text-gray-800 mt-1 break-all">{value}</p>
       {sub && <p className="text-xs text-gray-400 mt-1">{sub}</p>}
     </div>
   )
@@ -214,8 +212,6 @@ export default function ReturnAnalysis() {
   const { assets = [], total_current, total_invested,
           portfolio_total_return, portfolio_annual_return } = data
 
-  // 차트용: 입금액 입력된 자산 전체 (slice 제거 — 손실 자산이 잘리는 버그 수정)
-  // 1년 미만은 총수익률, 1년 이상은 연환산 수익률로 표시
   const chartAssets = assets
     .filter(a => a.investment_amount != null && a.total_return != null)
     .map(a => ({
@@ -226,11 +222,10 @@ export default function ReturnAnalysis() {
       chart_label: (a.under_one_year || a.annual_return == null) ? '총수익' : '연환산',
     }))
     .filter(a => a.chart_return != null)
-    .sort((a, b) => (b.chart_return ?? 0) - (a.chart_return ?? 0))  // 높은 순 → 손실은 하단
+    .sort((a, b) => (b.chart_return ?? 0) - (a.chart_return ?? 0))
 
   const totalReturnColor = portfolio_total_return >= 0 ? 'green' : 'red'
 
-  // 계산기 초기값
   const initNominal   = portfolio_annual_return != null
     ? Math.round(portfolio_annual_return * 10) / 10
     : (dash?.estimated_return_rate ?? 7.0)
@@ -238,15 +233,15 @@ export default function ReturnAnalysis() {
   const calcReturnSource = portfolio_annual_return != null ? 'actual' : 'estimated'
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-x-hidden">
       {/* 헤더 */}
       <div className="bg-gradient-to-r from-[#1e3a5f] to-[#1a5c96] text-white rounded-xl px-6 py-4">
         <h1 className="text-xl font-bold">📈 수익률 분석</h1>
         <p className="text-blue-200 text-sm mt-1">입금액 대비 실제 수익률 · 연환산 기준</p>
       </div>
 
-      {/* KPI 카드 */}
-      <div className="grid grid-cols-4 gap-4">
+      {/* KPI 카드 — 모바일 2열, 데스크탑 4열 */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <SummaryCard
           label="총 투자 원금"
           value={fmt.eok(total_invested)}
@@ -260,13 +255,13 @@ export default function ReturnAnalysis() {
           color="blue"
         />
         <SummaryCard
-          label="포트폴리오 총 수익률"
+          label="포트폴리오 총수익률"
           value={portfolio_total_return != null ? `${portfolio_total_return >= 0 ? '+' : ''}${portfolio_total_return.toFixed(2)}%` : '-'}
           sub="투자 시점부터 누적"
           color={totalReturnColor}
         />
         <SummaryCard
-          label="포트폴리오 연환산 수익률"
+          label="연환산 수익률"
           value={portfolio_annual_return != null ? `${portfolio_annual_return >= 0 ? '+' : ''}${portfolio_annual_return.toFixed(2)}%` : '-'}
           sub="현재가 가중평균"
           color={portfolio_annual_return >= 0 ? 'green' : 'red'}
@@ -276,16 +271,15 @@ export default function ReturnAnalysis() {
       {/* 자산별 수익률 차트 */}
       {chartAssets.length > 0 && (
         <div className="card">
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-4 flex-wrap">
             <h3 className="text-sm font-semibold text-gray-700">자산별 수익률 (입금액 입력된 자산)</h3>
-            <div className="flex gap-3 text-xs text-gray-400">
+            <div className="flex gap-3 text-xs text-gray-400 flex-wrap">
               <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-blue-500 mr-1"/>1년 이상: 연환산</span>
               <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-amber-400 mr-1"/>1년 미만: 총수익</span>
               <span><span className="inline-block w-2.5 h-2.5 rounded-sm bg-red-400 mr-1"/>손실</span>
             </div>
           </div>
           {(() => {
-            // 음수 포함 domain 계산 — Recharts auto domain은 음수 bar 미렌더링 버그 있음
             const vals = chartAssets.map(a => a.chart_return ?? 0)
             const minVal = Math.min(0, ...vals)
             const maxVal = Math.max(0, ...vals)
@@ -295,9 +289,9 @@ export default function ReturnAnalysis() {
               <ResponsiveContainer width="100%" height={Math.max(200, chartAssets.length * 26)}>
                 <BarChart data={chartAssets} layout="vertical"
                   barSize={13}
-                  margin={{ top: 0, right: 90, bottom: 0, left: 160 }}>
+                  margin={{ top: 0, right: 55, bottom: 0, left: 0 }}>
                   <XAxis type="number" unit="%" tick={{ fontSize: 11 }} domain={domain} />
-                  <YAxis type="category" dataKey="asset_name" tick={{ fontSize: 11 }} width={155} />
+                  <YAxis type="category" dataKey="asset_name" tick={{ fontSize: 11 }} width={130} />
                   <Tooltip
                     formatter={(v, _name, props) => {
                       const label = props.payload.under_one_year ? '총수익률 (1년 미만)' : '연환산 수익률'
@@ -318,11 +312,9 @@ export default function ReturnAnalysis() {
                         if (value == null) return null
                         const v = Number(value)
                         const isNeg = v < 0
-                        // 음수 바: x가 바의 왼쪽 끝, x+width가 0선
-                        // 양수 바: x가 0선, x+width가 바의 오른쪽 끝
                         const lx = isNeg
-                          ? Math.max(x - 4, 2)   // 음수: 바 왼쪽 바깥, 최소 2px 확보
-                          : x + Math.abs(width) + 4  // 양수: 바 오른쪽 바깥
+                          ? Math.max(x - 4, 2)
+                          : x + Math.abs(width) + 4
                         const anchor = isNeg ? 'end' : 'start'
                         return (
                           <text x={lx} y={y + height / 2}
@@ -341,60 +333,62 @@ export default function ReturnAnalysis() {
         </div>
       )}
 
-      {/* 자산별 수익률 테이블 */}
-      <div className="card p-0 overflow-auto">
+      {/* 자산별 수익률 테이블 — overflow-x: auto 래퍼, 자산명 sticky */}
+      <div className="card p-0">
         <div className="px-5 py-3 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700">자산별 수익률 상세</h3>
           <p className="text-xs text-gray-400 mt-0.5">입금액 미입력 자산은 수익률 계산 불가 — 자산 관리에서 입금액을 입력해 주세요</p>
         </div>
-        <table>
-          <thead><tr>
-            <th>계좌</th>
-            <th>자산명</th>
-            <th>유형</th>
-            <th className="text-right">입금액</th>
-            <th className="text-right">현재 평가액</th>
-            <th className="text-right">손익</th>
-            <th className="text-right">총 수익률</th>
-            <th className="text-right">연환산 수익률</th>
-            <th className="text-right">보유 기간</th>
-            <th>매입일</th>
-          </tr></thead>
-          <tbody>
-            {assets.map(a => {
-              const pnl = a.investment_amount
-                ? (a.current_value - a.investment_amount)
-                : null
-              return (
-                <tr key={a.id}>
-                  <td className="text-gray-600 text-xs">{a.account_name}</td>
-                  <td className="font-medium text-gray-800">{a.asset_name}</td>
-                  <td><span className="badge-gray text-xs">{ASSET_TYPE_LABEL[a.asset_type] || a.asset_type}</span></td>
-                  <td className="text-right text-blue-600">
-                    {a.investment_amount ? fmt.won(a.investment_amount) : <span className="text-gray-300">미입력</span>}
-                  </td>
-                  <td className="text-right font-medium">{fmt.won(a.current_value)}</td>
-                  <td className={`text-right font-medium ${pnl == null ? '' : pnl >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
-                    {pnl == null ? '-' : `${pnl >= 0 ? '+' : ''}${fmt.won(Math.abs(pnl))}`}
-                  </td>
-                  <td className="text-right"><ReturnBadge value={a.total_return} /></td>
-                  <td className="text-right">
-                    <AnnualReturnCell
-                      annualReturn={a.annual_return}
-                      totalReturn={a.total_return}
-                      underOneYear={a.under_one_year}
-                      holdingDays={a.holding_days}
-                    />
-                  </td>
-                  <td className="text-right text-xs text-gray-500">
-                    {a.holding_days != null ? `${a.holding_days}일` : '-'}
-                  </td>
-                  <td className="text-xs text-gray-400">{fmt.date(a.purchase_date)}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <table className="min-w-[640px]">
+            <thead><tr>
+              <th className="sticky left-0 bg-gray-50 z-10">자산명</th>
+              <th>계좌</th>
+              <th>유형</th>
+              <th className="text-right">입금액</th>
+              <th className="text-right">현재 평가액</th>
+              <th className="text-right">손익</th>
+              <th className="text-right">총 수익률</th>
+              <th className="text-right">연환산 수익률</th>
+              <th className="text-right">보유 기간</th>
+              <th>매입일</th>
+            </tr></thead>
+            <tbody>
+              {assets.map(a => {
+                const pnl = a.investment_amount
+                  ? (a.current_value - a.investment_amount)
+                  : null
+                return (
+                  <tr key={a.id}>
+                    <td className="sticky left-0 bg-white z-10 font-medium text-gray-800">{a.asset_name}</td>
+                    <td className="text-gray-600 text-xs">{a.account_name}</td>
+                    <td><span className="badge-gray text-xs">{ASSET_TYPE_LABEL[a.asset_type] || a.asset_type}</span></td>
+                    <td className="text-right text-blue-600">
+                      {a.investment_amount ? fmt.won(a.investment_amount) : <span className="text-gray-300">미입력</span>}
+                    </td>
+                    <td className="text-right font-medium">{fmt.won(a.current_value)}</td>
+                    <td className={`text-right font-medium ${pnl == null ? '' : pnl >= 0 ? 'text-blue-600' : 'text-red-500'}`}>
+                      {pnl == null ? '-' : `${pnl >= 0 ? '+' : ''}${fmt.won(Math.abs(pnl))}`}
+                    </td>
+                    <td className="text-right"><ReturnBadge value={a.total_return} /></td>
+                    <td className="text-right">
+                      <AnnualReturnCell
+                        annualReturn={a.annual_return}
+                        totalReturn={a.total_return}
+                        underOneYear={a.under_one_year}
+                        holdingDays={a.holding_days}
+                      />
+                    </td>
+                    <td className="text-right text-xs text-gray-500">
+                      {a.holding_days != null ? `${a.holding_days}일` : '-'}
+                    </td>
+                    <td className="text-xs text-gray-400">{fmt.date(a.purchase_date)}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* 수익률 계산기 */}
@@ -434,28 +428,31 @@ export default function ReturnAnalysis() {
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
-            <table className="mt-3">
-              <thead><tr>
-                <th>연도</th>
-                <th className="text-right">연초 자산</th>
-                <th className="text-right">연말 자산</th>
-                <th className="text-right">연간 인출액</th>
-                <th className="text-right">연간 수익률</th>
-              </tr></thead>
-              <tbody>
-                {annualData.map(d => (
-                  <tr key={d.year}>
-                    <td className="font-semibold">{d.year}년</td>
-                    <td className="text-right">{fmt.eok(d.start_value)}</td>
-                    <td className="text-right">{fmt.eok(d.end_value)}</td>
-                    <td className="text-right text-gray-500">{fmt.won(d.withdrawals)}</td>
-                    <td className="text-right">
-                      <ReturnBadge value={d.return_rate} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {/* 5컬럼 테이블 — overflow 래퍼 */}
+            <div className="overflow-x-auto mt-3" style={{ WebkitOverflowScrolling: 'touch' }}>
+              <table className="min-w-[380px]">
+                <thead><tr>
+                  <th className="sticky left-0 bg-gray-50 z-10">연도</th>
+                  <th className="text-right">연초 자산</th>
+                  <th className="text-right">연말 자산</th>
+                  <th className="text-right">연간 인출액</th>
+                  <th className="text-right">연간 수익률</th>
+                </tr></thead>
+                <tbody>
+                  {annualData.map(d => (
+                    <tr key={d.year}>
+                      <td className="sticky left-0 bg-white z-10 font-semibold">{d.year}년</td>
+                      <td className="text-right">{fmt.eok(d.start_value)}</td>
+                      <td className="text-right">{fmt.eok(d.end_value)}</td>
+                      <td className="text-right text-gray-500">{fmt.won(d.withdrawals)}</td>
+                      <td className="text-right">
+                        <ReturnBadge value={d.return_rate} />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </>
         )}
       </div>

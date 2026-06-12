@@ -6,11 +6,11 @@ import api, { fmt } from '../api/client.js'
 function SliderRow({ label, value, min, max, step, display, onChange }) {
   return (
     <div className="flex items-center gap-4">
-      <span className="text-sm text-gray-600 w-40 flex-shrink-0">{label}</span>
+      <span className="text-sm text-gray-600 w-24 sm:w-36 flex-shrink-0">{label}</span>
       <input type="range" min={min} max={max} step={step} value={value}
         onChange={e => onChange(+e.target.value)}
         className="flex-1 h-1.5 accent-blue-600 cursor-pointer" />
-      <span className="text-sm font-semibold text-gray-700 w-20 text-right">{display}</span>
+      <span className="text-sm font-semibold text-gray-700 w-14 sm:w-20 text-right">{display}</span>
     </div>
   )
 }
@@ -165,10 +165,10 @@ export default function Withdrawal() {
   const initInflation = dash ? Math.round((dash.config?.inflation?.assumed_rate ?? 0.025) * 1000) / 10 : null
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-x-hidden">
       <h1 className="text-xl font-bold text-gray-800">💸 인출 관리</h1>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* 이번 달 현황 */}
         <div className="card col-span-1">
           <h3 className="text-sm font-semibold text-gray-700 mb-3">이번 달 현황</h3>
@@ -275,9 +275,10 @@ export default function Withdrawal() {
         {history.length === 0 ? (
           <p className="text-sm text-gray-400">인출 이력이 없습니다.</p>
         ) : (
-          <table>
+          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+          <table className="min-w-[480px]">
             <thead><tr>
-              <th>날짜</th>
+              <th className="sticky left-0 bg-white z-10">날짜</th>
               <th className="text-right">권장 인출액</th>
               <th className="text-right">실제 인출액</th>
               <th className="text-right">차이</th>
@@ -289,7 +290,7 @@ export default function Withdrawal() {
                 const diff = w.actual_amount != null ? Math.abs(w.actual_amount) - w.amount : null
                 return (
                   <tr key={w.id}>
-                    <td className="font-medium">{fmt.month(w.date)}</td>
+                    <td className="sticky left-0 bg-white z-10 font-medium">{fmt.month(w.date)}</td>
                     <td className="text-right">{fmt.won(w.amount)}</td>
                     <td className={`text-right font-medium ${w.actual_amount != null ? 'text-green-600' : 'text-orange-400'}`}>
                       {w.actual_amount != null ? fmt.won(w.actual_amount) : '미입력'}
@@ -307,6 +308,7 @@ export default function Withdrawal() {
               })}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

@@ -268,7 +268,7 @@ export default function PensionOptimize() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-5 overflow-x-hidden">
 
       {/* 성공 토스트 */}
       {confirmSuccess && (
@@ -299,7 +299,7 @@ export default function PensionOptimize() {
       {/* 현재 설정 + 조정 슬라이더 */}
       <div className="card">
         <h3 className="text-sm font-semibold text-gray-700 mb-4">⚙️ 시뮬레이션 파라미터</h3>
-        <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
           {/* 왼쪽: 설정 정보 */}
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
@@ -411,7 +411,7 @@ export default function PensionOptimize() {
             <span>하단 [선택] 버튼 → 확정 적용</span>
           </div>
         </div>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-3 md:grid-cols-7 gap-2">
           {SCENARIOS.map(s => {
             const monthly  = calcMonthly(base, s.offset)
             const startAge = normalAge + s.offset
@@ -535,7 +535,7 @@ export default function PensionOptimize() {
       </div>
 
       {/* 손익분기점 테이블 */}
-      <div className="card p-0 overflow-auto">
+      <div className="card p-0">
         <div className="px-5 py-3 border-b border-gray-100">
           <h3 className="text-sm font-semibold text-gray-700">
             정상 수령 대비 손익분기점 분석
@@ -544,9 +544,10 @@ export default function PensionOptimize() {
             기준 월 수령액 {Math.round(normalMonthly/10000).toLocaleString()}만원 ({normalAge}세 개시)
           </p>
         </div>
-        <table>
+        <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
+        <table className="min-w-[580px]">
           <thead><tr>
-            <th>시나리오</th>
+            <th className="sticky left-0 bg-gray-50 z-10">시나리오</th>
             <th className="text-center">개시 연령</th>
             <th className="text-right">월 수령액</th>
             <th className="text-center">감/증액</th>
@@ -557,7 +558,7 @@ export default function PensionOptimize() {
           <tbody>
             {/* 정상 수령 기준행 */}
             <tr className="bg-blue-50">
-              <td><span className="font-bold text-blue-700">정상 수령 (기준)</span></td>
+              <td className="sticky left-0 bg-blue-50 z-10"><span className="font-bold text-blue-700">정상 수령 (기준)</span></td>
               <td className="text-center">{normalAge}세</td>
               <td className="text-right font-bold">{Math.round(normalMonthly/10000).toLocaleString()}만원</td>
               <td className="text-center text-gray-400">—</td>
@@ -572,7 +573,7 @@ export default function PensionOptimize() {
               const adv = s.advantage
               return (
                 <tr key={s.offset}>
-                  <td>
+                  <td className="sticky left-0 bg-white z-10">
                     <span className="font-semibold text-sm" style={{ color: s.color }}>
                       {s.label}
                     </span>
@@ -613,12 +614,13 @@ export default function PensionOptimize() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {/* 의사결정 가이드 */}
       <div className="card bg-gray-50">
         <h3 className="text-sm font-semibold text-gray-700 mb-3">📌 의사결정 가이드</h3>
-        <div className="grid grid-cols-3 gap-4 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
           <div className="bg-red-50 rounded-lg p-3 border border-red-100">
             <p className="font-bold text-red-700 mb-1">🟡 조기 수령 고려 상황</p>
             <ul className="text-gray-600 space-y-1">
