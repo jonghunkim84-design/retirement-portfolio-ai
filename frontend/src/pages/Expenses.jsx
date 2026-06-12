@@ -172,6 +172,17 @@ export default function Expenses() {
     else updateMut.mutate({ id: modal.data.id, body })
   }
 
+  // ⚠️ useMemo는 early return 이전에 선언 (Rules of Hooks)
+  const logsByMonth = useMemo(() => {
+    const map = new Map()
+    for (const r of logs) {
+      const ym = r.expense_date.slice(0, 7)
+      if (!map.has(ym)) map.set(ym, [])
+      map.get(ym).push(r)
+    }
+    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]))
+  }, [logs])
+
   if (logsLoading || sumLoading) return (
     <div className="flex items-center justify-center h-64 text-gray-400">불러오는 중...</div>
   )
@@ -189,12 +200,6 @@ export default function Expenses() {
   const chartData = monthlyList.map(m => ({
     name: `${m.month.slice(5)}월`,
     지출: Math.round(m.total / 10000),
-    living:  Math.round((m.living  || 0) / 10000),
-    housing: Math.round((m.housing || 0) / 10000),
-    medical: Math.round((m.medical || 0) / 10000),
-    family:  Math.round((m.family  || 0) / 10000),
-    leisure: Math.round((m.leisure || 0) / 10000),
-    other:   Math.round((m.other   || 0) / 10000),
   }))
 
   // 도넛 차트 데이터
@@ -204,17 +209,6 @@ export default function Expenses() {
     pct:   c.pct,
     color: CATEGORY_COLOR[c.category] || '#94a3b8',
   }))
-
-  // 로그 → 월별 그룹핑
-  const logsByMonth = useMemo(() => {
-    const map = new Map()
-    for (const r of logs) {
-      const ym = r.expense_date.slice(0, 7)
-      if (!map.has(ym)) map.set(ym, [])
-      map.get(ym).push(r)
-    }
-    return [...map.entries()].sort((a, b) => b[0].localeCompare(a[0]))
-  }, [logs])
 
   return (
     <div className="space-y-5">
