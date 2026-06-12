@@ -181,21 +181,23 @@ export default function Layout({ children }) {
       </NavLink>
 
       {/* ── 모바일 하단 탭 바 — 5탭(홈/자산/현금흐름/연금/더보기) ── */}
+      {/* pt-2 고정, pb는 홈바 safe area와 8px 중 큰 값 */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20
                       bg-[#1e3a5f] border-t border-white/10
-                      flex items-center justify-around py-2 px-1">
+                      flex items-center overflow-hidden pt-2"
+           style={{ paddingBottom: 'max(8px, env(safe-area-inset-bottom))' }}>
 
         {/* 홈 */}
         <NavLink to="/" end
           className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
-             min-w-[44px] min-h-[44px] justify-center
+            `flex flex-1 min-w-0 flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-colors
+             min-h-[44px] justify-center
              ${isActive ? 'text-white' : 'text-blue-300/70'}`
           }>
           {({ isActive }) => (
             <>
               <span className="text-xl leading-none">🏠</span>
-              <span className={`text-[11px] font-medium leading-tight ${isActive ? 'text-white' : 'text-blue-300/70'}`}>홈</span>
+              <span className={`text-[11px] font-medium leading-tight whitespace-nowrap ${isActive ? 'text-white' : 'text-blue-300/70'}`}>홈</span>
               <span className={`w-1 h-1 rounded-full mt-0.5 transition-opacity ${isActive ? 'bg-white opacity-100' : 'opacity-0'}`} />
             </>
           )}
@@ -208,12 +210,12 @@ export default function Layout({ children }) {
           return (
             <button key={group.id}
               onClick={() => setBottomSheet(isSheetOpen ? null : group.id)}
-              className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
-                          min-w-[44px] min-h-[44px] justify-center
+              className={`flex flex-1 min-w-0 flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-colors
+                          min-h-[44px] justify-center
                           ${isGroupActive || isSheetOpen ? 'text-white' : 'text-blue-300/70'}`}
             >
               <span className="text-xl leading-none">{group.icon}</span>
-              <span className={`text-[11px] font-medium leading-tight ${isGroupActive || isSheetOpen ? 'text-white' : 'text-blue-300/70'}`}>
+              <span className={`text-[11px] font-medium leading-tight whitespace-nowrap ${isGroupActive || isSheetOpen ? 'text-white' : 'text-blue-300/70'}`}>
                 {group.mobileLabel}
               </span>
               <span className={`w-1 h-1 rounded-full mt-0.5 transition-opacity ${isGroupActive ? 'bg-white opacity-100' : 'opacity-0'}`} />
@@ -224,12 +226,12 @@ export default function Layout({ children }) {
         {/* 더보기 — 설정 등 */}
         <button
           onClick={() => setBottomSheet(bottomSheet === 'more' ? null : 'more')}
-          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
-                      min-w-[44px] min-h-[44px] justify-center
+          className={`flex flex-1 min-w-0 flex-col items-center gap-0.5 px-1 py-1 rounded-lg transition-colors
+                      min-h-[44px] justify-center
                       ${bottomSheet === 'more' || currentGroup === 'settings' ? 'text-white' : 'text-blue-300/70'}`}
         >
           <span className="text-xl leading-none">⋯</span>
-          <span className={`text-[11px] font-medium leading-tight ${bottomSheet === 'more' || currentGroup === 'settings' ? 'text-white' : 'text-blue-300/70'}`}>
+          <span className={`text-[11px] font-medium leading-tight whitespace-nowrap ${bottomSheet === 'more' || currentGroup === 'settings' ? 'text-white' : 'text-blue-300/70'}`}>
             더보기
           </span>
           <span className={`w-1 h-1 rounded-full mt-0.5 transition-opacity ${currentGroup === 'settings' ? 'bg-white opacity-100' : 'opacity-0'}`} />
@@ -246,7 +248,7 @@ export default function Layout({ children }) {
           />
           {/* 시트 본체 */}
           <div className="md:hidden fixed bottom-0 left-0 right-0 z-50
-                          bg-[#1e3a5f] rounded-t-2xl shadow-2xl">
+                          bg-[#1e3a5f] rounded-t-2xl shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
               <span className="text-white font-semibold text-sm">
                 {bottomSheet === 'more'
@@ -281,8 +283,8 @@ export default function Layout({ children }) {
                 ))
               )}
             </div>
-            {/* 탭바 높이만큼 여백 */}
-            <div className="h-16" />
+            {/* 탭바 + safe area 높이만큼 여백 */}
+            <div style={{ height: 'calc(64px + env(safe-area-inset-bottom))' }} />
           </div>
         </>
       )}
