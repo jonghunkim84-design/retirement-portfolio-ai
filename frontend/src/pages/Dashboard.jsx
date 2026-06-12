@@ -237,6 +237,13 @@ export default function Dashboard() {
     enabled:  !!data,
   })
 
+  const { data: taxData, isLoading: taxLoading } = useQuery({
+    queryKey: ['tax-summary'],
+    queryFn:  () => api.get('/tax/summary').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!data,
+  })
+
   const genSummary = useMutation({
     mutationFn: () => api.post('/summary/generate'),
     onSuccess:  () => qc.invalidateQueries({ queryKey: ['dashboard'] }),
@@ -291,9 +298,12 @@ export default function Dashboard() {
   const wrBorder = wr > 5 ? 'border-red-500' : wr > 4 ? 'border-yellow-400' : 'border-green-500'
   const wrText   = wr > 5 ? 'text-red-600'   : wr > 4 ? 'text-yellow-600'   : 'text-green-600'
 
-  const em = emergency_liquidity?.months ?? 0
-  const emBorder = em < 6  ? 'border-red-500' : em < 12  ? 'border-yellow-400' : 'border-green-500'
-  const emText   = em < 6  ? 'text-red-600'   : em < 12  ? 'text-yellow-600'   : 'text-green-600'
+  const finYtd       = taxData?.financial_income_ytd ?? 0
+  const finRemaining = taxData?.remaining            ?? 20_000_000
+  const finPct       = taxData?.utilization_pct      ?? 0
+  const finStatus    = taxData?.status               ?? 'safe'
+  const finBorder    = finStatus === 'danger' ? 'border-red-500' : finStatus === 'warning' ? 'border-yellow-400' : 'border-green-500'
+  const finText      = finStatus === 'danger' ? 'text-red-600'   : finStatus === 'warning' ? 'text-yellow-600'   : 'text-green-600'
 
   const riskBorder = risk?.level === 'red'    ? 'border-red-500'
                    : risk?.level === 'yellow' ? 'border-yellow-400' : 'border-green-500'
@@ -409,16 +419,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 비상자금 */}
-        <div className={`card border-l-4 ${emBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => nav('/rebalance')}>
+        {/* 금융소득 종합과세 */}
+        <div className={`card border-l-4 ${finBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
+             onClick={() => nav('/tax')}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] text-gray-500 font-medium">비상자금</span>
-            <span className="text-lg">🛡️</span>
+            <span className="text-[11px] text-gray-500 font-medium">금융소득</span>
+            <span className="text-lg">💰</span>
           </div>
-          <div className={`text-xl font-bold ${emText}`}>{em}개월</div>
+          <div className={`text-xl font-bold ${finText}`}>
+            {taxLoading ? '...' : `${Math.round(finYtd / 10000).toLocaleString()}만`}
+          </div>
           <div className="text-[11px] text-gray-400 mt-0.5">
-            {em >= 12 ? '✅ 충분' : em >= 6 ? '⚠️ 양호 (권장 12M)' : '🔴 부족 (권장 6M+)'}
+            {taxLoading ? '' : `${finPct.toFixed(0)}% · 잔여 ${Math.round(finRemaining / 10000).toLocaleString()}만`}
           </div>
         </div>
 

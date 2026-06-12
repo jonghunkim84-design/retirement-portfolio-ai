@@ -65,9 +65,9 @@ export default function Layout({ children }) {
       {/* ── 데스크탑 사이드바 ───────────────────────────────────── */}
       <aside className="hidden md:flex w-52 bg-[#1e3a5f] text-white flex-col fixed h-full z-10 overflow-y-auto">
 
-        <div className="px-5 py-5 border-b border-white/10 flex-shrink-0">
+        <div className="px-5 py-5 border-b border-white/10 flex-shrink-0 flex flex-col items-center text-center">
           <div className="text-lg font-bold leading-tight">🏦 은퇴포트폴리오</div>
-          <div className="text-[11px] text-blue-300 mt-0.5">AI 자산관리 시스템</div>
+          <div className="text-[11px] text-blue-300 mt-0.5">AI 금융자산관리 시스템</div>
         </div>
 
         <nav className="flex-1 px-3 py-4 space-y-1">
