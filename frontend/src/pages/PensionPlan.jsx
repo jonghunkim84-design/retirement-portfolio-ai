@@ -291,6 +291,12 @@ export default function PensionPlan() {
     enabled: !isLoading,
   })
 
+  const { data: expenseSummary } = useQuery({
+    queryKey: ['expense-summary'],
+    queryFn: () => api.get('/expenses/summary').then(r => r.data),
+    enabled: !isLoading,
+  })
+
   // 저장된 계획용 목표 수익률 (단일 출처: config.plan.target_annual_return)
   const savedTarget = dash?.config?.plan?.target_annual_return ?? null
 
@@ -477,6 +483,41 @@ export default function PensionPlan() {
           )}
         </div>
       </div>
+
+      {/* 실지출 가정 검증 배너 */}
+      {expenseSummary && !expenseSummary.insufficient_data && Math.abs(expenseSummary.diff_pct) >= 10 && (
+        <div className={`rounded-xl px-5 py-4 flex items-start gap-3 border
+          ${expenseSummary.diff_pct > 0
+            ? 'bg-amber-50 border-amber-300'
+            : 'bg-blue-50 border-blue-300'}`}>
+          <span className="text-xl flex-shrink-0 mt-0.5">
+            {expenseSummary.diff_pct > 0 ? '⚠️' : 'ℹ️'}
+          </span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-800 mb-1">
+              최근 12개월 실지출 평균은{' '}
+              <span className="font-bold">
+                {Math.round(expenseSummary.monthly_avg_12 / 10000).toLocaleString()}만 원
+              </span>
+              으로 설정된 생활비(
+              {Math.round(expenseSummary.monthly_expense_setting / 10000).toLocaleString()}만 원)보다{' '}
+              <span className={expenseSummary.diff_pct > 0 ? 'text-amber-700 font-bold' : 'text-blue-700 font-bold'}>
+                {expenseSummary.diff_pct > 0 ? '+' : ''}{expenseSummary.diff_pct}%
+              </span>
+              {expenseSummary.diff_pct > 0 ? ' 높습니다' : ' 낮습니다'}.
+            </p>
+            {expenseSummary.diff_pct > 0 && (
+              <p className="text-xs text-amber-700">
+                시뮬레이션이 실제보다 낙관적일 수 있습니다. 생활비 가정을 검토해 보세요.
+              </p>
+            )}
+          </div>
+          <a href="/settings"
+            className="text-xs text-gray-500 hover:text-gray-700 underline flex-shrink-0 mt-0.5">
+            설정에서 조정
+          </a>
+        </div>
+      )}
 
       {/* 요약 카드 */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">

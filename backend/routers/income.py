@@ -116,9 +116,36 @@ def get_income_summary():
     # ── 누적 합계 ──────────────────────────────────────────────────
     total_all = sum(float(r["amount"]) for r in rows)
 
-    # ── 생활비 자급률 ──────────────────────────────────────────────
-    # 패시브 인컴 월 평균 / 월 생활비
+    # ── 생활비 자급률 (설정 기반) ──────────────────────────────────
     self_suf = round(monthly_avg / monthly_expense * 100, 1) if monthly_expense else 0
+
+    # ── 실측 자급률 (실지출 12개월 평균 기반, 3개월 이상 데이터 시) ──
+    actual_self_suf       = None
+    expense_monthly_avg   = None
+    expense_months_count  = 0
+    try:
+        from collections import defaultdict as _dd
+        exp_res = supabase.table("expenses").select("expense_date,amount").execute()
+        exp_rows = exp_res.data or []
+        if exp_rows:
+            today_str  = today.strftime("%Y-%m")
+            def _ym_offset(ym: str, n: int) -> str:
+                y, m = int(ym[:4]), int(ym[5:7])
+                t = y * 12 + (m - 1) - n
+                return f"{t // 12}-{(t % 12) + 1:02d}"
+            cutoff_12 = _ym_offset(today_str, 11)
+            ym_sums: dict = _dd(float)
+            for r in exp_rows:
+                ym = r["expense_date"][:7]
+                if ym >= cutoff_12:
+                    ym_sums[ym] += float(r["amount"])
+            expense_months_count = len(ym_sums)
+            if expense_months_count >= 3:
+                expense_monthly_avg = round(sum(ym_sums.values()) / expense_months_count)
+                actual_self_suf     = round(monthly_avg / expense_monthly_avg * 100, 1) \
+                                      if expense_monthly_avg else None
+    except Exception:
+        pass
 
     # ── 소득 유형별 합계 (올해) ────────────────────────────────────
     type_totals = {"interest": 0, "dividend": 0, "other": 0}
@@ -126,14 +153,17 @@ def get_income_summary():
         type_totals[r.get("income_type", "other")] += float(r["amount"])
 
     return {
-        "total_this_year":  total_this_year,
-        "total_all":        total_all,
-        "monthly_avg":      monthly_avg,
-        "self_sufficiency": self_suf,
-        "monthly_expense":  monthly_expense,
-        "pension_income":   float(pension["income"]),
-        "monthly_list":     monthly_list,
-        "by_asset":         by_asset_list,
-        "type_totals":      type_totals,
-        "current_year":     current_year,
+        "total_this_year":      total_this_year,
+        "total_all":            total_all,
+        "monthly_avg":          monthly_avg,
+        "self_sufficiency":     self_suf,
+        "actual_self_suf":      actual_self_suf,
+        "expense_monthly_avg":  expense_monthly_avg,
+        "expense_months_count": expense_months_count,
+        "monthly_expense":      monthly_expense,
+        "pension_income":       float(pension["income"]),
+        "monthly_list":         monthly_list,
+        "by_asset":             by_asset_list,
+        "type_totals":          type_totals,
+        "current_year":         current_year,
     }

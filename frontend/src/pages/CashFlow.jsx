@@ -107,16 +107,26 @@ function MonthCard({ m, isSelected, onClick }) {
         </div>
       )}
 
-      {/* 인출 */}
-      <div className="flex items-center gap-1 mb-1">
-        <span className="text-orange-400 text-xs">📤</span>
-        <span className="text-xs text-gray-600">
-          인출 {man(m.display_withdrawal).toLocaleString()}만
-        </span>
-        {m.has_actual && (
-          <span className="text-[9px] bg-orange-100 text-orange-600 px-1 rounded">실적</span>
-        )}
-      </div>
+      {/* 인출 / 실지출 */}
+      {m.actual_expense != null ? (
+        <div className="flex items-center gap-1 mb-1">
+          <span className="text-rose-400 text-xs">🧾</span>
+          <span className="text-xs text-rose-700 font-medium">
+            실지출 {man(m.actual_expense).toLocaleString()}만
+          </span>
+          <span className="text-[9px] bg-rose-100 text-rose-600 px-1 rounded">실측</span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1 mb-1">
+          <span className="text-orange-400 text-xs">📤</span>
+          <span className="text-xs text-gray-600">
+            인출 {man(m.display_withdrawal).toLocaleString()}만
+          </span>
+          {m.has_actual && (
+            <span className="text-[9px] bg-orange-100 text-orange-600 px-1 rounded">실적</span>
+          )}
+        </div>
+      )}
 
       {/* 순 현금흐름 */}
       <div className={`mt-2 pt-1.5 border-t border-gray-100 text-xs font-bold
@@ -147,13 +157,16 @@ export default function CashFlow() {
   // 현재 '인출'은 포트폴리오 인출 계획(withdrawal_log) 기준이라 단순 합산 시 이중 계산 위험 —
   // 연동하려면 재원 구분(사적연금 수령 vs 포트폴리오 인출) 별도 설계 필요.
 
-  // 차트: 현재+향후 13개월
-  const chartMonths = months.filter(m => m.is_current || m.is_future).slice(0, 13)
-  const chartData = chartMonths.map(m => ({
-    label:    `${m.month_num}월`,
+  // 차트: 과거 3개월 + 현재 + 향후 12개월 (16개월)
+  // 과거 달은 "YY.MM" 형식으로 구분
+  const chartData = months.map(m => ({
+    label:    m.is_past
+      ? `${String(m.year).slice(2)}.${String(m.month_num).padStart(2, '0')}`
+      : `${m.month_num}월`,
     만기_회수: man(m.maturity_total),
     연금_수입: man(m.pension_income),
-    인출:     man(m.display_withdrawal),
+    인출:     m.actual_expense != null ? null : man(m.display_withdrawal),
+    실지출:   m.actual_expense != null ? man(m.actual_expense) : null,
     순흐름:   man(m.net_cashflow),
   }))
 
@@ -220,6 +233,7 @@ export default function CashFlow() {
             <Bar dataKey="만기_회수" stackId="in" fill="#22c55e" radius={[0,0,0,0]} />
             <Bar dataKey="연금_수입" stackId="in" fill="#3b82f6" radius={[3,3,0,0]} />
             <Bar dataKey="인출"      fill="#f97316" radius={[3,3,0,0]} />
+            <Bar dataKey="실지출"    fill="#f43f5e" radius={[3,3,0,0]} />
             <Line type="monotone" dataKey="순흐름" stroke="#1e3a5f"
               strokeWidth={2} dot={{ r: 3 }} strokeDasharray="5 3" />
           </ComposedChart>
@@ -228,6 +242,7 @@ export default function CashFlow() {
           <span>🟢 만기 회수 = 만기 도래 자산 평가액 회수</span>
           <span>🔵 연금 수입 = 국민연금 월 수령액</span>
           <span>🟠 인출 = 생활비 인출 (실적/계획)</span>
+          <span style={{color:'#f43f5e'}}>● 실지출 = 지출 기록 입력값</span>
           <span>━ 순흐름 = 수입 – 인출</span>
         </div>
       </div>

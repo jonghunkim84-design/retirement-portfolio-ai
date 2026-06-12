@@ -205,6 +205,46 @@ def build_portfolio_context(question: str = "") -> str:
     except Exception:
         pass
 
+    # ── 지출 현황 ─────────────────────────────────────────────
+    try:
+        from collections import defaultdict as _dd
+        exp_res  = supabase.table("expenses").select("expense_date,amount,category").execute()
+        exp_rows = exp_res.data or []
+        if exp_rows:
+            def _ym_off(ym: str, n: int) -> str:
+                y, m = int(ym[:4]), int(ym[5:7])
+                t = y * 12 + (m - 1) - n
+                return f"{t // 12}-{(t % 12) + 1:02d}"
+
+            cur_ym    = today.strftime("%Y-%m")
+            cutoff_12 = _ym_off(cur_ym, 11)
+            ym_sums: dict = _dd(float)
+            cat_sums: dict = _dd(float)
+            for r in exp_rows:
+                ym = r["expense_date"][:7]
+                if ym >= cutoff_12:
+                    ym_sums[ym]  += float(r["amount"])
+                    cat = r.get("category") or "other"
+                    cat_sums[cat] += float(r["amount"])
+            months_cnt = len(ym_sums)
+            if months_cnt >= 1:
+                avg_12 = round(sum(ym_sums.values()) / months_cnt)
+                diff   = avg_12 - monthly_expenses
+                diff_p = round(diff / monthly_expenses * 100, 1) if monthly_expenses else 0
+                LABEL  = {'living':'생활비','housing':'주거·관리','medical':'의료·건강',
+                          'family':'경조사·가족','leisure':'여행·여가','other':'기타'}
+                top2   = sorted(cat_sums.items(), key=lambda x: -x[1])[:2]
+                top2_str = " / ".join(f"{LABEL.get(c,c)} {_fmt_man(v)}" for c, v in top2)
+                exp_parts = [
+                    f"최근 12개월 월평균 실지출 {_fmt_man(avg_12)} ({months_cnt}개월 데이터)",
+                    f"설정 생활비 대비 {diff_p:+.1f}%",
+                ]
+                if top2_str:
+                    exp_parts.append(f"지출 상위: {top2_str}")
+                sections.append("[지출 현황]\n" + " / ".join(exp_parts))
+    except Exception:
+        pass
+
     # ── 조건부: 질문 관련 자산 상세 ───────────────────────────
     if question:
         mentioned = [

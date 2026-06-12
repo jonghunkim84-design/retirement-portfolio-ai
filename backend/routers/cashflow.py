@@ -30,6 +30,13 @@ def get_monthly_cashflow():
     wd_res = supabase.table("withdrawal_log").select("*").order("date").execute()
     wd_map = {w["date"][:7]: w for w in (wd_res.data or [])}
 
+    # 실지출 이력 (expenses 테이블, YYYY-MM → 합계)
+    from collections import defaultdict as _dd
+    exp_res  = supabase.table("expenses").select("expense_date,amount").execute()
+    exp_map: dict[str, float] = _dd(float)
+    for r in (exp_res.data or []):
+        exp_map[r["expense_date"][:7]] += float(r["amount"])
+
     months_data = []
     for i in range(-3, 13):          # -3 ~ +12 = 16개월
         m         = _add_months(today, i)
@@ -51,6 +58,9 @@ def get_monthly_cashflow():
         planned_wd  = float(wd["amount"])        if wd and wd.get("amount")         else recommended_wd
         display_wd  = actual_wd if actual_wd is not None else planned_wd
 
+        # 실지출 데이터 (과거 달만, 기록 있는 경우)
+        actual_expense = exp_map.get(month_str) if is_past else None
+
         inflow = maturity_total + pension_income
         net    = inflow - display_wd
 
@@ -62,6 +72,7 @@ def get_monthly_cashflow():
             "is_past":      is_past,
             "is_current":   is_current,
             "is_future":    is_future,
+            "actual_expense": actual_expense,
             "maturing_assets": [
                 {
                     "id":            a["id"],

@@ -236,9 +236,22 @@ export default function Income() {
           color="purple" />
         <div className="card border-l-4 border-orange-400">
           <p className="text-xs text-gray-500 font-medium mb-2">생활비 자급률</p>
-          <p className="text-xl font-bold text-orange-500 mb-3">
-            {(s.self_sufficiency || 0).toFixed(1)}%
-          </p>
+          <div className="flex items-end gap-3 mb-1">
+            <p className="text-xl font-bold text-orange-500">
+              {(s.self_sufficiency || 0).toFixed(1)}%
+            </p>
+            {s.actual_self_suf != null && (
+              <div className="text-xs text-gray-500 mb-0.5">
+                <span className="text-gray-400">설정 기준</span>
+                <span className="ml-2 font-semibold text-teal-600">
+                  실측 {s.actual_self_suf.toFixed(1)}%
+                </span>
+                <span className="text-gray-400 ml-1">
+                  ({Math.round((s.expense_monthly_avg||0)/10000).toLocaleString()}만원 기준·{s.expense_months_count}개월)
+                </span>
+              </div>
+            )}
+          </div>
           <SelfSufGauge ratio={s.self_sufficiency || 0} />
         </div>
       </div>

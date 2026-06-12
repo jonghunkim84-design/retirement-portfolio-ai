@@ -52,12 +52,16 @@ def _fetch():
         supabase.table("withdrawals").select("*")
         .order("withdrawal_date", desc=True).execute().data or []
     )
+    expenses = (
+        supabase.table("expenses").select("*")
+        .order("expense_date", desc=True).execute().data or []
+    )
     cfg_rows = (
         supabase.table("user_config").select("value")
         .eq("key", "config").execute().data or [{}]
     )
     cfg = cfg_rows[0].get("value", {}) if cfg_rows else {}
-    return assets, incomes, withdrawals, cfg
+    return assets, incomes, withdrawals, expenses, cfg
 
 
 def _cfg_items(cfg: dict):
@@ -152,6 +156,29 @@ def _sheet_income(ws, incomes: list):
     _auto_width(ws)
 
 
+_CATEGORY_KO = {
+    'living':  '생활비',
+    'housing': '주거·관리',
+    'medical': '의료·건강',
+    'family':  '경조사·가족',
+    'leisure': '여행·여가',
+    'other':   '기타',
+}
+
+
+def _sheet_expenses(ws, expenses: list):
+    ws.append(["날짜", "카테고리", "금액", "메모"])
+    _header_style(ws)
+    for e in expenses:
+        ws.append([
+            e.get("expense_date", ""),
+            _CATEGORY_KO.get(e.get("category") or "other", "기타"),
+            float(e.get("amount") or 0),
+            e.get("memo") or "",
+        ])
+    _auto_width(ws)
+
+
 def _sheet_withdrawals(ws, withdrawals: list):
     ws.append(["날짜", "계좌명", "세제분류", "금액", "메모"])
     _header_style(ws)
@@ -179,7 +206,7 @@ def export_xlsx():
     today = datetime.now().strftime("%Y%m%d")
     now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    assets, incomes, withdrawals, cfg = _fetch()
+    assets, incomes, withdrawals, expenses, cfg = _fetch()
 
     wb = openpyxl.Workbook()
     ws0 = wb.active
@@ -188,6 +215,7 @@ def export_xlsx():
 
     _sheet_assets(wb.create_sheet("자산 목록"), assets)
     _sheet_income(wb.create_sheet("수입 기록"), incomes)
+    _sheet_expenses(wb.create_sheet("지출 기록"), expenses)
     _sheet_withdrawals(wb.create_sheet("인출 기록"), withdrawals)
     _sheet_config(wb.create_sheet("설정"), cfg)
 
@@ -207,7 +235,7 @@ def export_xlsx():
 def export_csv():
     today = datetime.now().strftime("%Y%m%d")
 
-    assets, incomes, withdrawals, cfg = _fetch()
+    assets, incomes, withdrawals, expenses, cfg = _fetch()
 
     zip_buf = io.BytesIO()
     with zipfile.ZipFile(zip_buf, "w", zipfile.ZIP_DEFLATED) as zf:
@@ -243,6 +271,19 @@ def export_csv():
                 inc.get("note") or "",
             ])
         zf.writestr("income.csv", buf.getvalue().encode("utf-8-sig"))
+
+        # expenses.csv
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(["날짜", "카테고리", "금액", "메모"])
+        for e in expenses:
+            w.writerow([
+                e.get("expense_date", ""),
+                _CATEGORY_KO.get(e.get("category") or "other", "기타"),
+                e.get("amount", 0) or 0,
+                e.get("memo") or "",
+            ])
+        zf.writestr("expenses.csv", buf.getvalue().encode("utf-8-sig"))
 
         # withdrawals.csv
         buf = io.StringIO()

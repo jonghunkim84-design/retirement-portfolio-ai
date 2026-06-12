@@ -12,6 +12,7 @@ import PensionPlan   from './pages/PensionPlan.jsx'
 import ReturnAnalysis from './pages/ReturnAnalysis.jsx'
 import CashFlow      from './pages/CashFlow.jsx'
 import Income        from './pages/Income.jsx'
+import Expenses      from './pages/Expenses.jsx'
 import PensionOptimize from './pages/PensionOptimize.jsx'
 import NetWorth      from './pages/NetWorth.jsx'
 import MaturityGuide from './pages/MaturityGuide.jsx'
@@ -64,6 +65,7 @@ export default function App() {
             <Route path="/maturity-guide"   element={<MaturityGuide />} />
             <Route path="/cashflow"         element={<CashFlow />} />
             <Route path="/income"           element={<Income />} />
+            <Route path="/expenses"         element={<Expenses />} />
             <Route path="/pension-optimize" element={<PensionOptimize />} />
             <Route path="/ai-advisor"       element={<AIAdvisor />} />
             <Route path="/tax"              element={<TaxOptimization />} />

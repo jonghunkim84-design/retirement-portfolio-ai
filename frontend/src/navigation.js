@@ -25,6 +25,7 @@ export const NAV_GROUPS = [
     icon: '💰',
     items: [
       { path: '/income',     label: '수입 관리',   icon: '💰' },
+      { path: '/expenses',   label: '지출 기록',   icon: '🧾' },
       { path: '/withdrawal', label: '인출 관리',   icon: '💸' },
       { path: '/cashflow',   label: '현금흐름',    icon: '📅' },
       { path: '/networth',   label: '순자산 추이', icon: '💹' },
