@@ -44,3 +44,4 @@ backend/*.pyc
 
 # Vercel
 .vercel/
+.vercel
