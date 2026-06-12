@@ -19,6 +19,12 @@ export default function Layout({ children }) {
   const location       = useLocation()
   const { user, signOut } = useAuth()
 
+  // 바텀시트: group id | 'more' | null
+  const [bottomSheet, setBottomSheet] = useState(null)
+
+  // 경로 이동 시 바텀시트 닫기
+  useEffect(() => { setBottomSheet(null) }, [location.pathname])
+
   const [openGroups, setOpenGroups] = useState(() => {
     try {
       const saved = localStorage.getItem('nav_open_groups')
@@ -183,41 +189,91 @@ export default function Layout({ children }) {
           )}
         </NavLink>
 
-        {/* 그룹 탭: 자산 / 현금흐름 / 연금 — 그룹 첫 번째 페이지로 이동 */}
+        {/* 그룹 탭: 자산 / 현금흐름 / 연금 — 터치 시 바텀시트 팝업 */}
         {SIDEBAR_GROUPS.map(group => {
-          const firstPath     = group.items[0].path
           const isGroupActive = currentGroup === group.id
+          const isSheetOpen   = bottomSheet === group.id
           return (
-            <NavLink key={group.id} to={firstPath}
+            <button key={group.id}
+              onClick={() => setBottomSheet(isSheetOpen ? null : group.id)}
               className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
                           min-w-[44px] min-h-[44px] justify-center
-                          ${isGroupActive ? 'text-white' : 'text-blue-300/70'}`}
+                          ${isGroupActive || isSheetOpen ? 'text-white' : 'text-blue-300/70'}`}
             >
               <span className="text-xl leading-none">{group.icon}</span>
-              <span className={`text-[11px] font-medium leading-tight ${isGroupActive ? 'text-white' : 'text-blue-300/70'}`}>
+              <span className={`text-[11px] font-medium leading-tight ${isGroupActive || isSheetOpen ? 'text-white' : 'text-blue-300/70'}`}>
                 {group.mobileLabel}
               </span>
               <span className={`w-1 h-1 rounded-full mt-0.5 transition-opacity ${isGroupActive ? 'bg-white opacity-100' : 'opacity-0'}`} />
-            </NavLink>
+            </button>
           )
         })}
 
-        {/* 더보기 — 설정으로 이동 */}
-        <NavLink to="/settings"
-          className={({ isActive }) =>
-            `flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
-             min-w-[44px] min-h-[44px] justify-center
-             ${isActive ? 'text-white' : 'text-blue-300/70'}`
-          }>
-          {({ isActive }) => (
-            <>
-              <span className="text-xl leading-none">⋯</span>
-              <span className={`text-[11px] font-medium leading-tight ${isActive ? 'text-white' : 'text-blue-300/70'}`}>더보기</span>
-              <span className={`w-1 h-1 rounded-full mt-0.5 transition-opacity ${isActive ? 'bg-white opacity-100' : 'opacity-0'}`} />
-            </>
-          )}
-        </NavLink>
+        {/* 더보기 — 설정 등 */}
+        <button
+          onClick={() => setBottomSheet(bottomSheet === 'more' ? null : 'more')}
+          className={`flex flex-col items-center gap-0.5 px-2 py-1 rounded-lg transition-colors
+                      min-w-[44px] min-h-[44px] justify-center
+                      ${bottomSheet === 'more' || currentGroup === 'settings' ? 'text-white' : 'text-blue-300/70'}`}
+        >
+          <span className="text-xl leading-none">⋯</span>
+          <span className={`text-[11px] font-medium leading-tight ${bottomSheet === 'more' || currentGroup === 'settings' ? 'text-white' : 'text-blue-300/70'}`}>
+            더보기
+          </span>
+          <span className={`w-1 h-1 rounded-full mt-0.5 transition-opacity ${currentGroup === 'settings' ? 'bg-white opacity-100' : 'opacity-0'}`} />
+        </button>
       </nav>
+
+      {/* ── 모바일 바텀시트 ──────────────────────────────────────── */}
+      {bottomSheet && (
+        <>
+          {/* 반투명 오버레이 */}
+          <div
+            className="md:hidden fixed inset-0 z-40 bg-black/40"
+            onClick={() => setBottomSheet(null)}
+          />
+          {/* 시트 본체 */}
+          <div className="md:hidden fixed bottom-0 left-0 right-0 z-50
+                          bg-[#1e3a5f] rounded-t-2xl shadow-2xl">
+            <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-white/10">
+              <span className="text-white font-semibold text-sm">
+                {bottomSheet === 'more'
+                  ? '더보기'
+                  : NAV_GROUPS.find(g => g.id === bottomSheet)?.label}
+              </span>
+              <button
+                onClick={() => setBottomSheet(null)}
+                className="text-blue-300/70 hover:text-white text-2xl leading-none w-8 h-8 flex items-center justify-center"
+              >
+                ×
+              </button>
+            </div>
+            <div className="px-4 py-3 space-y-1">
+              {bottomSheet === 'more' ? (
+                <NavLink to="/settings"
+                  className={({ isActive }) =>
+                    `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors
+                     ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10'}`
+                  }>
+                  <span className="text-xl">⚙️</span>설정
+                </NavLink>
+              ) : (
+                NAV_GROUPS.find(g => g.id === bottomSheet)?.items.map(({ path, icon, label }) => (
+                  <NavLink key={path} to={path}
+                    className={({ isActive }) =>
+                      `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors
+                       ${isActive ? 'bg-white/15 text-white' : 'text-blue-100 hover:bg-white/10'}`
+                    }>
+                    <span className="text-xl">{icon}</span>{label}
+                  </NavLink>
+                ))
+              )}
+            </div>
+            {/* 탭바 높이만큼 여백 */}
+            <div className="h-16" />
+          </div>
+        </>
+      )}
     </div>
   )
 }
