@@ -168,6 +168,18 @@ export default function Layout({ children }) {
         {children}
       </main>
 
+      {/* ── AI 어드바이저 플로팅 버튼 ────────────────────────────── */}
+      {/* 모바일: 탭바(≈64px) + 여유 → bottom-20(80px) / 데스크탑: bottom-6 */}
+      <NavLink to="/ai-advisor"
+        className={({ isActive }) =>
+          `fixed right-4 bottom-20 md:bottom-6 z-30
+           w-14 h-14 rounded-full shadow-xl flex items-center justify-center text-2xl
+           transition-transform hover:scale-110 active:scale-95
+           ${isActive ? 'bg-blue-400' : 'bg-[#2563eb] hover:bg-blue-500'}`
+        }>
+        <span title="AI에게 묻기">💬</span>
+      </NavLink>
+
       {/* ── 모바일 하단 탭 바 — 5탭(홈/자산/현금흐름/연금/더보기) ── */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-20
                       bg-[#1e3a5f] border-t border-white/10
