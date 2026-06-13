@@ -6,8 +6,8 @@ import {
 } from 'recharts'
 import api, { fmt } from '../api/client.js'
 
-const INCOME_TYPE_LABEL = { interest: '이자', dividend: '배당', other: '기타' }
-const INCOME_TYPE_COLOR = { interest: '#3b82f6', dividend: '#22c55e', other: '#a78bfa' }
+const INCOME_TYPE_LABEL = { interest: '이자', dividend: '배당', earned: '근로소득', other: '기타' }
+const INCOME_TYPE_COLOR = { interest: '#3b82f6', dividend: '#22c55e', earned: '#f97316', other: '#a78bfa' }
 const ASSET_TYPE_LABEL  = {
   cash: '현금성', bond: '채권', tdf: 'TDF',
   fund: '펀드', equity: '주식형', income: '리츠/인컴',
@@ -200,6 +200,7 @@ export default function Income() {
     name:     `${m.month.slice(5)}월`,
     이자:     Math.round((m.interest || 0) / 10000),
     배당:     Math.round((m.dividend || 0) / 10000),
+    근로소득: Math.round((m.earned   || 0) / 10000),
     기타:     Math.round((m.other    || 0) / 10000),
   }))
 
@@ -224,7 +225,7 @@ export default function Income() {
       <div className="grid grid-cols-4 gap-4">
         <SummaryCard icon="📅" label={`${currentYear}년 수입 합계`}
           value={fmt.eok(s.total_this_year || 0)}
-          sub={`이자 ${fmt.won(typeTotals.interest||0)} · 배당 ${fmt.won(typeTotals.dividend||0)}`}
+          sub={`이자 ${fmt.won(typeTotals.interest||0)} · 배당 ${fmt.won(typeTotals.dividend||0)}${typeTotals.earned > 0 ? ` · 근로 ${fmt.won(typeTotals.earned)}` : ''}`}
           color="blue" />
         <SummaryCard icon="📆" label="월 평균 패시브 인컴"
           value={`${Math.round((s.monthly_avg||0)/10000).toLocaleString()}만원`}
@@ -275,6 +276,7 @@ export default function Income() {
                 <Legend iconSize={10} wrapperStyle={{ fontSize: 11 }} />
                 <Bar dataKey="이자" stackId="a" fill="#3b82f6" radius={[0,0,0,0]} />
                 <Bar dataKey="배당" stackId="a" fill="#22c55e" radius={[0,0,0,0]} />
+                <Bar dataKey="근로소득" stackId="a" fill="#f97316" radius={[0,0,0,0]} />
                 <Bar dataKey="기타" stackId="a" fill="#a78bfa" radius={[3,3,0,0]} />
               </BarChart>
             </ResponsiveContainer>
@@ -318,6 +320,7 @@ export default function Income() {
               <th>자산명</th><th>계좌</th><th>유형</th>
               <th className="text-right">이자</th>
               <th className="text-right">배당</th>
+              <th className="text-right">근로소득</th>
               <th className="text-right">기타</th>
               <th className="text-right">합계</th>
               <th className="text-right">건수</th>
@@ -334,6 +337,7 @@ export default function Income() {
                   </td>
                   <td className="text-right text-blue-600">{a.interest > 0 ? fmt.won(a.interest) : '-'}</td>
                   <td className="text-right text-green-600">{a.dividend > 0 ? fmt.won(a.dividend) : '-'}</td>
+                  <td className="text-right text-orange-500">{a.earned > 0 ? fmt.won(a.earned) : '-'}</td>
                   <td className="text-right text-purple-600">{a.other > 0 ? fmt.won(a.other) : '-'}</td>
                   <td className="text-right font-semibold">{fmt.won(a.total)}</td>
                   <td className="text-right text-gray-400 text-xs">{a.count}건</td>

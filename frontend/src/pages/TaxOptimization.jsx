@@ -56,18 +56,21 @@ function won(v) {
 }
 
 // ── 공통 모니터 카드 ──────────────────────────────────────────────
-function MonitorCard({ title, ytd, threshold, remaining, pct, status, thresholdLabel, statusMessages, isLoading }) {
+function MonitorCard({ title, subtitle, ytd, threshold, remaining, pct, status, thresholdLabel, statusMessages, isLoading, notice }) {
   const S    = STATUS[status] ?? STATUS.safe
   const barW = Math.min(pct, 100)
 
   return (
     <div className={`card border-l-4 ${S.border}`}>
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-1">
         <h2 className="text-sm font-semibold text-gray-700">{title}</h2>
         <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${S.badge}`}>
           {S.label}
         </span>
       </div>
+      {subtitle && (
+        <p className="text-[11px] text-gray-400 mb-3">{subtitle}</p>
+      )}
 
       {isLoading ? (
         <div className="text-sm text-gray-400 py-4 text-center">불러오는 중...</div>
@@ -117,6 +120,13 @@ function MonitorCard({ title, ytd, threshold, remaining, pct, status, thresholdL
           <div className={`mt-3 rounded-lg px-3 py-2 text-xs ${S.badge}`}>
             {statusMessages[status] ?? statusMessages.safe}
           </div>
+
+          {/* 사용자 안내 */}
+          {notice && (
+            <div className="mt-2 rounded-lg px-3 py-2 text-[11px] text-amber-700 bg-amber-50 border border-amber-200">
+              ⚠️ {notice}
+            </div>
+          )}
         </>
       )}
     </div>
@@ -150,6 +160,7 @@ export default function TaxOptimization() {
       {/* ─── A: 금융소득 종합과세 모니터 ──────────────────────── */}
       <MonitorCard
         title="💰 금융소득 종합과세 모니터"
+        subtitle="이자·배당·기타 금융소득 기준 (근로소득 제외)"
         ytd={finYtd}
         threshold={FINANCIAL_THRESHOLD}
         remaining={finRemaining}
@@ -162,6 +173,7 @@ export default function TaxOptimization() {
           warning: '금융소득이 기준의 60%를 초과했습니다. ISA·연금 계좌 활용을 검토하세요.',
           danger:  '금융소득이 기준의 80%를 초과했습니다. 연내 배당 수령 조정이 필요합니다.',
         }}
+        notice="근로소득을 '기타'로 입력하신 경우 수입 관리 화면에서 유형을 '근로소득'으로 수정해 주세요."
       />
 
       {/* ─── B: 절세 전략 카드 4개 ────────────────────────────── */}
