@@ -189,6 +189,33 @@ def build_portfolio_context(question: str = "") -> str:
     except Exception:
         pass  # 연금 세금 데이터 없으면 섹션 생략
 
+    # ── 수입 현황 (금융소득 / 근로소득 분리) ──────────────────
+    try:
+        inc_res = (
+            supabase.table("income_log")
+            .select("income_date,income_type,amount")
+            .gte("income_date", f"{today.year}-01-01")
+            .lte("income_date", today.isoformat())
+            .execute()
+        )
+        inc_rows = inc_res.data or []
+        if inc_rows:
+            financial_total = sum(
+                float(r["amount"]) for r in inc_rows
+                if r.get("income_type") in ("interest", "dividend", "other")
+            )
+            earned_total = sum(
+                float(r["amount"]) for r in inc_rows
+                if r.get("income_type") == "earned"
+            )
+            inc_parts = [f"금융소득(이자·배당·기타) {_fmt_man(financial_total)}"]
+            if earned_total > 0:
+                inc_parts.append(f"근로소득 {_fmt_man(earned_total)}")
+            inc_parts.append(f"금융소득종합과세 한도 2,000만원 대비 {round(financial_total / 20_000_000 * 100, 1)}% 소진")
+            sections.append("[올해 수입]\n" + " / ".join(inc_parts))
+    except Exception:
+        pass
+
     # ── 위험 점수 ─────────────────────────────────────────────
     try:
         risk_res = (
