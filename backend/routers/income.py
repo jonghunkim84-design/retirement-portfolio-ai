@@ -10,6 +10,7 @@ router = APIRouter()
 INCOME_TYPE_LABEL = {
     "interest": "이자",
     "dividend": "배당",
+    "earned":   "근로소득",
     "other":    "기타",
 }
 
@@ -81,7 +82,7 @@ def get_income_summary():
     for r in this_year:
         ym  = r["income_date"][:7]          # "YYYY-MM"
         typ = r["income_type"]
-        monthly.setdefault(ym, {"interest": 0, "dividend": 0, "other": 0})
+        monthly.setdefault(ym, {"interest": 0, "dividend": 0, "earned": 0, "other": 0})
         monthly[ym][typ] = monthly[ym].get(typ, 0) + float(r["amount"])
 
     monthly_list = [
@@ -104,6 +105,7 @@ def get_income_summary():
             "total":        0,
             "interest":     0,
             "dividend":     0,
+            "earned":       0,
             "other":        0,
             "count":        0,
         })
@@ -148,9 +150,13 @@ def get_income_summary():
         pass
 
     # ── 소득 유형별 합계 (올해) ────────────────────────────────────
-    type_totals = {"interest": 0, "dividend": 0, "other": 0}
+    type_totals = {"interest": 0, "dividend": 0, "earned": 0, "other": 0}
     for r in this_year:
-        type_totals[r.get("income_type", "other")] += float(r["amount"])
+        typ = r.get("income_type", "other")
+        if typ in type_totals:
+            type_totals[typ] += float(r["amount"])
+        else:
+            type_totals["other"] += float(r["amount"])
 
     return {
         "total_this_year":      total_this_year,

@@ -21,10 +21,10 @@ def get_tax_summary():
     year_start = f"{today.year}-01-01"
     year_end   = today.isoformat()
 
-    # ── 올해 이자+배당 수입 합계 ──────────────────────────────────
+    # ── 올해 금융소득 합계 (이자+배당+기타, 근로소득 제외) ──────────
     fin_res = supabase.table("income_log") \
         .select("amount") \
-        .in_("income_type", ["interest", "dividend"]) \
+        .in_("income_type", ["interest", "dividend", "other"]) \
         .gte("income_date", year_start) \
         .lte("income_date", year_end) \
         .execute()
