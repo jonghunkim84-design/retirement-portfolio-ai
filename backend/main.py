@@ -123,10 +123,10 @@ def deactivate_expired():
     }
 
 
-@app.post("/alert/daily")
+@app.api_route("/alert/daily", methods=["GET", "POST"])
 def daily_alert_cron():
     """Vercel Cron Job 전용 엔드포인트 — 매일 오전 8시 KST (23:00 UTC) 자동 호출
-    vercel.json의 crons 설정에 의해 호출됨.
+    vercel.json의 crons 설정에 의해 호출됨 (Vercel은 GET 요청 사용).
     로컬 APScheduler와 동일한 run_daily_alert() 사용:
     ① 시세 갱신 → ② 만기 자산 자동 비활성화 → ③ 이메일 알림
     """
