@@ -136,6 +136,20 @@
 | 한도 기준 | 2,000만원 (현행) / 향후 1,500만원 개정 기준 대응 |
 | ISA 활용 안내 | 절세 계좌 전환 가이드 |
 
+#### 건강보험료 시뮬레이터 (`/health-insurance`)
+| 기능 | 설명 |
+|------|------|
+| 소득 입력 (슬라이더) | 국민연금(50% 반영) / 개인연금·IRP(미부과) / 이자·배당 / 근로·사업 — 배지로 반영 규칙 표시 |
+| 재산 입력 (동적) | 6종 재산 유형별 과세표준 자동 환산, 최대 5개 추가·삭제, 기본공제 1억 자동 적용 |
+| 주택담보대출 공제 | 대출 잔액 입력 시 재산 과세표준에서 차감 |
+| 예상 보험료 KPI | 월 건강보험료 / 장기요양보험료 / 월·연간 총 납부액 / 실소득 대비 보험료율 / 부과점수 |
+| 계산 근거 표시 | 소득·재산 점수 및 점수 × 단가 계산 과정 요약 |
+| 피부양자 판정 | 사적연금 포함 전액 합산 기준, 가능 시 절감 금액 안내 |
+| 절세 시나리오 비교 | ISA 전환 / 국민연금 감소 / 개인연금 증가 3가지 월 절감액 비교 |
+| 시뮬레이션 저장 | 라벨·입력값·계산 결과를 Supabase에 저장 (최대 20개 이력) |
+| 시뮬레이션 불러오기 | 저장 목록에서 선택 시 슬라이더·재산 항목 전체 복원 |
+| 상황별 팁 자동 표시 | ISA 안내 / 개인연금 미부과 / 국민연금 50% / 대출공제 안내 조건부 표시 |
+
 #### 위험 점수 (`/risk`)
 | 기능 | 설명 |
 |------|------|
@@ -246,6 +260,7 @@
 | `risk_scores` | id, date, total_score, cash_score, seq_score, conc_score, level | 위험 점수 이력 |
 | `recommendations` | id, rule_id, message, date | AI 요약 및 권장사항 |
 | `notification_log` | id, notification_type, year, sent_at | 이메일 알림 중복 방지 |
+| `health_insurance_simulations` | id, user_id, label, inputs (JSONB), health_premium, long_care_premium, total_monthly, total_annual, income_score, property_score, total_score, is_dependent_eligible | 건강보험료 시뮬레이션 저장 이력 (RLS 적용) |
 
 ---
 
@@ -314,7 +329,7 @@
 │
 ├── frontend/                          # React + Vite 프론트엔드
 │   ├── src/
-│   │   ├── pages/                     # 페이지 컴포넌트 (18개)
+│   │   ├── pages/                     # 페이지 컴포넌트 (19개)
 │   │   │   ├── Dashboard.jsx          # 대시보드 (KPI·알림·현금흐름·AI 요약)
 │   │   │   ├── Assets.jsx             # 자산 관리 (CRUD·세제분류·필터)
 │   │   │   ├── ReturnAnalysis.jsx     # 수익률 분석
@@ -329,6 +344,7 @@
 │   │   │   ├── PensionOptimize.jsx    # 연금 최적화
 │   │   │   ├── PensionTax.jsx         # 연금 세금 계산
 │   │   │   ├── TaxOptimization.jsx    # 세금 최적화 (금융소득 모니터)
+│   │   │   ├── HealthInsurance.jsx    # 건강보험료 시뮬레이터 (저장·불러오기 포함)
 │   │   │   ├── RiskScore.jsx          # 위험 점수
 │   │   │   ├── AIAdvisor.jsx          # AI 어드바이저
 │   │   │   ├── Settings.jsx           # 설정
@@ -337,6 +353,8 @@
 │   │   │   └── Layout.jsx             # 사이드바(PC) + 모바일 탭바 레이아웃
 │   │   ├── context/
 │   │   │   └── AuthContext.jsx        # Supabase Auth 컨텍스트 + useAuth 훅
+│   │   ├── hooks/
+│   │   │   └── useHealthInsurance.js  # 최신 건강보험료 시뮬레이션 조회 함수
 │   │   ├── lib/
 │   │   │   └── supabase.js            # Supabase 클라이언트 초기화
 │   │   ├── api/
@@ -390,7 +408,8 @@
 │   ├── 2026-06-12_price_update_status.sql
 │   ├── 2026-06-13_target_annual_return.sql
 │   ├── 2026-06-15_expenses.sql
-│   └── 2026-06-16_income_type_earned.sql
+│   ├── 2026-06-16_income_type_earned.sql
+│   └── 2026-06-25_health_insurance_simulations.sql
 │
 ├── vercel.json                        # Vercel 배포 (experimentalServices + Cron)
 ├── .env                               # 로컬 환경 변수 (Git 제외)
@@ -450,6 +469,7 @@ Supabase Dashboard
 | `risk_scores` | 위험 점수 이력 |
 | `bucket_snapshots` | 버킷별 자산 스냅샷 |
 | `recommendations` | AI 포트폴리오 요약 |
+| `health_insurance_simulations` | 건강보험료 시뮬레이션 저장 이력 |
 
 > 이미 운영 중인 DB에 새 마이그레이션만 적용하려면 `migrations/` 폴더의 해당 파일을 순서대로 실행합니다.
 
