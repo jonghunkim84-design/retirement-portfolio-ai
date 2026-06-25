@@ -41,6 +41,7 @@ export const NAV_GROUPS = [
       { path: '/pension-optimize', label: '연금 최적화', icon: '🏛' },
       { path: '/pension-tax',      label: '연금 세금',   icon: '🏖' },
       { path: '/tax',              label: '세금 최적화', icon: '🧾' },
+      { path: '/health-insurance', label: '건강보험료',  icon: '🏥' },
       { path: '/risk',             label: '위험 점수',   icon: '⚠️' },
     ],
   },

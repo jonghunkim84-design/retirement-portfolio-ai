@@ -19,3 +19,13 @@ SEVERANCE_DISCOUNT = {
     (11, 20): 0.60,   # 11~20년차: 60%
     (21, 99): 0.50,   # 21년차~: 50%
 }
+
+# 건강보험료 지역가입자 2026년 기준 상수
+HEALTH_INSURANCE_2026 = {
+    "rate_per_point":            208.4,   # 부과점수당 금액 (원)
+    "long_care_rate":            0.1295,  # 장기요양보험료율 (건강보험료 기준)
+    "min_premium":               20160,   # 최저보험료 (원/월)
+    "basic_property_deduction":  10000,   # 재산 기본공제 (만원 = 1억원)
+    "dependent_income_limit":    2000,    # 피부양자 소득 한도 (만원)
+    "national_pension_ratio":    0.50,    # 국민연금 반영 비율 (건보료 부과 기준)
+}
