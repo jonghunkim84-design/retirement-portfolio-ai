@@ -515,6 +515,10 @@ export default function HealthInsurance() {
             label="개인연금·IRP 인출" badge="건보료 미부과" badgeClass="bg-gray-100 text-gray-600"
             value={pp} onChange={setPp} min={0} max={3000} step={50}
           />
+          <p className="text-xs text-gray-400 mt-1">
+            ※ 세액공제를 받지 않은 납입원금의 인출은 건강보험료 부과 대상에 해당하지 않습니다.
+            세액공제 받은 원금 및 운용수익 인출분 기준으로 입력하세요.
+          </p>
           <SliderRow
             label="이자·배당 소득" badge="100% 반영" badgeClass="bg-red-100 text-red-600"
             value={fi} onChange={setFi} min={0} max={5000} step={100}
