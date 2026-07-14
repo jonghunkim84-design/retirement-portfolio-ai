@@ -129,6 +129,16 @@
 | 한도 초과 시 세율 | 16.5% 분리과세 또는 종합과세 선택 |
 | 인출 기록 연동 | `withdrawals` 테이블 기반 실제 인출 이력 반영 |
 
+#### 인출 전략 (`/withdrawal-strategy`)
+| 기능 | 설명 |
+|------|------|
+| 한계 비용 사다리 | 계좌 유형별 인출 세율 오름차순 정렬 (일반 0% → ISA 원금 0% → 연금 비과세 풀 0% → 한도 내 연금 3.3~5.5% → ISA 수익 9.9% → 한도 초과 16.5%) |
+| 권장 인출 배분 | 연간 필요 인출액(기본값: 연 생활비 − 국민연금)을 사다리 순서로 배분, 계좌별 권장 인출액·세금 계산 |
+| 시나리오 비교 | 권장 순서 / 연금 우선 / 연금 미사용 3가지의 연간 총 부담(인출세+금융소득세+건보료) 비교 차트 |
+| 건보료 통합 | 백엔드 `health_insurance.py` 공용 모듈로 시나리오별 건강보험료 반영 (재산 과세표준·근로소득 입력 지원) |
+| 금융소득 추정 | 최근 12개월 이자·배당 실적 기반, 일반계좌 인출에 따른 금융소득 감소 반영 |
+| 듀얼 트랙 연동 | 기존 연금소득세 모델(비과세 풀·1,500만원 한도 YTD) 재사용 |
+
 #### 세금 최적화 (`/tax`)
 | 기능 | 설명 |
 |------|------|
@@ -166,6 +176,7 @@
 |------|------|
 | 포트폴리오 기반 AI 채팅 | 현재 자산·수입·인출 현황을 컨텍스트로 포함한 OpenAI 대화 |
 | 수입 현황 컨텍스트 | 이달 수입·YTD 금융소득·생활비 자급률 자동 포함 |
+| 앱 기능 참고 매핑 | "이 데이터 어디에 쓰이나요" 같은 메타 질문에 실제 기능(지출·수입·인출 기록이 반영되는 화면/계산)을 근거로 답변, 목록에 없는 기능은 추측하지 않음 |
 | 플로팅 버튼 | 모바일 우측 하단 고정 버튼 |
 
 #### 설정 (`/settings`)
@@ -343,6 +354,7 @@
 │   │   │   ├── PensionPlan.jsx        # 연금 계획 (주택연금 포함)
 │   │   │   ├── PensionOptimize.jsx    # 연금 최적화
 │   │   │   ├── PensionTax.jsx         # 연금 세금 계산
+│   │   │   ├── WithdrawalStrategy.jsx # 인출 전략 (세금+건보료 최적 인출 순서)
 │   │   │   ├── TaxOptimization.jsx    # 세금 최적화 (금융소득 모니터)
 │   │   │   ├── HealthInsurance.jsx    # 건강보험료 시뮬레이터 (저장·불러오기 포함)
 │   │   │   ├── RiskScore.jsx          # 위험 점수
@@ -371,7 +383,8 @@
 │   ├── main.py                        # 앱 진입점, CORS, 라우터 등록, Cron 엔드포인트
 │   ├── database.py                    # Supabase 클라이언트 초기화
 │   ├── utils.py                       # BUCKET_MAP, EXPECTED_RETURN, 공용 함수
-│   ├── tax_constants.py               # 연금소득세 세율·한도 상수
+│   ├── tax_constants.py               # 연금·ISA·금융소득·건보료 세율·한도 상수
+│   ├── health_insurance.py            # 건강보험료 계산 공용 모듈 (프론트 점수표와 동일)
 │   ├── advisor_context.py             # AI 어드바이저용 포트폴리오 컨텍스트 생성
 │   ├── advisor_prompt.py              # AI 시스템 프롬프트 정의
 │   ├── notifier.py                    # Gmail 이메일 알림 + 만기 자동 비활성화
@@ -379,6 +392,7 @@
 │   │   ├── assets.py                  # GET/POST/PUT/DELETE /assets
 │   │   ├── dashboard.py               # GET /dashboard (종합 집계)
 │   │   ├── pension_tax.py             # 연금소득세 계산 (퇴직연금·연금저축·ISA)
+│   │   ├── withdrawal_strategy.py     # 인출 순서 최적화 (세금+건보료 통합)
 │   │   ├── pension_plan.py            # 장기 연금 시뮬레이션
 │   │   ├── returns.py                 # 수익률 분석
 │   │   ├── rebalance.py               # 리밸런싱 계산
@@ -397,6 +411,8 @@
 │   │   └── export.py                  # Excel 내보내기
 │   ├── tests/
 │   │   ├── test_pension_tax.py        # 연금소득세 유닛 테스트
+│   │   ├── test_withdrawal_strategy.py     # 인출 전략 순수 함수 테스트
+│   │   ├── test_withdrawal_strategy_api.py # 인출 전략 라우트 스모크 테스트 (DB 모킹)
 │   │   ├── test_daily_cron.py         # Cron 로직 테스트
 │   │   └── test_assumptions.py        # 계획 가정값 테스트
 │   └── requirements.txt

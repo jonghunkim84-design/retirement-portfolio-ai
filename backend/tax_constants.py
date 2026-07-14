@@ -20,6 +20,14 @@ SEVERANCE_DISCOUNT = {
     (21, 99): 0.50,   # 21년차~: 50%
 }
 
+# ISA 계좌 (만기 해지 시)
+ISA_SEPARATE_RATE   = 0.099        # 비과세 한도 초과 수익 분리과세 (지방소득세 포함)
+ISA_TAX_FREE_LIMIT  = 2_000_000    # 일반형 비과세 한도 (서민형 400만원)
+
+# 금융소득 (이자·배당)
+FINANCIAL_WITHHOLDING_RATE        = 0.154         # 원천징수 (지방소득세 포함)
+FINANCIAL_COMPREHENSIVE_THRESHOLD = 20_000_000    # 종합과세 기준
+
 # 건강보험료 지역가입자 2026년 기준 상수
 HEALTH_INSURANCE_2026 = {
     "rate_per_point":            208.4,   # 부과점수당 금액 (원)
