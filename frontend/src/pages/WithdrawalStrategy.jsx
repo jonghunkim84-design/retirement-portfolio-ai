@@ -112,7 +112,12 @@ export default function WithdrawalStrategy() {
           />
           <NumberInput
             label="재산 과세표준 (공제 후)" unit="만원"
-            value={propertyInput} onChange={setPropertyInput} placeholder="0"
+            value={propertyInput} onChange={setPropertyInput}
+            placeholder={
+              data?.inputs?.property_tax_base_source === 'real_assets'
+                ? `${data.inputs.property_tax_base_manwon} (실물자산 추정)`
+                : '0'
+            }
           />
           <NumberInput
             label="연간 근로·사업소득" unit="만원"
@@ -121,7 +126,7 @@ export default function WithdrawalStrategy() {
         </div>
         <p className="text-[11px] text-gray-400 mt-2">
           필요 인출액 기본값 = 연 생활비 − 국민연금 수령액 ·
-          재산 과세표준은 건강보험료 시뮬레이터의 값을 참고해 입력하세요
+          재산 과세표준은 미입력 시 실물자산 등록 정보로 자동 추정됩니다 (직접 입력 시 우선)
           {isFetching && <span className="ml-2 text-blue-400">재계산 중...</span>}
         </p>
       </div>

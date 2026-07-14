@@ -231,10 +231,22 @@ def _age_rate(age: Optional[int]) -> Optional[float]:
 @router.get("/summary")
 def get_strategy_summary(
     annual_need: Optional[float] = None,
-    property_tax_base: float = 0,   # 재산 과세표준 (만원, 기본공제 차감 후)
-    earned_income: float = 0,       # 연간 근로·사업소득 (원)
+    property_tax_base: Optional[float] = None,  # 재산 과세표준 (만원, 공제 후) — 미입력 시 실물자산에서 추정
+    earned_income: float = 0,                   # 연간 근로·사업소득 (원)
 ):
     """인출 순서 사다리 + 권장 배분 + 3개 시나리오 비교."""
+    # 재산 과세표준 미입력 → 등록된 실물자산 기반 자동 추정
+    property_tax_base_source = "input"
+    if property_tax_base is None:
+        from routers.real_assets import get_property_tax_base_manwon
+        estimated = get_property_tax_base_manwon()
+        if estimated is not None:
+            property_tax_base = estimated
+            property_tax_base_source = "real_assets"
+        else:
+            property_tax_base = 0
+            property_tax_base_source = "none"
+
     config = get_config()
     assets = get_active_assets()
     plan   = config.get("pension_plan") or {}
@@ -334,6 +346,10 @@ def get_strategy_summary(
 
     # ── 경고 ────────────────────────────────────────────────────
     warnings = []
+    if property_tax_base_source == "real_assets":
+        warnings.append(
+            f"재산 과세표준 {property_tax_base:,.0f}만원은 실물자산 페이지 등록 정보 기반 추정값입니다 (직접 입력 시 우선 적용)."
+        )
     if age is not None and age < 55:
         warnings.append("55세 미만 — 연금계좌 인출 시 기타소득세 16.5% (세액공제분) 등 불이익이 있어 연금 풀을 제외했습니다.")
     if age is None:
@@ -356,6 +372,7 @@ def get_strategy_summary(
             "national_pension_annual":  round(national_pension_annual),
             "earned_income":            earned_income,
             "property_tax_base_manwon": property_tax_base,
+            "property_tax_base_source": property_tax_base_source,
             "age":                      age,
             "age_rate_pct":             round(age_rate * 100, 1) if age_rate else None,
         },

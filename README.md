@@ -39,6 +39,16 @@
 | 만기 자산 수동 정리 | 버튼 클릭으로 만기 지난 자산 일괄 비활성화 |
 | 만기 자산 자동 정리 | 매일 오전 8시 KST Vercel Cron 자동 실행 |
 
+#### 실물자산 (`/real-assets`)
+| 기능 | 설명 |
+|------|------|
+| 실물자산 CRUD | 부동산·전세보증금 등 명칭 / 분류 / 시세 / 공시가격 / 담보대출 / 취득가·취득일 / 소재지 입력 |
+| 분류 4종 | 주택 · 건물·상가·토지 · 전세보증금 · 기타 (배지 색상 구분) |
+| 순가치 계산 | 시세 − 담보대출, 취득가 대비 증감 표시 |
+| 총 순자산 합산 | 금융자산 + 실물 순자산 KPI (리밸런싱·4% 인출률·위험점수에는 미포함) |
+| 건보료 과세표준 추정 | 공시가 환산율(주택 43~45% / 건물 100% / 전세 30%) − 대출 − 기본공제 1억 자동 계산 |
+| 인출 전략 연동 | 인출 전략 페이지에서 재산 과세표준 미입력 시 실물자산 추정값 자동 사용 |
+
 #### 수익률 분석 (`/returns`)
 | 기능 | 설명 |
 |------|------|
@@ -272,6 +282,7 @@
 | `recommendations` | id, rule_id, message, date | AI 요약 및 권장사항 |
 | `notification_log` | id, notification_type, year, sent_at | 이메일 알림 중복 방지 |
 | `health_insurance_simulations` | id, user_id, label, inputs (JSONB), health_premium, long_care_premium, total_monthly, total_annual, income_score, property_score, total_score, is_dependent_eligible | 건강보험료 시뮬레이션 저장 이력 (RLS 적용) |
+| `real_assets` | id, name, category, market_value, official_price, loan_amount, acquisition_price, acquisition_date, address, memo, is_active | 실물자산 (부동산·전세보증금 등 비금융자산) |
 
 ---
 
@@ -343,6 +354,7 @@
 │   │   ├── pages/                     # 페이지 컴포넌트 (19개)
 │   │   │   ├── Dashboard.jsx          # 대시보드 (KPI·알림·현금흐름·AI 요약)
 │   │   │   ├── Assets.jsx             # 자산 관리 (CRUD·세제분류·필터)
+│   │   │   ├── RealAssets.jsx         # 실물자산 (부동산 등 비금융자산 CRUD)
 │   │   │   ├── ReturnAnalysis.jsx     # 수익률 분석
 │   │   │   ├── Rebalance.jsx          # 리밸런싱 가이드
 │   │   │   ├── MaturityGuide.jsx      # 만기 재배분 가이드
@@ -390,6 +402,7 @@
 │   ├── notifier.py                    # Gmail 이메일 알림 + 만기 자동 비활성화
 │   ├── routers/
 │   │   ├── assets.py                  # GET/POST/PUT/DELETE /assets
+│   │   ├── real_assets.py             # 실물자산 CRUD + 순자산·건보료 과세표준 요약
 │   │   ├── dashboard.py               # GET /dashboard (종합 집계)
 │   │   ├── pension_tax.py             # 연금소득세 계산 (퇴직연금·연금저축·ISA)
 │   │   ├── withdrawal_strategy.py     # 인출 순서 최적화 (세금+건보료 통합)
@@ -414,6 +427,7 @@
 │   │   ├── test_withdrawal_strategy.py     # 인출 전략 순수 함수 테스트
 │   │   ├── test_withdrawal_strategy_api.py # 인출 전략 라우트 스모크 테스트 (DB 모킹)
 │   │   ├── test_daily_cron.py         # Cron 로직 테스트
+│   │   ├── test_real_assets.py        # 실물자산 과세표준·요약 테스트
 │   │   └── test_assumptions.py        # 계획 가정값 테스트
 │   └── requirements.txt
 │
@@ -425,7 +439,8 @@
 │   ├── 2026-06-13_target_annual_return.sql
 │   ├── 2026-06-15_expenses.sql
 │   ├── 2026-06-16_income_type_earned.sql
-│   └── 2026-06-25_health_insurance_simulations.sql
+│   ├── 2026-06-25_health_insurance_simulations.sql
+│   └── 2026-07-14_real_assets.sql
 │
 ├── vercel.json                        # Vercel 배포 (experimentalServices + Cron)
 ├── .env                               # 로컬 환경 변수 (Git 제외)
@@ -486,6 +501,7 @@ Supabase Dashboard
 | `bucket_snapshots` | 버킷별 자산 스냅샷 |
 | `recommendations` | AI 포트폴리오 요약 |
 | `health_insurance_simulations` | 건강보험료 시뮬레이션 저장 이력 |
+| `real_assets` | 실물자산 (부동산·전세보증금 등) |
 
 > 이미 운영 중인 DB에 새 마이그레이션만 적용하려면 `migrations/` 폴더의 해당 파일을 순서대로 실행합니다.
 

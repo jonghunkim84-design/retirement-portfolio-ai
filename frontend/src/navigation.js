@@ -13,6 +13,7 @@ export const NAV_GROUPS = [
     icon: '📊',
     items: [
       { path: '/assets',        label: '자산 관리',    icon: '📋' },
+      { path: '/real-assets',   label: '실물자산',     icon: '🏘' },
       { path: '/returns',       label: '수익률 분석',  icon: '📈' },
       { path: '/rebalance',     label: '리밸런싱',     icon: '⚖️' },
       { path: '/maturity-guide', label: '만기 재배분', icon: '🔄' },

@@ -21,6 +21,7 @@ import TaxOptimization from './pages/TaxOptimization.jsx'
 import PensionTax      from './pages/PensionTax.jsx'
 import HealthInsurance from './pages/HealthInsurance.jsx'
 import WithdrawalStrategy from './pages/WithdrawalStrategy.jsx'
+import RealAssets from './pages/RealAssets.jsx'
 
 // 로그인하지 않으면 /login 으로 리다이렉트
 function ProtectedLayout() {
@@ -58,6 +59,7 @@ export default function App() {
           <Route element={<ProtectedLayout />}>
             <Route path="/"                 element={<Dashboard />} />
             <Route path="/assets"           element={<Assets />} />
+            <Route path="/real-assets"      element={<RealAssets />} />
             <Route path="/risk"             element={<RiskScore />} />
             <Route path="/rebalance"        element={<Rebalance />} />
             <Route path="/withdrawal"       element={<Withdrawal />} />
