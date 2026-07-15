@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useRef } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
   LineChart, Line, AreaChart, Area, ComposedChart,
@@ -289,15 +289,54 @@ export default function PensionPlan() {
     } catch {}
     return defaults
   })
-
-  useEffect(() => {
-    localStorage.setItem('home_pension_config', JSON.stringify(homePension))
-  }, [homePension])
+  const hpSaveTimer  = useRef(null)
+  const hpHydrated   = useRef(false)
 
   const { data: dash, isLoading, error } = useQuery({
     queryKey: ['dashboard'],
     queryFn: () => api.get('/dashboard').then(r => r.data),
   })
+
+  // 주택연금 설정을 서버(config.plan.home_pension)에 저장 — 기기 간 동기화
+  // (localStorage 전용 저장은 기기별로 분리되어 다른 기기에서 꺼진 것처럼 보이는 문제가 있었음)
+  const saveHomePension = hp => {
+    if (!dash) return
+    const next = JSON.parse(JSON.stringify(dash.config))
+    next.plan = {
+      ...(next.plan || {}),
+      home_pension: {
+        enabled:          hp.enabled,
+        house_value_eok:  hp.houseValueEok,
+        start_age:        hp.startAge,
+        payment_type:     hp.paymentType,
+      },
+    }
+    api.put('/config', next).then(() => qc.invalidateQueries({ queryKey: ['dashboard'] }))
+  }
+
+  const handleHomePensionChange = next => {
+    setHomePension(next)
+    localStorage.setItem('home_pension_config', JSON.stringify(next))
+    clearTimeout(hpSaveTimer.current)
+    hpSaveTimer.current = setTimeout(() => saveHomePension(next), 600)
+  }
+
+  // 최초 로드 시 서버 값으로 동기화 (서버에 없으면 로컬 값을 서버로 1회 이전)
+  useEffect(() => {
+    if (!dash || hpHydrated.current) return
+    hpHydrated.current = true
+    const serverHP = dash.config?.plan?.home_pension
+    if (serverHP) {
+      setHomePension({
+        enabled:       !!serverHP.enabled,
+        houseValueEok: serverHP.house_value_eok ?? 5,
+        startAge:      serverHP.start_age ?? 70,
+        paymentType:   serverHP.payment_type ?? 'fixed',
+      })
+    } else if (homePension.enabled) {
+      saveHomePension(homePension)
+    }
+  }, [dash])
 
   const { data: returnsData } = useQuery({
     queryKey: ['returns'],
@@ -699,7 +738,7 @@ export default function PensionPlan() {
       {/* 주택연금 시뮬레이션 패널 */}
       <HomePensionPanel
         homePension={homePension}
-        onChange={setHomePension}
+        onChange={handleHomePensionChange}
         currentAge={currentAge}
       />
 

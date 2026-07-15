@@ -170,15 +170,6 @@ export default function Dashboard() {
   const nav = useNavigate()
   const [aiOpen, setAiOpen] = useState(false)
 
-  // 주택연금 시뮬레이션 설정 — 연금 계획(PensionPlan) 페이지와 동일 소스 공유
-  const [homePensionCfg] = useState(() => {
-    try {
-      const saved = localStorage.getItem('home_pension_config')
-      if (saved) return JSON.parse(saved)
-    } catch {}
-    return null
-  })
-
   const { data, isLoading, error } = useQuery({
     queryKey: ['dashboard'],
     queryFn:  () => api.get('/dashboard').then(r => r.data),
@@ -239,10 +230,12 @@ export default function Dashboard() {
 
   // 몬테카를로 성공 확률 (500 경로 — 대시보드용 경량 실행)
   // 수익률 우선순위·주택연금 반영 — 연금 계획(PensionPlan) 페이지와 동일 기준 사용
+  // 주택연금 설정은 config.plan.home_pension(서버)에서 읽어 기기 간 동일하게 반영
   const mcReturnRate = data?.config?.plan?.target_annual_return
     ?? returnsData?.portfolio_annual_return
     ?? data?.estimated_return_rate
     ?? 4
+  const homePensionCfg = data?.config?.plan?.home_pension
   const { data: mcData } = useQuery({
     queryKey: ['montecarlo-dash', mcReturnRate, homePensionCfg],
     queryFn:  () => api.post('/simulation/montecarlo', {
@@ -250,9 +243,9 @@ export default function Dashboard() {
       runs: 500,
       home_pension: homePensionCfg?.enabled ? {
         enabled: true,
-        house_value_eok: homePensionCfg.houseValueEok,
-        start_age: homePensionCfg.startAge,
-        payment_type: homePensionCfg.paymentType,
+        house_value_eok: homePensionCfg.house_value_eok,
+        start_age: homePensionCfg.start_age,
+        payment_type: homePensionCfg.payment_type,
       } : undefined,
     }).then(r => r.data),
     staleTime: 10 * 60 * 1000,

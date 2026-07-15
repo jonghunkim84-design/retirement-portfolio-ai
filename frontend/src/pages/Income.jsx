@@ -289,7 +289,8 @@ export default function Income() {
   return (
     <div className="space-y-5">
       {/* 헤더 */}
-      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#1a5c96] text-white rounded-xl px-6 py-4 flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#1a5c96] text-white rounded-xl
+                      px-4 md:px-6 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>
           <h1 className="text-xl font-bold">💰 배당·이자 수입 추적</h1>
           <p className="text-blue-200 text-sm mt-1">
@@ -297,7 +298,7 @@ export default function Income() {
           </p>
         </div>
         <button
-          className="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/30 whitespace-nowrap"
+          className="self-start sm:self-auto bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/30 whitespace-nowrap"
           onClick={() => setTaxCompareOpen(true)}>
           🧾 세금 비교
         </button>
