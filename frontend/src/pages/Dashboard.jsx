@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import api, { fmt, LEVEL_COLOR } from '../api/client.js'
+import api, { fmt } from '../api/client.js'
 
 const ASSET_TYPE_KO = {
   cash: '현금성', bond: '채권', tdf: 'TDF',
@@ -9,8 +9,29 @@ const ASSET_TYPE_KO = {
 }
 
 // ── 알림 목록 생성 ────────────────────────────────────────────────
-function buildAlerts(data, nominalReturn) {
+function buildAlerts(data, nominalReturn, pensionLimit, mcSuccess) {
   const alerts = []
+
+  // 연금 1,500만원 한도 (시급성 — 연내 인출 조절 필요)
+  if (pensionLimit) {
+    const pct = pensionLimit.pct ?? 0
+    if (pensionLimit.is_over_limit)
+      alerts.push({ level: 'red', icon: '🏖', title: `연금 인출 한도 초과 — ${pct.toFixed(0)}%`,
+        detail: `한도 대상 인출 ${Math.round(pensionLimit.ytd_amount / 10000).toLocaleString()}만원 · 초과분 16.5% 과세. 연내 인출 중단 검토`, link: '/pension-tax' })
+    else if (pct >= 80)
+      alerts.push({ level: 'yellow', icon: '🏖', title: `연금 인출 한도 ${pct.toFixed(0)}% 소진`,
+        detail: `잔여 ${Math.round(pensionLimit.remaining / 10000).toLocaleString()}만원 — 연말까지 인출 속도 조절 필요`, link: '/pension-tax' })
+  }
+
+  // 몬테카를로 성공 확률 (계획의 지속 가능성)
+  if (mcSuccess != null) {
+    if (mcSuccess < 70)
+      alerts.push({ level: 'red', icon: '🎲', title: `계획 성공 확률 ${mcSuccess}% — 위험`,
+        detail: '95세까지 자산 유지 확률이 70% 미만. 지출·배분 조정 필요', link: '/pension-plan' })
+    else if (mcSuccess < 85)
+      alerts.push({ level: 'yellow', icon: '🎲', title: `계획 성공 확률 ${mcSuccess}% — 점검`,
+        detail: '95세까지 자산 유지 확률이 85% 미만. 연금 계획 시나리오 검토 권장', link: '/pension-plan' })
+  }
   const {
     risk, emergency_liquidity, maturing_60d,
     bucket_deviations, withdrawal_rate, config,
@@ -127,75 +148,6 @@ function DeviationRow({ label, currentRatio, targetRatio }) {
   )
 }
 
-// ── 비상 유동성 카드 ──────────────────────────────────────────────
-function LiquidityCard({ liquidity }) {
-  const months         = liquidity?.months ?? null
-  const cashTotal      = liquidity?.cash_total      ?? 0
-  const monthlyExpenses = liquidity?.monthly_expenses ?? 0
-
-  const pct = months != null ? Math.min(Math.round((months / 12) * 100), 100) : 0
-
-  const status =
-    months == null  ? { label: '계산 불가', badge: 'bg-gray-100 text-gray-500',    border: 'border-gray-400',  bar: 'bg-gray-300',   text: 'text-gray-500' }
-    : months >= 12  ? { label: '안전',      badge: 'bg-green-100 text-green-700',  border: 'border-green-500', bar: 'bg-green-400',  text: 'text-green-600' }
-    : months >= 6   ? { label: '주의',      badge: 'bg-yellow-100 text-yellow-700',border: 'border-yellow-400',bar: 'bg-yellow-400', text: 'text-yellow-600' }
-                    : { label: '위험',      badge: 'bg-red-100 text-red-700',      border: 'border-red-500',   bar: 'bg-red-400',    text: 'text-red-600' }
-
-  return (
-    <div className={`card border-l-4 ${status.border}`}>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-700">💧 비상 유동성 비율</h3>
-        <span className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${status.badge}`}>
-          {status.label}
-        </span>
-      </div>
-
-      {/* 대형 개월 수 */}
-      <div className="flex items-end gap-2 mb-4">
-        <span className={`text-5xl font-bold leading-none ${status.text}`}>
-          {months != null ? months.toFixed(1) : '—'}
-        </span>
-        <div className="mb-1 leading-tight">
-          <div className="text-lg text-gray-600 font-medium">개월</div>
-          <div className="text-[11px] text-gray-400">/ 권장 12개월</div>
-        </div>
-      </div>
-
-      {/* 프로그레스바 */}
-      <div className="mb-4">
-        <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
-          <div className={`h-full rounded-full ${status.bar} transition-all duration-500`}
-               style={{ width: `${pct}%` }} />
-          {/* 6개월(50%) · 12개월(100%) 마커 */}
-          <div className="absolute top-0 bottom-0 w-0.5 bg-gray-400 z-10 opacity-60"
-               style={{ left: '50%' }} />
-        </div>
-        <div className="flex justify-between text-[10px] text-gray-400 mt-1 px-0.5">
-          <span>0</span>
-          <span>6개월</span>
-          <span>12개월</span>
-        </div>
-      </div>
-
-      {/* 현금성 자산 / 월 생활비 상세 */}
-      <div className="space-y-2 text-xs border-t border-gray-100 pt-3">
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">현금성 자산 합계</span>
-          <span className="font-semibold text-gray-800">
-            {Math.round(cashTotal / 10000).toLocaleString()}만원
-          </span>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-gray-500">월 생활비</span>
-          <span className="font-semibold text-gray-800">
-            {Math.round(monthlyExpenses / 10000).toLocaleString()}만원
-          </span>
-        </div>
-      </div>
-    </div>
-  )
-}
-
 // ── KPI 카드 ──────────────────────────────────────────────────────
 function KpiCard({ icon, label, value, sub, borderColor, onClick }) {
   return (
@@ -244,6 +196,41 @@ export default function Dashboard() {
     enabled:  !!data,
   })
 
+  // 총 순자산 (금융 + 실물)
+  const { data: realAssets } = useQuery({
+    queryKey: ['real-assets-summary'],
+    queryFn:  () => api.get('/real-assets/summary').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!data,
+  })
+
+  // 이달 인출·실적 인출률
+  const { data: wdSummary } = useQuery({
+    queryKey: ['withdrawals-summary'],
+    queryFn:  () => api.get('/withdrawals/summary').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!data,
+  })
+
+  // 연금 1,500만원 한도
+  const { data: ptData } = useQuery({
+    queryKey: ['pension-tax-summary'],
+    queryFn:  () => api.get('/pension-tax/summary').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!data,
+  })
+
+  // 몬테카를로 성공 확률 (500 경로 — 대시보드용 경량 실행)
+  const { data: mcData } = useQuery({
+    queryKey: ['montecarlo-dash', data?.estimated_return_rate],
+    queryFn:  () => api.post('/simulation/montecarlo', {
+      return_rate_pct: data?.estimated_return_rate ?? 4,
+      runs: 500,
+    }).then(r => r.data),
+    staleTime: 10 * 60 * 1000,
+    enabled:  !!data,
+  })
+
   const genSummary = useMutation({
     mutationFn: () => api.post('/summary/generate'),
     onSuccess:  () => qc.invalidateQueries({ queryKey: ['dashboard'] }),
@@ -280,7 +267,7 @@ export default function Dashboard() {
   const dateStr = `${today.getFullYear()}년 ${today.getMonth() + 1}월 ${today.getDate()}일`
 
   // 알림 목록
-  const alerts      = buildAlerts(data, nominalReturn)
+  const alerts      = buildAlerts(data, nominalReturn, ptData?.limit_ytd, mcData?.success_prob)
   const redCount    = alerts.filter(a => a.level === 'red').length
   const yellowCount = alerts.filter(a => a.level === 'yellow').length
 
@@ -293,11 +280,29 @@ export default function Dashboard() {
   const tgtEquity = targets.target_equity ?? 0.35
   const tgtIncome = targets.target_income ?? 0.15
 
-  // KPI 색상
-  const wr = withdrawal_rate ?? 0
-  const wrBorder = wr > 5 ? 'border-red-500' : wr > 4 ? 'border-yellow-400' : 'border-green-500'
-  const wrText   = wr > 5 ? 'text-red-600'   : wr > 4 ? 'text-yellow-600'   : 'text-green-600'
+  // ── KPI 파생값 ────────────────────────────────────────────────
+  // ① 총 순자산 (금융 + 실물 − 대출)
+  const combinedNet = realAssets?.combined_net_worth ?? buckets.total
+  const hasReal     = (realAssets?.count ?? 0) > 0
 
+  // ② 계획 성공 확률 (몬테카를로)
+  const mcProb   = mcData?.success_prob
+  const mcBorder = mcProb == null ? 'border-gray-300' : mcProb >= 85 ? 'border-green-500' : mcProb >= 70 ? 'border-yellow-400' : 'border-red-500'
+  const mcText   = mcProb == null ? 'text-gray-400'   : mcProb >= 85 ? 'text-green-600'   : mcProb >= 70 ? 'text-yellow-600'   : 'text-red-600'
+
+  // ③ 이달 인출 (실적)
+  const curWd       = wdSummary?.current_month_total ?? 0
+  const actualRate  = wdSummary?.withdrawal_rate_pct
+  const wdBorder = actualRate == null ? 'border-gray-300' : actualRate <= 4 ? 'border-green-500' : actualRate <= 5 ? 'border-yellow-400' : 'border-red-500'
+  const wdText   = actualRate == null ? 'text-gray-700'   : actualRate <= 4 ? 'text-green-600'   : actualRate <= 5 ? 'text-yellow-600'   : 'text-red-600'
+
+  // ④ 연금 1,500만원 한도
+  const lim       = ptData?.limit_ytd
+  const limPct    = lim?.pct ?? 0
+  const limBorder = lim?.status === 'danger' ? 'border-red-500' : lim?.status === 'warning' ? 'border-yellow-400' : 'border-green-500'
+  const limText   = lim?.status === 'danger' ? 'text-red-600'   : lim?.status === 'warning' ? 'text-yellow-600'   : 'text-green-600'
+
+  // ⑤ 금융소득 2,000만원 한도
   const finYtd       = taxData?.financial_income_ytd ?? 0
   const finRemaining = taxData?.remaining            ?? 20_000_000
   const finPct       = taxData?.utilization_pct      ?? 0
@@ -305,15 +310,10 @@ export default function Dashboard() {
   const finBorder    = finStatus === 'danger' ? 'border-red-500' : finStatus === 'warning' ? 'border-yellow-400' : 'border-green-500'
   const finText      = finStatus === 'danger' ? 'text-red-600'   : finStatus === 'warning' ? 'text-yellow-600'   : 'text-green-600'
 
-  const riskBorder = risk?.level === 'red'    ? 'border-red-500'
-                   : risk?.level === 'yellow' ? 'border-yellow-400' : 'border-green-500'
-  const riskText   = risk?.level === 'red'    ? 'text-red-600'
-                   : risk?.level === 'yellow' ? 'text-yellow-600'   : 'text-green-600'
-
-  const realBorder = realAfterTax < 0 ? 'border-red-500'
-                   : realAfterTax < 2 ? 'border-yellow-400' : 'border-green-500'
-  const realText   = realAfterTax < 0 ? 'text-red-600'
-                   : realAfterTax < 2 ? 'text-yellow-600'   : 'text-green-600'
+  // ⑥ 비상자금
+  const emMonths  = liquidity?.months ?? emergency_liquidity?.months ?? 0
+  const emBorder  = emMonths >= 12 ? 'border-green-500' : emMonths >= 6 ? 'border-yellow-400' : 'border-red-500'
+  const emText    = emMonths >= 12 ? 'text-green-600'   : emMonths >= 6 ? 'text-yellow-600'   : 'text-red-600'
 
   // ── 렌더 ──────────────────────────────────────────────────────
   return (
@@ -394,37 +394,71 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* ─── Zone 2: KPI 6개 ───────────────────────────────────── */}
+      {/* ─── Zone 2: 핵심 KPI 6개 (시급성 순) ──────────────────── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
 
-        {/* 총 자산 */}
+        {/* ① 총 순자산 (금융+실물) */}
         <KpiCard
-          icon="💰" label="총 자산"
-          value={fmt.eok(buckets.total)}
-          sub={`B1 ${(buckets.b1 / 1e8).toFixed(1)}억 · B2 ${(buckets.b2 / 1e8).toFixed(1)}억 · B3 ${(buckets.b3 / 1e8).toFixed(1)}억`}
+          icon="💰" label="총 순자산"
+          value={fmt.eok(combinedNet)}
+          sub={hasReal
+            ? `금융 ${(buckets.total / 1e8).toFixed(1)}억 · 실물 ${((realAssets?.net_value ?? 0) / 1e8).toFixed(1)}억`
+            : `B1 ${(buckets.b1 / 1e8).toFixed(1)}억 · B2 ${(buckets.b2 / 1e8).toFixed(1)}억 · B3 ${(buckets.b3 / 1e8).toFixed(1)}억`}
           borderColor="border-blue-500"
           onClick={() => nav('/networth')}
         />
 
-        {/* 인출률 */}
-        <div className={`card border-l-4 ${wrBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => nav('/withdrawal')}>
+        {/* ② 계획 성공 확률 (몬테카를로) */}
+        <div className={`card border-l-4 ${mcBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
+             onClick={() => nav('/pension-plan')}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] text-gray-500 font-medium">인출률 (연)</span>
-            <span className="text-lg">💸</span>
+            <span className="text-[11px] text-gray-500 font-medium">계획 성공 확률</span>
+            <span className="text-lg">🎲</span>
           </div>
-          <div className={`text-xl font-bold ${wrText}`}>{wr.toFixed(1)}%</div>
+          <div className={`text-xl font-bold ${mcText}`}>
+            {mcProb == null ? '...' : `${mcProb}%`}
+          </div>
           <div className="text-[11px] text-gray-400 mt-0.5">
-            {wr <= 4 ? '✅ 4% 기준 이하' : wr <= 5 ? '⚠️ 4% 기준 초과' : '🔴 위험 수준'}
+            {mcProb == null ? '시뮬레이션 중' : '95세까지 자산 유지'}
           </div>
         </div>
 
-        {/* 금융소득 종합과세 */}
+        {/* ③ 이달 인출 */}
+        <div className={`card border-l-4 ${wdBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
+             onClick={() => nav('/withdrawal')}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] text-gray-500 font-medium">이달 인출</span>
+            <span className="text-lg">💸</span>
+          </div>
+          <div className={`text-xl font-bold ${wdText}`}>
+            {Math.round(curWd / 10000).toLocaleString()}만
+          </div>
+          <div className="text-[11px] text-gray-400 mt-0.5">
+            {actualRate != null ? `실적 인출률 ${actualRate}%` : '기록 없음'}
+          </div>
+        </div>
+
+        {/* ④ 연금 인출 한도 (1,500만) */}
+        <div className={`card border-l-4 ${limBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
+             onClick={() => nav('/pension-tax')}>
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] text-gray-500 font-medium">연금 한도</span>
+            <span className="text-lg">🏖</span>
+          </div>
+          <div className={`text-xl font-bold ${limText}`}>
+            {lim ? `${limPct.toFixed(0)}%` : '...'}
+          </div>
+          <div className="text-[11px] text-gray-400 mt-0.5">
+            {lim ? `잔여 ${Math.round(lim.remaining / 10000).toLocaleString()}만` : '1,500만 기준'}
+          </div>
+        </div>
+
+        {/* ⑤ 금융소득 종합과세 (2,000만) */}
         <div className={`card border-l-4 ${finBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
              onClick={() => nav('/withdrawal-strategy')}>
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] text-gray-500 font-medium">금융소득</span>
-            <span className="text-lg">💰</span>
+            <span className="text-lg">🧾</span>
           </div>
           <div className={`text-xl font-bold ${finText}`}>
             {taxLoading ? '...' : `${Math.round(finYtd / 10000).toLocaleString()}만`}
@@ -434,58 +468,15 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 세후 실질수익률 */}
-        <div className={`card border-l-4 ${realBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => nav('/returns')}>
+        {/* ⑥ 비상자금 */}
+        <div className={`card border-l-4 ${emBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
+             onClick={() => nav('/rebalance')}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] text-gray-500 font-medium">세후 실질수익률</span>
-            <span className="text-lg">📈</span>
+            <span className="text-[11px] text-gray-500 font-medium">비상자금</span>
+            <span className="text-lg">🛡</span>
           </div>
-          <div className={`text-xl font-bold ${realText}`}>
-            {realAfterTax >= 0 ? '+' : ''}{realAfterTax.toFixed(1)}%
-          </div>
-          <div className="text-[11px] text-gray-400 mt-0.5">
-            명목 {nominalReturn.toFixed(1)}% · {returnSource === 'actual' ? '실현' : '기대'}
-          </div>
-        </div>
-
-        {/* 위험점수 */}
-        <div className={`card border-l-4 ${riskBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => nav('/risk')}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] text-gray-500 font-medium">위험점수</span>
-            <span className="text-lg">⚠️</span>
-          </div>
-          <div className={`text-xl font-bold ${riskText}`}>{risk?.total_score ?? 0}점</div>
-          <div className="text-[11px] text-gray-400 mt-0.5">
-            {LEVEL_COLOR[risk?.level]?.label ?? '🟢 안전'} · /100점
-          </div>
-        </div>
-
-        {/* 국민연금 */}
-        <div className="card border-l-4 border-purple-500 p-3 cursor-pointer hover:shadow-md transition-shadow"
-             onClick={() => nav('/pension-plan')}>
-          <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] text-gray-500 font-medium">국민연금</span>
-            <span className="text-lg">🏛</span>
-          </div>
-          {pension.income > 0 ? (
-            <>
-              <div className="text-xl font-bold text-purple-600">
-                {Math.round(pension.income / 10000).toLocaleString()}만원
-              </div>
-              <div className="text-[11px] text-gray-400 mt-0.5">월 수령 중</div>
-            </>
-          ) : (
-            <>
-              <div className="text-xl font-bold text-purple-600">
-                D-{pension.months_to_start}
-              </div>
-              <div className="text-[11px] text-gray-400 mt-0.5">
-                {pension.start_date} 개시
-              </div>
-            </>
-          )}
+          <div className={`text-xl font-bold ${emText}`}>{Number(emMonths).toFixed(1)}개월</div>
+          <div className="text-[11px] text-gray-400 mt-0.5">권장 12개월 · 현금성 기준</div>
         </div>
       </div>
 
@@ -662,10 +653,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ─── Zone 4: 비상 유동성 비율 ─────────────────────────── */}
-      <LiquidityCard liquidity={liquidity} />
-
-      {/* ─── Zone 5: AI 요약 (접이식) ──────────────────────────── */}
+      {/* ─── Zone 4: AI 요약 (접이식) ──────────────────────────── */}
       <div className="card border-l-4 border-blue-400">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
