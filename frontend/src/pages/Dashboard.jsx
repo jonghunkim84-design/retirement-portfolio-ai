@@ -229,6 +229,14 @@ export default function Dashboard() {
     enabled:  !!data,
   })
 
+  // 올해 수입 합계 (수입 관리 화면과 동일 소스)
+  const { data: incomeSummary } = useQuery({
+    queryKey: ['income-summary-dash'],
+    queryFn:  () => api.get('/income/summary').then(r => r.data),
+    staleTime: 5 * 60 * 1000,
+    enabled:  !!data,
+  })
+
   // 몬테카를로 성공 확률 (500 경로 — 대시보드용 경량 실행)
   // 수익률 우선순위·주택연금 반영 — 연금 계획(PensionPlan) 페이지와 동일 기준 사용
   const mcReturnRate = data?.config?.plan?.target_annual_return
@@ -316,11 +324,10 @@ export default function Dashboard() {
   const wdBorder = actualRate == null ? 'border-gray-300' : actualRate <= 4 ? 'border-green-500' : actualRate <= 5 ? 'border-yellow-400' : 'border-red-500'
   const wdText   = actualRate == null ? 'text-gray-700'   : actualRate <= 4 ? 'text-green-600'   : actualRate <= 5 ? 'text-yellow-600'   : 'text-red-600'
 
-  // ④ 연금 1,500만원 한도
-  const lim       = ptData?.limit_ytd
-  const limPct    = lim?.pct ?? 0
-  const limBorder = lim?.status === 'danger' ? 'border-red-500' : lim?.status === 'warning' ? 'border-yellow-400' : 'border-green-500'
-  const limText   = lim?.status === 'danger' ? 'text-red-600'   : lim?.status === 'warning' ? 'text-yellow-600'   : 'text-green-600'
+  // ④ 올해 수입 합계
+  const incomeYear     = incomeSummary?.current_year ?? new Date().getFullYear()
+  const incomeThisYear = incomeSummary?.total_this_year ?? 0
+  const incomeTypes    = incomeSummary?.type_totals ?? {}
 
   // ⑤ 금융소득 2,000만원 한도
   const finYtd       = taxData?.financial_income_ytd ?? 0
@@ -458,18 +465,18 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* ④ 연금 인출 한도 (1,500만) */}
-        <div className={`card border-l-4 ${limBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => nav('/pension-tax')}>
+        {/* ④ 올해 수입 합계 */}
+        <div className="card border-l-4 border-blue-400 p-3 cursor-pointer hover:shadow-md transition-shadow"
+             onClick={() => nav('/income')}>
           <div className="flex items-center justify-between mb-1">
-            <span className="text-[11px] text-gray-500 font-medium">연금 한도</span>
-            <span className="text-lg">🏖</span>
+            <span className="text-[11px] text-gray-500 font-medium">{incomeYear}년 수입 합계</span>
+            <span className="text-lg">📅</span>
           </div>
-          <div className={`text-xl font-bold ${limText}`}>
-            {lim ? `${limPct.toFixed(0)}%` : '...'}
+          <div className="text-xl font-bold text-blue-700">
+            {Math.round(incomeThisYear / 10000).toLocaleString()}만
           </div>
           <div className="text-[11px] text-gray-400 mt-0.5">
-            {lim ? `잔여 ${Math.round(lim.remaining / 10000).toLocaleString()}만` : '1,500만 기준'}
+            이자 {Math.round((incomeTypes.interest||0) / 10000).toLocaleString()}만 · 배당 {Math.round((incomeTypes.dividend||0) / 10000).toLocaleString()}만
           </div>
         </div>
 
