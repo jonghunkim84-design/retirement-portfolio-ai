@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import {
-  LineChart, Line, AreaChart, Area,
+  LineChart, Line, AreaChart, Area, ComposedChart,
   XAxis, YAxis, Tooltip, Legend,
   ResponsiveContainer, ReferenceLine, CartesianGrid,
 } from 'recharts'
@@ -138,12 +138,15 @@ function FlowTooltip({ active, payload, label }) {
 
 function BalTooltip({ active, payload, label }) {
   if (!active || !payload?.length) return null
+  const rows = payload.filter(p => !Array.isArray(p.value))
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg text-xs">
       <div className="font-bold text-gray-700 mb-1">{label}년</div>
-      <div style={{ color: '#3b82f6' }}>
-        포트폴리오 잔액: <span className="font-semibold">{payload[0].value}억원</span>
-      </div>
+      {rows.map((p, i) => (
+        <div key={i} style={{ color: p.color || '#3b82f6' }}>
+          {p.name}: <span className="font-semibold">{p.value}억원</span>
+        </div>
+      ))}
     </div>
   )
 }
@@ -312,6 +315,36 @@ export default function PensionPlan() {
   const estateTarget  = estate?.target_amount ?? 0
   const hasGifts      = Object.keys(giftsByYear).length > 0
 
+  // 몬테카를로 시뮬레이션 (1,000개 경로)
+  const { data: mc, isFetching: mcFetching } = useQuery({
+    queryKey: ['montecarlo', returnRate, homePension],
+    queryFn: () => api.post('/simulation/montecarlo', {
+      return_rate_pct: returnRate,
+      runs: 1000,
+      home_pension: {
+        enabled: homePension.enabled,
+        house_value_eok: homePension.houseValueEok,
+        start_age: homePension.startAge,
+        payment_type: homePension.paymentType,
+      },
+    }).then(r => r.data),
+    enabled: !isLoading,
+    staleTime: 60 * 1000,
+  })
+
+  const mcByYear = useMemo(() => {
+    if (!mc) return {}
+    const m = {}
+    mc.years.forEach((y, i) => {
+      m[y] = {
+        p5:  mc.percentiles.p5[i],  p25: mc.percentiles.p25[i],
+        p50: mc.percentiles.p50[i], p75: mc.percentiles.p75[i],
+        p95: mc.percentiles.p95[i],
+      }
+    })
+    return m
+  }, [mc])
+
   // 저장된 계획용 목표 수익률 (단일 출처: config.plan.target_annual_return)
   const savedTarget = dash?.config?.plan?.target_annual_return ?? null
 
@@ -421,14 +454,20 @@ export default function PensionPlan() {
     ? calcHomePensionMonthly(homePension.houseValueEok, homePension.startAge, homePension.paymentType, 0)
     : 0
 
-  const chartData = rows.map(r => ({
-    year:         r.year,
-    expense:      Math.round(r.monthlyExpense    / 10000),
-    pension:      Math.round(r.pensionMonthly    / 10000),
-    homePension:  Math.round(r.homePensionMonthly / 10000),
-    withdrawal:   Math.round(r.monthlyWithdrawal / 10000),
-    balance:      +(r.portfolioBalance / 1e8).toFixed(1),
-  }))
+  const chartData = rows.map(r => {
+    const q = mcByYear[r.year]
+    return {
+      year:         r.year,
+      expense:      Math.round(r.monthlyExpense    / 10000),
+      pension:      Math.round(r.pensionMonthly    / 10000),
+      homePension:  Math.round(r.homePensionMonthly / 10000),
+      withdrawal:   Math.round(r.monthlyWithdrawal / 10000),
+      balance:      +(r.portfolioBalance / 1e8).toFixed(1),
+      band90:       q ? [+(q.p5 / 1e8).toFixed(1),  +(q.p95 / 1e8).toFixed(1)] : undefined,
+      band50:       q ? [+(q.p25 / 1e8).toFixed(1), +(q.p75 / 1e8).toFixed(1)] : undefined,
+      median:       q ? +(q.p50 / 1e8).toFixed(1) : undefined,
+    }
+  })
 
   const retireAge  = config.user?.retirement_age
   const retireYear = retireAge ? birthYear + retireAge : null
@@ -598,6 +637,59 @@ export default function PensionPlan() {
         </div>
       )}
 
+      {/* 몬테카를로 시뮬레이션 결과 */}
+      <div className="card">
+        <div className="flex items-center justify-between mb-1">
+          <h3 className="text-sm font-semibold text-gray-700">
+            🎲 몬테카를로 시뮬레이션 {mcFetching && <span className="text-[11px] text-blue-400 font-normal">재계산 중...</span>}
+          </h3>
+          {mc && (
+            <span className="text-[11px] text-gray-400">
+              {mc.runs.toLocaleString()}개 경로 · μ {mc.assumptions.mu_pct}% · σ {mc.assumptions.sigma_pct}% (버킷 구성 기반)
+            </span>
+          )}
+        </div>
+        {!mc ? (
+          <div className="text-sm text-gray-400 py-4 text-center">시뮬레이션 계산 중...</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-3">
+              <div className="text-center">
+                <p className="text-[11px] text-gray-400 mb-1">95세까지 자산 유지 확률</p>
+                <p className={`text-2xl font-bold ${
+                  mc.success_prob >= 90 ? 'text-green-600' : mc.success_prob >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                  {mc.success_prob}%
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-[11px] text-gray-400 mb-1">상속 목표 달성 확률</p>
+                <p className={`text-2xl font-bold ${
+                  mc.estate_success_prob == null ? 'text-gray-300'
+                  : mc.estate_success_prob >= 90 ? 'text-green-600'
+                  : mc.estate_success_prob >= 70 ? 'text-yellow-600' : 'text-red-600'}`}>
+                  {mc.estate_success_prob == null ? '목표 미설정' : `${mc.estate_success_prob}%`}
+                </p>
+              </div>
+              <div className="text-center">
+                <p className="text-[11px] text-gray-400 mb-1">95세 잔액 중앙값</p>
+                <p className="text-2xl font-bold text-gray-800">{fmt.eok(mc.final.median)}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[11px] text-gray-400 mb-1">고갈 시나리오</p>
+                <p className="text-2xl font-bold text-gray-800">{mc.depletion.prob}%</p>
+                {mc.depletion.median_year && (
+                  <p className="text-[10px] text-gray-400">고갈 시 중앙값 {mc.depletion.median_year}년</p>
+                )}
+              </div>
+            </div>
+            <p className="text-[11px] text-gray-400 mt-3 border-t border-gray-100 pt-2">
+              ⚠️ 정규분포·완전 상관 가정의 추정치입니다 — 극단적 폭락은 과소평가될 수 있으며,
+              확률은 보장이 아니라 입력한 수익률·변동성 가정 위의 계산입니다.
+            </p>
+          </>
+        )}
+      </div>
+
       {/* 주택연금 시뮬레이션 패널 */}
       <HomePensionPanel
         homePension={homePension}
@@ -647,9 +739,10 @@ export default function PensionPlan() {
         <p className="text-xs text-gray-400 mb-4">
           연 수익률 {returnRate}% 가정 · 매년 인출 후 잔액
           {homePension.enabled && ' · 주택연금 수령 포함'}
+          {mc && ' · 음영 = 몬테카를로 25~75% / 5~95% 범위'}
         </p>
-        <ResponsiveContainer width="100%" height={220}>
-          <AreaChart data={chartData} margin={{ top: 10, right: 20, bottom: 5, left: 15 }}>
+        <ResponsiveContainer width="100%" height={260}>
+          <ComposedChart data={chartData} margin={{ top: 10, right: 20, bottom: 5, left: 15 }}>
             <defs>
               <linearGradient id="balGrad" x1="0" y1="0" x2="0" y2="1">
                 <stop offset="5%"  stopColor="#3b82f6" stopOpacity={0.35} />
@@ -671,9 +764,23 @@ export default function PensionPlan() {
               <ReferenceLine y={+(estateTarget / 1e8).toFixed(1)} stroke="#10b981" strokeWidth={2} strokeDasharray="8 4"
                 label={{ value: `상속 목표 ${(estateTarget / 1e8).toFixed(1)}억`, position: 'insideTopRight', fontSize: 10, fill: '#10b981' }} />
             )}
-            <Area type="monotone" dataKey="balance" name="포트폴리오 잔액"
+            {mc && (
+              <Area type="monotone" dataKey="band90" name="5~95% 범위"
+                stroke="none" fill="#93c5fd" fillOpacity={0.22}
+                connectNulls isAnimationActive={false} legendType="none" />
+            )}
+            {mc && (
+              <Area type="monotone" dataKey="band50" name="25~75% 범위"
+                stroke="none" fill="#60a5fa" fillOpacity={0.30}
+                connectNulls isAnimationActive={false} legendType="none" />
+            )}
+            {mc && (
+              <Line type="monotone" dataKey="median" name="시뮬레이션 중앙값"
+                stroke="#6366f1" strokeWidth={1.5} strokeDasharray="4 3" dot={false} />
+            )}
+            <Area type="monotone" dataKey="balance" name="포트폴리오 잔액 (고정 수익률)"
               stroke="#3b82f6" fill="url(#balGrad)" strokeWidth={2.5} dot={false} />
-          </AreaChart>
+          </ComposedChart>
         </ResponsiveContainer>
       </div>
 
