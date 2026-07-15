@@ -4,6 +4,15 @@ from typing import Optional
 from datetime import date
 from database import supabase
 from utils import get_config, get_pension_info
+from tax_constants import (
+    FINANCIAL_WITHHOLDING_RATE,
+    COMPREHENSIVE_TAX_BRACKETS,
+    LOCAL_INCOME_TAX_RATE,
+    PERSONAL_DEDUCTION_PER_PERSON,
+    CARD_DEDUCTION_THRESHOLD_RATE,
+    CARD_DEDUCTION_RATE,
+    CARD_DEDUCTION_CAP,
+)
 
 router = APIRouter()
 
@@ -172,4 +181,90 @@ def get_income_summary():
         "by_asset":             by_asset_list,
         "type_totals":          type_totals,
         "current_year":         current_year,
+    }
+
+
+# ── 세금 비교: 원천징수 15.4% vs 종합소득세(단순화) ─────────────────────
+def _calc_comprehensive_tax(total_income: float, dependents: int, card_amount: float) -> dict:
+    """인적공제 + 카드공제만 반영한 단순화 종합소득세 계산.
+
+    실제 신고 시에는 근로소득공제·각종 세액공제(자녀·의료비·기부금 등)·
+    카드공제 한도의 총급여 구간별 차등 등이 추가로 반영되므로, 이 계산은
+    개략적인 비교 참고용이며 실제 신고세액과 다를 수 있습니다.
+    """
+    dependents  = max(1, dependents)
+    card_amount = max(0.0, card_amount)
+
+    personal_deduction = dependents * PERSONAL_DEDUCTION_PER_PERSON
+
+    card_threshold = total_income * CARD_DEDUCTION_THRESHOLD_RATE
+    card_over      = max(0.0, card_amount - card_threshold)
+    card_deduction = min(CARD_DEDUCTION_CAP, card_over * CARD_DEDUCTION_RATE)
+
+    total_deduction = personal_deduction + card_deduction
+    taxable_base    = max(0.0, total_income - total_deduction)
+
+    bracket_rate = COMPREHENSIVE_TAX_BRACKETS[-1][1]
+    prog_deduct  = COMPREHENSIVE_TAX_BRACKETS[-1][2]
+    for upper, rate, deduction in COMPREHENSIVE_TAX_BRACKETS:
+        if taxable_base <= upper:
+            bracket_rate, prog_deduct = rate, deduction
+            break
+
+    income_tax = max(0.0, taxable_base * bracket_rate - prog_deduct)
+    local_tax  = income_tax * LOCAL_INCOME_TAX_RATE
+    total_tax  = income_tax + local_tax
+
+    return {
+        "personal_deduction":  round(personal_deduction),
+        "card_deduction":      round(card_deduction),
+        "total_deduction":     round(total_deduction),
+        "taxable_base":        round(taxable_base),
+        "bracket_rate_pct":    round(bracket_rate * 100, 1),
+        "income_tax":          round(income_tax),
+        "local_tax":           round(local_tax),
+        "tax":                 round(total_tax),
+        "net_income":          round(total_income - total_tax),
+    }
+
+
+@router.get("/tax-compare")
+def compare_tax(dependents: int = 1, card_amount: float = 0):
+    """올해 수입 합계 기준 — 원천징수 15.4% vs 종합소득세(인적공제+카드공제, 단순화) 비교."""
+    today         = date.today()
+    current_year  = today.year
+    year_start    = f"{current_year}-01-01"
+    year_end      = today.isoformat()
+
+    res = supabase.table("income_log") \
+        .select("amount") \
+        .gte("income_date", year_start).lte("income_date", year_end).execute()
+    total_income = sum(float(r["amount"]) for r in (res.data or []))
+
+    withholding_tax = total_income * FINANCIAL_WITHHOLDING_RATE
+    withholding = {
+        "rate_pct":   round(FINANCIAL_WITHHOLDING_RATE * 100, 1),
+        "tax":        round(withholding_tax),
+        "net_income": round(total_income - withholding_tax),
+    }
+
+    comprehensive = _calc_comprehensive_tax(total_income, dependents, card_amount)
+
+    better = "comprehensive" if comprehensive["tax"] < withholding["tax"] else "withholding"
+    diff   = abs(withholding["tax"] - comprehensive["tax"])
+
+    return {
+        "year":           current_year,
+        "total_income":   round(total_income),
+        "inputs": {
+            "dependents":  max(1, dependents),
+            "card_amount": round(max(0.0, card_amount)),
+        },
+        "withholding":    withholding,
+        "comprehensive":  comprehensive,
+        "better_option":  better,
+        "diff":           diff,
+        "disclaimer":     "인적공제(기본공제)와 신용카드 소득공제만 반영한 단순화 계산입니다. "
+                           "근로소득공제, 경로우대·장애인 추가공제, 자녀·의료비 등 세액공제는 "
+                           "반영되지 않아 실제 신고세액과 차이가 있을 수 있습니다.",
     }

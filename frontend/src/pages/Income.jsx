@@ -126,6 +126,80 @@ function SummaryCard({ label, value, sub, color = 'blue', icon }) {
   )
 }
 
+// ── 세금 비교 모달 (원천징수 15.4% vs 종합소득세) ───────────────────
+function TaxCompareModal({ onClose }) {
+  const [dependents, setDependents] = useState(1)
+  const [cardAmount, setCardAmount] = useState('')
+  const [result, setResult] = useState(null)
+
+  const compareMut = useMutation({
+    mutationFn: () => api.get('/income/tax-compare', {
+      params: { dependents, card_amount: Number(cardAmount) || 0 },
+    }).then(r => r.data),
+    onSuccess: data => setResult(data),
+  })
+
+  return (
+    <Modal title="🧾 세금 비교 — 원천징수 vs 종합소득세" onClose={onClose}>
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">인적공제 대상 인원(본인 포함)</label>
+            <input type="number" min={1} value={dependents}
+              onChange={e => setDependents(Math.max(1, Number(e.target.value)))} className="w-full" />
+          </div>
+          <div>
+            <label className="text-xs text-gray-500 block mb-1">연간 카드 사용액 (원)</label>
+            <input type="number" min={0} value={cardAmount}
+              onChange={e => setCardAmount(e.target.value)} placeholder="예: 15000000" className="w-full" />
+          </div>
+        </div>
+        <button className="btn-primary w-full" onClick={() => compareMut.mutate()} disabled={compareMut.isPending}>
+          {compareMut.isPending ? '계산 중...' : '비교하기'}
+        </button>
+
+        {result && (
+          <div className="space-y-3 pt-3 border-t border-gray-100">
+            <p className="text-xs text-gray-500">
+              {result.year}년 수입 합계 <span className="font-semibold text-gray-700">{fmt.won(result.total_income)}</span> 기준
+            </p>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className={`rounded-lg p-3 border ${result.better_option === 'withholding' ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
+                <p className="text-xs text-gray-500 font-medium">원천징수 ({result.withholding.rate_pct}%)</p>
+                <p className="text-lg font-bold text-blue-700 mt-1">{fmt.won(result.withholding.tax)}</p>
+                <p className="text-[11px] text-gray-400 mt-1">세후 실수령 {fmt.won(result.withholding.net_income)}</p>
+                {result.better_option === 'withholding' && <p className="text-[11px] text-green-600 font-semibold mt-1">✓ 더 유리</p>}
+              </div>
+              <div className={`rounded-lg p-3 border ${result.better_option === 'comprehensive' ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
+                <p className="text-xs text-gray-500 font-medium">종합소득세 신고 (세율 {result.comprehensive.bracket_rate_pct}%)</p>
+                <p className="text-lg font-bold text-purple-700 mt-1">{fmt.won(result.comprehensive.tax)}</p>
+                <p className="text-[11px] text-gray-400 mt-1">세후 실수령 {fmt.won(result.comprehensive.net_income)}</p>
+                {result.better_option === 'comprehensive' && <p className="text-[11px] text-green-600 font-semibold mt-1">✓ 더 유리</p>}
+              </div>
+            </div>
+
+            <div className="text-xs text-gray-500 bg-gray-50 rounded-lg p-3 space-y-1">
+              <div className="flex justify-between"><span>인적공제</span><span>{fmt.won(result.comprehensive.personal_deduction)}</span></div>
+              <div className="flex justify-between"><span>카드공제</span><span>{fmt.won(result.comprehensive.card_deduction)}</span></div>
+              <div className="flex justify-between"><span>과세표준</span><span>{fmt.won(result.comprehensive.taxable_base)}</span></div>
+              <div className="flex justify-between"><span>산출세액(종소세)</span><span>{fmt.won(result.comprehensive.income_tax)}</span></div>
+              <div className="flex justify-between"><span>지방소득세</span><span>{fmt.won(result.comprehensive.local_tax)}</span></div>
+            </div>
+
+            <p className="text-sm font-semibold text-center text-gray-700">
+              {result.better_option === 'withholding' ? '원천징수' : '종합소득세 신고'}가{' '}
+              <span className="text-green-600">{fmt.won(result.diff)}</span> 더 유리합니다
+            </p>
+
+            <p className="text-[11px] text-gray-400 leading-relaxed">{result.disclaimer}</p>
+          </div>
+        )}
+      </div>
+    </Modal>
+  )
+}
+
 // ── 자급률 게이지 ─────────────────────────────────────────────────
 function SelfSufGauge({ ratio }) {
   const pct   = Math.min(ratio, 100)
@@ -152,6 +226,7 @@ function SelfSufGauge({ ratio }) {
 export default function Income() {
   const qc = useQueryClient()
   const [modal, setModal] = useState(null)  // null | { mode: 'add'|'edit', data }
+  const [taxCompareOpen, setTaxCompareOpen] = useState(false)
 
   const { data: logs = [], isLoading: logsLoading } = useQuery({
     queryKey: ['income-list'],
@@ -214,11 +289,18 @@ export default function Income() {
   return (
     <div className="space-y-5">
       {/* 헤더 */}
-      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#1a5c96] text-white rounded-xl px-6 py-4">
-        <h1 className="text-xl font-bold">💰 배당·이자 수입 추적</h1>
-        <p className="text-blue-200 text-sm mt-1">
-          패시브 인컴 기록 · 생활비 자급률 · 자산별 수입 현황
-        </p>
+      <div className="bg-gradient-to-r from-[#1e3a5f] to-[#1a5c96] text-white rounded-xl px-6 py-4 flex items-center justify-between">
+        <div>
+          <h1 className="text-xl font-bold">💰 배당·이자 수입 추적</h1>
+          <p className="text-blue-200 text-sm mt-1">
+            패시브 인컴 기록 · 생활비 자급률 · 자산별 수입 현황
+          </p>
+        </div>
+        <button
+          className="bg-white/10 hover:bg-white/20 text-white text-sm font-medium px-4 py-2 rounded-lg border border-white/30 whitespace-nowrap"
+          onClick={() => setTaxCompareOpen(true)}>
+          🧾 세금 비교
+        </button>
       </div>
 
       {/* KPI 카드 */}
@@ -422,6 +504,10 @@ export default function Income() {
             saving={createMut.isPending || updateMut.isPending}
           />
         </Modal>
+      )}
+
+      {taxCompareOpen && (
+        <TaxCompareModal onClose={() => setTaxCompareOpen(false)} />
       )}
     </div>
   )
