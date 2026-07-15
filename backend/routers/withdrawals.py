@@ -1,14 +1,17 @@
-"""인출 기록 CRUD — withdrawals 테이블.
+"""인출 기록 CRUD + 월별 요약 — withdrawals 테이블 (단일 인출 데이터 소스).
 
-기존 withdrawal.py(withdrawal_log 테이블)와 별개:
-- withdrawal_log: 포트폴리오 월간 인출 계획 관리
-- withdrawals: 실제 연금 수령 인출 기록 (연금소득세 한도 계산에 사용)
+withdrawal_log(월간 계획) 테이블은 폐지됨 — 건별 인출 기록의 월별 합계가
+현금흐름·대시보드·수익률·AI 요약·인출 관리 화면에 공용으로 쓰인다.
 """
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from datetime import date
 from database import supabase
+from utils import (
+    get_config, get_active_assets, calculate_buckets,
+    get_pension_info, get_monthly_withdrawal_totals,
+)
 
 router = APIRouter()
 
@@ -38,6 +41,45 @@ def _validate_in(body: WithdrawalIn):
         raise HTTPException(status_code=422, detail="금액은 0보다 커야 합니다")
     if body.tax_account_type not in _VALID_TAX_TYPES:
         raise HTTPException(status_code=422, detail=f"tax_account_type은 {sorted(_VALID_TAX_TYPES)} 중 하나여야 합니다")
+
+
+@router.get("/summary")
+def withdrawals_summary(months: int = 24):
+    """인출 관리 화면용 요약 — 월별 합계·인출률(실적)·비상자금."""
+    config  = get_config()
+    assets  = get_active_assets()
+    buckets = calculate_buckets(assets, config)
+    pension = get_pension_info(config)
+
+    monthly_expense = float(config.get("user", {}).get("monthly_expense", 5_000_000))
+    recommended     = max(0.0, monthly_expense - pension["income"])
+
+    totals = get_monthly_withdrawal_totals()
+    monthly = [
+        {"month": m, "total": round(v)}
+        for m, v in sorted(totals.items())[-months:]
+    ]
+
+    today = date.today()
+    this_month = today.strftime("%Y-%m")
+    ytd_total = sum(v for m, v in totals.items() if m.startswith(str(today.year)))
+    last_12 = sum(v for m, v in sorted(totals.items(), reverse=True)[:12])
+
+    total_assets = buckets["total"]
+    return {
+        "monthly":              monthly,
+        "current_month":        this_month,
+        "current_month_total":  round(totals.get(this_month, 0)),
+        "ytd_total":            round(ytd_total),
+        "last_12m_total":       round(last_12),
+        # 인출률: 최근 12개월 실적 기준 (실적 없으면 None)
+        "withdrawal_rate_pct":  round(last_12 / total_assets * 100, 2) if total_assets > 0 and last_12 > 0 else None,
+        "emergency_months":     buckets["months_covered"],
+        "monthly_expense":      monthly_expense,
+        "pension_income":       pension["income"],
+        "recommended":          round(recommended),
+        "total_assets":         round(total_assets),
+    }
 
 
 @router.get("")

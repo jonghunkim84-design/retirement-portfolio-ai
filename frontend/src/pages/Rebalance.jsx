@@ -2,10 +2,22 @@ import { useQuery } from '@tanstack/react-query'
 import { BarChart, Bar, XAxis, YAxis, Tooltip, Legend, ResponsiveContainer, ReferenceLine, Cell, LabelList } from 'recharts'
 import api, { fmt } from '../api/client.js'
 
+const URGENCY_BADGE = {
+  '긴급': 'bg-red-100 text-red-700',
+  '주의': 'bg-yellow-100 text-yellow-700',
+  '예정': 'bg-gray-100 text-gray-600',
+}
+
 export default function Rebalance() {
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['rebalance'],
     queryFn: () => api.get('/rebalance').then(r => r.data),
+  })
+
+  // 만기 재배분 가이드 (구 /maturity-guide 페이지 병합)
+  const { data: maturity } = useQuery({
+    queryKey: ['maturity-guide'],
+    queryFn: () => api.get('/rebalance/maturity-guide').then(r => r.data),
   })
 
   if (isLoading) return <div className="flex items-center justify-center h-64 text-gray-400">불러오는 중...</div>
@@ -187,6 +199,63 @@ export default function Rebalance() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* 만기 예정 자산 재배분 (구 만기 재배분 가이드 병합) */}
+      {maturity && maturity.maturing_count > 0 && (
+        <div className="card">
+          <div className="flex items-center justify-between mb-1">
+            <h3 className="text-sm font-semibold text-gray-700">⏳ 만기 예정 자산 재배분 (90일 이내)</h3>
+            <span className="text-xs text-gray-500">
+              총 {maturity.maturing_count}건 · {fmt.eok(maturity.maturity_total)}
+            </span>
+          </div>
+          <p className="text-xs text-gray-400 mb-3">
+            우선 편입 추천: <span className="font-bold text-gray-600">
+              {maturity.primary_bucket?.bucket} {maturity.primary_bucket?.name}</span>
+          </p>
+
+          {(maturity.reasons ?? []).length > 0 && (
+            <div className="rounded-lg bg-blue-50 border border-blue-100 px-3 py-2 mb-3 space-y-0.5">
+              {maturity.reasons.map((r, i) => (
+                <p key={i} className="text-[11px] text-blue-700">· {r}</p>
+              ))}
+            </div>
+          )}
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="py-2 pr-2 text-left font-medium">자산명</th>
+                  <th className="py-2 pr-2 text-left font-medium">계좌</th>
+                  <th className="py-2 pr-2 text-center font-medium">만기일</th>
+                  <th className="py-2 pr-2 text-center font-medium">D-day</th>
+                  <th className="py-2 pr-2 text-right font-medium">평가액</th>
+                  <th className="py-2 text-left font-medium hidden md:table-cell">비고</th>
+                </tr>
+              </thead>
+              <tbody>
+                {maturity.maturing_assets.map(a => (
+                  <tr key={a.id} className="border-b border-gray-50">
+                    <td className="py-2 pr-2 font-medium text-gray-700">{a.asset_name}</td>
+                    <td className="py-2 pr-2 text-gray-500">{a.account_name}</td>
+                    <td className="py-2 pr-2 text-center text-gray-500">{a.maturity_date}</td>
+                    <td className="py-2 pr-2 text-center">
+                      <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${URGENCY_BADGE[a.urgency]}`}>
+                        {a.urgency} D-{a.days_left}
+                      </span>
+                    </td>
+                    <td className="py-2 pr-2 text-right font-medium text-gray-700">{fmt.won(a.current_value)}</td>
+                    <td className="py-2 text-gray-400 hidden md:table-cell">
+                      → {a.recommended_bucket} {a.recommended_bucket_name} · {a.account_note}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}

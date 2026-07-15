@@ -15,8 +15,7 @@ export const NAV_GROUPS = [
       { path: '/assets',        label: '자산 관리',    icon: '📋' },
       { path: '/real-assets',   label: '실물자산',     icon: '🏘' },
       { path: '/returns',       label: '수익률 분석',  icon: '📈' },
-      { path: '/rebalance',     label: '리밸런싱',     icon: '⚖️' },
-      { path: '/maturity-guide', label: '만기 재배분', icon: '🔄' },
+      { path: '/rebalance',     label: '리밸런싱·만기', icon: '⚖️' },
     ],
   },
   {
@@ -43,7 +42,6 @@ export const NAV_GROUPS = [
       { path: '/pension-tax',      label: '연금 세금',   icon: '🏖' },
       { path: '/withdrawal-strategy', label: '인출 전략', icon: '🪜' },
       { path: '/estate-plan',      label: '상속·증여',   icon: '🎁' },
-      { path: '/tax',              label: '세금 최적화', icon: '🧾' },
       { path: '/health-insurance', label: '건강보험료',  icon: '🏥' },
       { path: '/risk',             label: '위험 점수',   icon: '⚠️' },
     ],

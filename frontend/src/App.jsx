@@ -15,9 +15,7 @@ import Income        from './pages/Income.jsx'
 import Expenses      from './pages/Expenses.jsx'
 import PensionOptimize from './pages/PensionOptimize.jsx'
 import NetWorth      from './pages/NetWorth.jsx'
-import MaturityGuide from './pages/MaturityGuide.jsx'
 import AIAdvisor      from './pages/AIAdvisor.jsx'
-import TaxOptimization from './pages/TaxOptimization.jsx'
 import PensionTax      from './pages/PensionTax.jsx'
 import HealthInsurance from './pages/HealthInsurance.jsx'
 import WithdrawalStrategy from './pages/WithdrawalStrategy.jsx'
@@ -67,13 +65,11 @@ export default function App() {
             <Route path="/pension-plan"     element={<PensionPlan />} />
             <Route path="/returns"          element={<ReturnAnalysis />} />
             <Route path="/networth"         element={<NetWorth />} />
-            <Route path="/maturity-guide"   element={<MaturityGuide />} />
             <Route path="/cashflow"         element={<CashFlow />} />
             <Route path="/income"           element={<Income />} />
             <Route path="/expenses"         element={<Expenses />} />
             <Route path="/pension-optimize" element={<PensionOptimize />} />
             <Route path="/ai-advisor"       element={<AIAdvisor />} />
-            <Route path="/tax"              element={<TaxOptimization />} />
             <Route path="/pension-tax"       element={<PensionTax />} />
             <Route path="/health-insurance" element={<HealthInsurance />} />
             <Route path="/withdrawal-strategy" element={<WithdrawalStrategy />} />

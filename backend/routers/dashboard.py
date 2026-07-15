@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from datetime import date, timedelta
 from database import supabase
-from utils import get_config, get_active_assets, calculate_buckets, get_pension_info, calculate_estimated_return
+from utils import get_config, get_active_assets, calculate_buckets, get_pension_info, calculate_estimated_return, get_monthly_withdrawal_totals
 
 router = APIRouter()
 
@@ -25,9 +25,12 @@ def get_dashboard():
         .eq("rule_id", "ai_summary").order("date", desc=True).limit(1).execute()
     ai_summary = summ_res.data[0] if summ_res.data else None
 
-    # 최근 인출 이력 (3개월)
-    wd_res = supabase.table("withdrawal_log").select("*").order("date", desc=True).limit(3).execute()
-    withdrawal_history = wd_res.data or []
+    # 최근 인출 이력 (3개월) — withdrawals 월별 합계 기준
+    _totals = get_monthly_withdrawal_totals()
+    withdrawal_history = [
+        {"date": f"{m}-01", "actual_amount": v}
+        for m, v in sorted(_totals.items(), reverse=True)[:3]
+    ]
 
     monthly_expense        = config.get("user", {}).get("monthly_expense", 5000000)
     recommended_withdrawal = max(0, monthly_expense - pension["income"])

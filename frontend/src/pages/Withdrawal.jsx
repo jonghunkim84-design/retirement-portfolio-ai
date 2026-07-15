@@ -1,313 +1,223 @@
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import {
+  BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid,
+} from 'recharts'
 import api, { fmt } from '../api/client.js'
 
-// ── 인출률 계산기 ─────────────────────────────────────────────────
-function SliderRow({ label, value, min, max, step, display, onChange }) {
-  return (
-    <div className="flex items-center gap-4">
-      <span className="text-sm text-gray-600 w-24 sm:w-36 flex-shrink-0">{label}</span>
-      <input type="range" min={min} max={max} step={step} value={value}
-        onChange={e => onChange(+e.target.value)}
-        className="flex-1 h-1.5 accent-blue-600 cursor-pointer" />
-      <span className="text-sm font-semibold text-gray-700 w-14 sm:w-20 text-right">{display}</span>
-    </div>
-  )
+// ── 상수 ─────────────────────────────────────────────────────────
+const TAX_TYPE = {
+  pension_savings:    { label: '연금저축',      badge: 'bg-blue-100 text-blue-700' },
+  retirement_pension: { label: '퇴직연금(IRP)', badge: 'bg-green-100 text-green-700' },
+  isa:                { label: 'ISA',           badge: 'bg-yellow-100 text-yellow-700' },
+  regular:            { label: '일반',          badge: 'bg-gray-100 text-gray-600' },
 }
 
-const W_TABS = ['① 기본 인출률', '② 하락 반영 인출률', '③ 실질 인출률']
+const EMPTY_FORM = {
+  withdrawal_date: new Date().toISOString().slice(0, 10),
+  amount: '', account_name: '', tax_account_type: 'regular', memo: '',
+}
 
-function WithdrawalCalc({ initAssets, initAnnualW, initInflation }) {
-  const [assets,    setAssets]    = useState(initAssets    ?? 10)
-  const [annualW,   setAnnualW]   = useState(initAnnualW   ?? 3000)
-  const [decline,   setDecline]   = useState(0)
-  const [inflation, setInflation] = useState(initInflation ?? 2.5)
-  const [tab,       setTab]       = useState(0)
+const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200'
 
-  useEffect(() => { if (initAssets   != null) setAssets(initAssets)       }, [initAssets])
-  useEffect(() => { if (initAnnualW  != null) setAnnualW(initAnnualW)     }, [initAnnualW])
-  useEffect(() => { if (initInflation!= null) setInflation(initInflation)  }, [initInflation])
-
-  const totalMan      = assets * 10000
-  const adjustedTotal = totalMan * (1 - decline / 100)
-  const adjustedW     = annualW  * (1 + inflation / 100)
-  const rates = [
-    annualW / totalMan * 100,
-    annualW / adjustedTotal * 100,
-    adjustedW / totalMan * 100,
-  ]
-  const rate          = rates[tab]
-  const durationYears = totalMan > 0 ? Math.floor(totalMan / annualW) : 0
-  const safeAmount    = Math.round(totalMan * 0.04)
-  const rateColor     = rate < 4 ? 'text-green-600' : rate < 6 ? 'text-yellow-600' : 'text-red-600'
-
-  const formulas = [
-    { text: `기본 인출률 = 연간 인출액 ÷ 총 자산`,
-      calc: `= ${annualW.toLocaleString()}만 ÷ ${totalMan.toLocaleString()}만 = ${rate.toFixed(2)}%`,
-      sub:  '주가 하락·물가 미반영' },
-    { text: `하락 반영 인출률 = 연간 인출액 ÷ (총 자산 × (1 − 하락률))`,
-      calc: `= ${annualW.toLocaleString()}만 ÷ ${Math.round(adjustedTotal).toLocaleString()}만 = ${rate.toFixed(2)}%`,
-      sub:  `주식 ${decline}% 하락 시 실효 인출률` },
-    { text: `실질 인출률 = 연간 인출액 × (1 + 물가상승률) ÷ 총 자산`,
-      calc: `= ${Math.round(adjustedW).toLocaleString()}만 ÷ ${totalMan.toLocaleString()}만 = ${rate.toFixed(2)}%`,
-      sub:  `물가 ${inflation.toFixed(1)}% 반영 — 실질 구매력 기준` },
-  ]
-
+function KpiCard({ label, value, sub, color = 'text-gray-800' }) {
   return (
-    <div className="space-y-4">
-      <div className="space-y-3 py-1">
-        <SliderRow label="총 자산 (억 원)"    value={assets}    min={1}   max={50}    step={0.5} display={`${assets}억`}                 onChange={setAssets} />
-        <SliderRow label="연간 인출액 (만 원)" value={annualW}   min={500} max={20000} step={500} display={`${annualW.toLocaleString()}만`} onChange={setAnnualW} />
-        <SliderRow label="주식 하락률 (%)"    value={decline}   min={0}   max={50}    step={1}   display={`${decline}%`}                  onChange={setDecline} />
-        <SliderRow label="물가상승률 (%)"     value={inflation} min={0}   max={10}    step={0.1} display={`${inflation.toFixed(1)}%`}     onChange={setInflation} />
-      </div>
-
-      {/* 탭 */}
-      <div className="flex gap-2 flex-wrap">
-        {W_TABS.map((t, i) => (
-          <button key={i} onClick={() => setTab(i)}
-            className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors
-              ${tab === i
-                ? 'bg-[#1e3a5f] text-white border-[#1e3a5f]'
-                : 'bg-white text-gray-600 border-gray-300 hover:border-blue-400'}`}>
-            {t}
-          </button>
-        ))}
-      </div>
-
-      <div className="bg-gray-50 rounded-lg px-4 py-3 text-sm">
-        <div className="text-gray-600">{formulas[tab].text}</div>
-        <div className="font-semibold text-gray-800 mt-0.5">{formulas[tab].calc}</div>
-        <div className="text-xs text-gray-400 mt-1">{formulas[tab].sub}</div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-3">
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <div className="text-xs text-gray-500 mb-1">계산된 인출률</div>
-          <div className={`text-2xl font-bold ${rateColor}`}>{rate.toFixed(2)}%</div>
-          <div className="text-xs text-gray-400 mt-1">{formulas[tab].sub}</div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <div className="text-xs text-gray-500 mb-1">자산 지속 기간</div>
-          <div className="text-2xl font-bold text-gray-800">{durationYears}년</div>
-          <div className="text-xs text-gray-400 mt-1">수익률 0% 가정</div>
-        </div>
-        <div className="bg-white border border-gray-200 rounded-xl p-4 text-center shadow-sm">
-          <div className="text-xs text-gray-500 mb-1">4% 기준 안전 인출액</div>
-          <div className="text-2xl font-bold text-blue-600">{safeAmount.toLocaleString()}만</div>
-          <div className="text-xs text-gray-400 mt-1">연간 기준</div>
-        </div>
-      </div>
-
-      <div className={`text-xs rounded-lg px-3 py-2 ${
-        rate < 4 ? 'bg-green-50 text-green-700' :
-        rate < 6 ? 'bg-yellow-50 text-yellow-700' : 'bg-red-50 text-red-600'}`}>
-        {rate < 4
-          ? `✅ 현재 인출률 ${rate.toFixed(2)}%는 4% 안전 기준 이하입니다.`
-          : rate < 6
-          ? `⚠️ 현재 인출률 ${rate.toFixed(2)}%는 4% 안전 기준을 초과합니다. 지출 조정을 권장합니다.`
-          : `🔴 현재 인출률 ${rate.toFixed(2)}%는 6% 이상으로 장기 지속이 어려울 수 있습니다.`}
-      </div>
+    <div className="card">
+      <p className="text-[11px] text-gray-400 mb-1">{label}</p>
+      <p className={`text-lg font-bold ${color}`}>{value}</p>
+      {sub && <p className="text-[11px] text-gray-400 mt-0.5">{sub}</p>}
     </div>
   )
 }
 
 export default function Withdrawal() {
   const qc = useQueryClient()
-  const today = new Date()
-  const [year, setYear]   = useState(today.getFullYear())
-  const [month, setMonth] = useState(today.getMonth() + 1)
-  const [amount, setAmount] = useState('')
-  const [note, setNote]   = useState('')
+  const [form, setForm] = useState(EMPTY_FORM)
+  const [error, setError] = useState(null)
+  const set = (k, v) => setForm(prev => ({ ...prev, [k]: v }))
 
-  const { data: current } = useQuery({
-    queryKey: ['withdrawal-current'],
-    queryFn: () => api.get('/withdrawal/current-month').then(r => r.data),
+  const year = new Date().getFullYear()
+
+  const { data: summary } = useQuery({
+    queryKey: ['withdrawals-summary'],
+    queryFn: () => api.get('/withdrawals/summary').then(r => r.data),
+  })
+  const { data: records = [], isLoading } = useQuery({
+    queryKey: ['withdrawals', year],
+    queryFn: () => api.get('/withdrawals', { params: { year } }).then(r => r.data),
   })
 
-  const { data: dash } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: () => api.get('/dashboard').then(r => r.data),
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: history = [] } = useQuery({
-    queryKey: ['withdrawal-history'],
-    queryFn: () => api.get('/withdrawal').then(r => r.data),
-  })
-
-  const saveMut = useMutation({
-    mutationFn: body => api.post('/withdrawal', body),
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['withdrawal-current'] })
-      qc.invalidateQueries({ queryKey: ['withdrawal-history'] })
-      qc.invalidateQueries({ queryKey: ['dashboard'] })
-    },
-  })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    saveMut.mutate({ year, month, actual_amount: Math.abs(+amount), note })
+  const invalidate = () => {
+    qc.invalidateQueries({ queryKey: ['withdrawals'] })
+    qc.invalidateQueries({ queryKey: ['withdrawals-summary'] })
+    qc.invalidateQueries({ queryKey: ['dashboard'] })
+    qc.invalidateQueries({ queryKey: ['pension-tax'] })
   }
 
-  // 입력창 초기값을 현재 월 권장액으로
-  const defaultAmount = current?.actual_amount ?? current?.recommended ?? ''
+  const saveMut = useMutation({
+    mutationFn: body => api.post('/withdrawals', body),
+    onSuccess: () => { setForm(f => ({ ...EMPTY_FORM, withdrawal_date: f.withdrawal_date })); setError(null); invalidate() },
+    onError: e => setError(e.response?.data?.detail ?? '저장에 실패했습니다'),
+  })
+  const deleteMut = useMutation({
+    mutationFn: id => api.delete(`/withdrawals/${id}`),
+    onSuccess: invalidate,
+  })
 
-  const netFromPortfolio = current ? current.recommended : 0
-  const statusColor = current?.actual_amount != null ? 'text-green-600' : 'text-orange-400'
-  const statusText  = current?.actual_amount != null
-    ? `입력 완료 (${fmt.won(current.actual_amount)})`
-    : '미입력'
+  const submit = e => {
+    e.preventDefault()
+    saveMut.mutate({
+      withdrawal_date: form.withdrawal_date,
+      amount: Number(form.amount) || 0,
+      account_name: form.account_name || '기타',
+      tax_account_type: form.tax_account_type,
+      memo: form.memo || null,
+    })
+  }
 
-  // 계산기 초기값 (대시보드 데이터 기반)
-  const initAssets    = dash ? Math.round(dash.buckets?.total / 1e8 * 10) / 10 : null
-  const initAnnualW   = current ? Math.round(current.recommended * 12 / 10000) : null
-  const initInflation = dash ? Math.round((dash.config?.inflation?.assumed_rate ?? 0.025) * 1000) / 10 : null
+  const chartData = (summary?.monthly ?? []).map(m => ({
+    name: m.month.slice(2),                        // YY-MM
+    인출액: Math.round(m.total / 10000),           // 만원
+  }))
+
+  const rate = summary?.withdrawal_rate_pct
+  const rateColor = rate == null ? 'text-gray-400'
+    : rate <= 4 ? 'text-green-600' : rate <= 5 ? 'text-yellow-600' : 'text-red-600'
 
   return (
-    <div className="space-y-5 overflow-x-hidden">
-      <h1 className="text-xl font-bold text-gray-800">💸 인출 관리</h1>
+    <div className="space-y-5">
+      {/* ─── 헤더 ─────────────────────────────────────────────── */}
+      <div>
+        <h1 className="text-xl font-bold text-gray-800">💸 인출 관리</h1>
+        <p className="text-sm text-gray-500 mt-0.5">
+          계좌별 인출 기록 — 연금소득세 한도·현금흐름·수익률 계산에 공용으로 사용됩니다.
+          어느 계좌에서 뺄지는 <Link to="/withdrawal-strategy" className="text-blue-500 underline">인출 전략</Link>을 참고하세요
+        </p>
+      </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        {/* 이번 달 현황 */}
-        <div className="card col-span-1">
-          <h3 className="text-sm font-semibold text-gray-700 mb-3">이번 달 현황</h3>
-          {current && (
-            <div className="space-y-2 text-sm">
-              {[
-                ['월 생활비',          fmt.won(current.monthly_expense)],
-                ['국민연금 수령액',    fmt.won(current.pension_income) + (current.pension_income > 0 ? ' (수령 중)' : ' (개시 전)')],
-                ['포트폴리오 권장 인출', fmt.won(current.recommended)],
-                ['실제 입력 상태',     null],
-              ].map(([label, value]) => (
-                <div key={label} className="flex justify-between py-1.5 border-b border-gray-50">
-                  <span className="text-gray-500">{label}</span>
-                  {value ? (
-                    <span className="font-medium text-gray-800">{value}</span>
-                  ) : (
-                    <span className={`font-semibold ${statusColor}`}>{statusText}</span>
-                  )}
-                </div>
+      {/* ─── KPI ──────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <KpiCard label="이달 인출 합계" value={fmt.won(summary?.current_month_total)}
+                 sub={`참고: 생활비 − 국민연금 = ${fmt.won(summary?.recommended)}`} />
+        <KpiCard label="올해 누적 인출" value={fmt.won(summary?.ytd_total)} />
+        <KpiCard label="실적 인출률 (최근 12개월)"
+                 value={rate == null ? '기록 없음' : `${rate}%`}
+                 color={rateColor}
+                 sub={rate == null ? '인출 기록을 입력하면 계산됩니다' : rate <= 4 ? '✅ 4% 기준 이하' : '⚠️ 4% 기준 초과'} />
+        <KpiCard label="비상자금" value={`${summary?.emergency_months ?? 0}개월`}
+                 sub="현금성 자산 ÷ 월 생활비"
+                 color={(summary?.emergency_months ?? 0) >= 6 ? 'text-green-600' : 'text-red-600'} />
+      </div>
+
+      {error && (
+        <div className="rounded-xl bg-red-50 border border-red-200 px-4 py-2.5 text-xs text-red-600">⚠️ {error}</div>
+      )}
+
+      {/* ─── 입력 폼 ──────────────────────────────────────────── */}
+      <form onSubmit={submit} className="card space-y-3">
+        <h2 className="text-sm font-semibold text-gray-700">✏️ 인출 기록 추가</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+          <label className="block">
+            <span className="text-xs text-gray-500">날짜</span>
+            <input type="date" value={form.withdrawal_date} required
+                   onChange={e => set('withdrawal_date', e.target.value)} className={`${inputCls} mt-1`} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-gray-500">금액 (원)</span>
+            <input type="number" min="1" value={form.amount} required
+                   onChange={e => set('amount', e.target.value)} className={`${inputCls} mt-1`} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-gray-500">계좌명</span>
+            <input value={form.account_name} placeholder="예: 미래에셋 IRP"
+                   onChange={e => set('account_name', e.target.value)} className={`${inputCls} mt-1`} />
+          </label>
+          <label className="block">
+            <span className="text-xs text-gray-500">세제 분류</span>
+            <select value={form.tax_account_type}
+                    onChange={e => set('tax_account_type', e.target.value)} className={`${inputCls} mt-1`}>
+              {Object.entries(TAX_TYPE).map(([v, t]) => (
+                <option key={v} value={v}>{t.label}</option>
               ))}
-            </div>
-          )}
+            </select>
+          </label>
+          <label className="block">
+            <span className="text-xs text-gray-500">메모</span>
+            <input value={form.memo} placeholder="예: 생활비"
+                   onChange={e => set('memo', e.target.value)} className={`${inputCls} mt-1`} />
+          </label>
         </div>
-
-        {/* 입력 폼 */}
-        <div className="card col-span-2">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">✏️ 실제 인출액 입력</h3>
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="flex gap-3">
-              <div className="flex-1">
-                <label className="text-xs text-gray-500 block mb-1">연도</label>
-                <input type="number" value={year} onChange={e => setYear(+e.target.value)}
-                  className="w-full" min={2020} max={2050} />
-              </div>
-              <div className="flex-1">
-                <label className="text-xs text-gray-500 block mb-1">월</label>
-                <select value={month} onChange={e => setMonth(+e.target.value)} className="w-full">
-                  {Array.from({length: 12}, (_, i) => i+1).map(m => (
-                    <option key={m} value={m}>{m}월</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">
-                실제 인출액 (원)
-                {current?.recommended && (
-                  <button type="button" className="ml-2 text-blue-500 underline"
-                    onClick={() => setAmount(String(current.recommended))}>
-                    권장액({fmt.won(current.recommended)}) 입력
-                  </button>
-                )}
-              </label>
-              <input type="number" value={amount || (current?.actual_amount ?? '')}
-                onChange={e => setAmount(e.target.value)}
-                placeholder={`권장액: ${fmt.won(netFromPortfolio)}`}
-                className="w-full" />
-              {amount && current?.recommended && (
-                <p className="text-xs mt-1 text-gray-400">
-                  권장액 대비 {(Math.abs(+amount) - current.recommended) >= 0 ? '+' : ''}
-                  {fmt.won(Math.abs(+amount) - current.recommended)}
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs text-gray-500 block mb-1">메모 (선택)</label>
-              <input value={note} onChange={e => setNote(e.target.value)}
-                placeholder="예: 의료비 추가 지출" className="w-full" />
-            </div>
-
-            <button type="submit" className="btn-primary w-full" disabled={saveMut.isPending || !amount}>
-              {saveMut.isPending ? '저장 중...' : '💾 저장'}
-            </button>
-
-            {saveMut.isSuccess && (
-              <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-3 py-2">
-                ✅ 저장 완료!
-              </div>
-            )}
-            {saveMut.isError && (
-              <div className="bg-red-50 border border-red-200 text-red-600 text-sm rounded-lg px-3 py-2">
-                ❌ 저장 실패: {saveMut.error?.response?.data?.detail || '다시 시도해주세요.'}
-              </div>
-            )}
-          </form>
+        <div className="flex justify-between items-center">
+          <p className="text-[11px] text-gray-400">
+            연금저축·IRP 인출은 연 1,500만원 한도 모니터(연금 세금)에 자동 반영됩니다
+          </p>
+          <button type="submit" disabled={saveMut.isPending}
+                  className="px-4 py-2 text-sm rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 disabled:opacity-50">
+            {saveMut.isPending ? '저장 중...' : '저장'}
+          </button>
         </div>
-      </div>
+      </form>
 
-      {/* 인출률 계산기 */}
-      <div className="card">
-        <h3 className="text-sm font-semibold text-gray-700 mb-4">💡 인출률 계산기</h3>
-        <WithdrawalCalc
-          initAssets={initAssets}
-          initAnnualW={initAnnualW}
-          initInflation={initInflation}
-        />
-      </div>
+      {/* ─── 월별 인출 차트 ───────────────────────────────────── */}
+      {chartData.length > 0 && (
+        <div className="card">
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">📊 월별 인출 추이</h2>
+          <div className="h-52">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                <YAxis tickFormatter={v => `${v.toLocaleString()}만`} tick={{ fontSize: 10 }} width={70} />
+                <Tooltip formatter={v => `${v.toLocaleString()}만원`} />
+                <Bar dataKey="인출액" fill="#f97316" radius={[3, 3, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      )}
 
-      {/* 인출 이력 */}
+      {/* ─── 올해 기록 목록 ───────────────────────────────────── */}
       <div className="card">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">📊 인출 이력 — 권장 vs 실제</h3>
-        {history.length === 0 ? (
-          <p className="text-sm text-gray-400">인출 이력이 없습니다.</p>
+        <h2 className="text-sm font-semibold text-gray-700 mb-3">📋 {year}년 인출 기록</h2>
+        {isLoading ? (
+          <div className="text-sm text-gray-400 py-6 text-center">불러오는 중...</div>
+        ) : records.length === 0 ? (
+          <div className="text-sm text-gray-400 py-6 text-center">올해 인출 기록이 없습니다</div>
         ) : (
-          <div className="overflow-x-auto" style={{ WebkitOverflowScrolling: 'touch' }}>
-          <table className="min-w-[480px]">
-            <thead><tr>
-              <th className="sticky left-0 bg-white z-10">날짜</th>
-              <th className="text-right">권장 인출액</th>
-              <th className="text-right">실제 인출액</th>
-              <th className="text-right">차이</th>
-              <th>가드레일</th>
-              <th>메모</th>
-            </tr></thead>
-            <tbody>
-              {history.map(w => {
-                const diff = w.actual_amount != null ? Math.abs(w.actual_amount) - w.amount : null
-                return (
-                  <tr key={w.id}>
-                    <td className="sticky left-0 bg-white z-10 font-medium">{fmt.month(w.date)}</td>
-                    <td className="text-right">{fmt.won(w.amount)}</td>
-                    <td className={`text-right font-medium ${w.actual_amount != null ? 'text-green-600' : 'text-orange-400'}`}>
-                      {w.actual_amount != null ? fmt.won(w.actual_amount) : '미입력'}
-                    </td>
-                    <td className={`text-right text-xs ${diff == null ? '' : diff > 0 ? 'text-red-500' : 'text-blue-500'}`}>
-                      {diff != null ? `${diff > 0 ? '+' : ''}${fmt.won(diff)}` : '-'}
-                    </td>
-                    <td>{w.guardrail_applied
-                      ? <span className="badge-red">🔴 하향 적용</span>
-                      : <span className="badge-gray">정상</span>}
-                    </td>
-                    <td className="text-xs text-gray-400">{w.note || '-'}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
+          <div className="overflow-x-auto">
+            <table className="w-full text-xs">
+              <thead>
+                <tr className="text-gray-400 border-b border-gray-100">
+                  <th className="py-2 pr-2 text-left font-medium">날짜</th>
+                  <th className="py-2 pr-2 text-left font-medium">계좌</th>
+                  <th className="py-2 pr-2 text-center font-medium">세제 분류</th>
+                  <th className="py-2 pr-2 text-right font-medium">금액</th>
+                  <th className="py-2 pr-2 text-left font-medium hidden md:table-cell">메모</th>
+                  <th className="py-2 text-center font-medium">관리</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.map(r => {
+                  const t = TAX_TYPE[r.tax_account_type] ?? TAX_TYPE.regular
+                  return (
+                    <tr key={r.id} className="border-b border-gray-50">
+                      <td className="py-2 pr-2 font-medium text-gray-700">{fmt.date(r.withdrawal_date)}</td>
+                      <td className="py-2 pr-2 text-gray-600">{r.account_name}</td>
+                      <td className="py-2 pr-2 text-center">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${t.badge}`}>{t.label}</span>
+                      </td>
+                      <td className="py-2 pr-2 text-right font-bold text-gray-800">{fmt.won(r.amount)}</td>
+                      <td className="py-2 pr-2 text-gray-400 hidden md:table-cell">{r.memo || '-'}</td>
+                      <td className="py-2 text-center">
+                        <button onClick={() => window.confirm('이 기록을 삭제할까요?') && deleteMut.mutate(r.id)}
+                                className="text-red-400 hover:underline px-1">삭제</button>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         )}
       </div>

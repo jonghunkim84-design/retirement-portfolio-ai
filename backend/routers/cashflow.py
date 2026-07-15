@@ -1,7 +1,7 @@
 from fastapi import APIRouter
 from datetime import date
 from database import supabase
-from utils import get_active_assets, get_config, get_pension_info
+from utils import get_active_assets, get_config, get_pension_info, get_monthly_withdrawal_totals
 
 router = APIRouter()
 
@@ -26,9 +26,8 @@ def get_monthly_cashflow():
     pension_income       = float(pension["income"])
     recommended_wd       = max(0.0, monthly_expense - pension_income)
 
-    # 인출 이력 (date 앞 7자리 → YYYY-MM 키)
-    wd_res = supabase.table("withdrawal_log").select("*").order("date").execute()
-    wd_map = {w["date"][:7]: w for w in (wd_res.data or [])}
+    # 인출 이력 — withdrawals 건별 기록의 월별 합계 (withdrawal_log 폐지)
+    wd_totals = get_monthly_withdrawal_totals()
 
     # 실지출 이력 (expenses 테이블, YYYY-MM → 합계)
     from collections import defaultdict as _dd
@@ -52,10 +51,9 @@ def get_monthly_cashflow():
         ]
         maturity_total = sum(float(a["current_value"]) for a in maturing)
 
-        # 인출 내역
-        wd = wd_map.get(month_str)
-        actual_wd   = float(wd["actual_amount"]) if wd and wd.get("actual_amount") else None
-        planned_wd  = float(wd["amount"])        if wd and wd.get("amount")         else recommended_wd
+        # 인출 내역 (실적 있으면 실적, 없으면 권장액)
+        actual_wd   = wd_totals.get(month_str)
+        planned_wd  = recommended_wd
         display_wd  = actual_wd if actual_wd is not None else planned_wd
 
         # 실지출 데이터 (과거 달만, 기록 있는 경우)

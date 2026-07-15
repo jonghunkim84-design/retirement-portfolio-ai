@@ -24,7 +24,7 @@ function buildAlerts(data, nominalReturn) {
       icon:   '📅',
       title:  `만기 D-${a.days_left} · ${a.asset_name}`,
       detail: `${Math.round(a.current_value / 10000).toLocaleString()}만원 · ${a.maturity_date} · 즉시 재배분 결정 필요`,
-      link:   '/maturity-guide',
+      link:   '/rebalance',
     })
   )
 
@@ -35,7 +35,7 @@ function buildAlerts(data, nominalReturn) {
       icon:   '📅',
       title:  `만기 D-${a.days_left} · ${a.asset_name}`,
       detail: `${Math.round(a.current_value / 10000).toLocaleString()}만원 · ${a.maturity_date} · 재배분 계획 수립 권장`,
-      link:   '/maturity-guide',
+      link:   '/rebalance',
     })
   )
 
@@ -421,7 +421,7 @@ export default function Dashboard() {
 
         {/* 금융소득 종합과세 */}
         <div className={`card border-l-4 ${finBorder} p-3 cursor-pointer hover:shadow-md transition-shadow`}
-             onClick={() => nav('/tax')}>
+             onClick={() => nav('/withdrawal-strategy')}>
           <div className="flex items-center justify-between mb-1">
             <span className="text-[11px] text-gray-500 font-medium">금융소득</span>
             <span className="text-lg">💰</span>
@@ -599,7 +599,7 @@ export default function Dashboard() {
         <div className="card">
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-sm font-semibold text-gray-700">⏳ 향후 60일 만기 자산</h3>
-            <button onClick={() => nav('/maturity-guide')}
+            <button onClick={() => nav('/rebalance')}
               className="text-[11px] text-blue-500 hover:text-blue-700">
               재배분 가이드 →
             </button>
@@ -617,7 +617,7 @@ export default function Dashboard() {
                 const urgent = a.days_left <= 30
                 return (
                   <div key={a.id}
-                    onClick={() => nav('/maturity-guide')}
+                    onClick={() => nav('/rebalance')}
                     className={`rounded-lg px-3 py-2.5 border cursor-pointer transition-colors ${
                       urgent
                         ? 'border-red-200 bg-red-50 hover:bg-red-100'

@@ -107,9 +107,12 @@ def get_annual_returns():
     snap_res = supabase.table("portfolio_snapshots").select("*").order("snapshot_date").execute()
     snapshots = {s["snapshot_date"]: s for s in (snap_res.data or [])}
 
-    # 인출 이력 전체 조회
-    wd_res = supabase.table("withdrawal_log").select("date,actual_amount,amount").execute()
-    withdrawals = wd_res.data or []
+    # 인출 이력 — withdrawals 월별 합계 (withdrawal_log 폐지)
+    from utils import get_monthly_withdrawal_totals
+    withdrawals = [
+        {"date": f"{m}-01", "actual_amount": v, "amount": v}
+        for m, v in get_monthly_withdrawal_totals().items()
+    ]
 
     results = []
     # 스냅샷이 있는 연도 범위 계산

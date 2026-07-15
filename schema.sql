@@ -129,24 +129,10 @@ VALUES (
 ON CONFLICT (key) DO NOTHING;
 
 
--- ── 4. withdrawal_log ─────────────────────────────────────────────────────────
--- 포트폴리오 월간 인출 계획 (date 는 항상 1일: YYYY-MM-01).
--- ※ 실제 연금 수령 기록은 withdrawals 테이블 사용.
-CREATE TABLE IF NOT EXISTS public.withdrawal_log (
-  id                bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-  date              date        NOT NULL UNIQUE,   -- YYYY-MM-01 (월 대표일)
-  amount            numeric     NOT NULL DEFAULT 0,  -- 권장 인출액
-  actual_amount     numeric,                          -- 실제 인출액 (NULL=미기록)
-  guardrail_applied boolean     NOT NULL DEFAULT false,
-  note              text                 DEFAULT ''
-);
-
-COMMENT ON TABLE public.withdrawal_log IS
-  '월별 포트폴리오 인출 계획. date=YYYY-MM-01 UNIQUE. actual_amount=NULL이면 미기록.';
-
-
--- ── 5. withdrawals ────────────────────────────────────────────────────────────
--- 실제 연금 수령 인출 기록 — 연금소득세 한도(연 1,500만원) 계산에 사용.
+-- ── 4. withdrawals ────────────────────────────────────────────────────────────
+-- 인출 기록 단일 소스 (건별). 연금소득세 한도(연 1,500만원) 계산 및
+-- 현금흐름·대시보드·수익률의 월별 인출 집계에 사용.
+-- ※ 구 withdrawal_log(월간 계획) 테이블은 2026-07 폐지 — migrations 참조.
 CREATE TABLE IF NOT EXISTS public.withdrawals (
   id               bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
   withdrawal_date  date        NOT NULL,

@@ -29,6 +29,20 @@ def get_active_assets() -> list:
     return res.data or []
 
 
+def get_monthly_withdrawal_totals() -> dict:
+    """withdrawals 테이블(건별 인출 기록) → {YYYY-MM: 월 합계} 집계.
+
+    withdrawal_log 테이블 폐지 후 모든 월간 인출 소비처가 이 함수를 사용한다.
+    """
+    res = supabase.table("withdrawals").select("withdrawal_date,amount").execute()
+    totals: dict = {}
+    for r in (res.data or []):
+        key = (r.get("withdrawal_date") or "")[:7]
+        if key:
+            totals[key] = totals.get(key, 0.0) + float(r["amount"])
+    return totals
+
+
 def calculate_buckets(assets: list, config: dict) -> dict:
     monthly = config.get("user", {}).get("monthly_expense", 5000000)
 

@@ -58,11 +58,12 @@ def generate_summary():
     monthly = config.get("user", {}).get("monthly_expense", 5000000)
     user_name = config.get("user", {}).get("name", "고객")
 
-    # 최신 인출 데이터
-    wd_res = supabase.table("withdrawal_log").select("*").order("date", desc=True).limit(1).execute()
-    wd     = wd_res.data[0] if wd_res.data else None
-    display_wd = (wd.get("actual_amount") or wd.get("amount") or monthly) if wd else monthly
-    guardrail  = wd.get("guardrail_applied", False) if wd else False
+    # 최신 인출 데이터 — withdrawals 최근 월 합계 (withdrawal_log 폐지)
+    from utils import get_monthly_withdrawal_totals
+    _totals = get_monthly_withdrawal_totals()
+    _recent = sorted(_totals.items(), reverse=True)
+    display_wd = _recent[0][1] if _recent else monthly
+    guardrail  = False  # withdrawal_log 폐지로 가드레일 플래그 제거
 
     client = _openai()
     source = "fallback"
