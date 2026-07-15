@@ -281,12 +281,18 @@ export default function PensionPlan() {
   const qc = useQueryClient()
   const [returnRate,   setReturnRate]   = useState(4)
   const [returnSource, setReturnSource] = useState('default')
-  const [homePension,  setHomePension]  = useState({
-    enabled:      false,
-    houseValueEok: 5,
-    startAge:     70,
-    paymentType:  'fixed',
+  const [homePension,  setHomePension]  = useState(() => {
+    const defaults = { enabled: false, houseValueEok: 5, startAge: 70, paymentType: 'fixed' }
+    try {
+      const saved = localStorage.getItem('home_pension_config')
+      if (saved) return { ...defaults, ...JSON.parse(saved) }
+    } catch {}
+    return defaults
   })
+
+  useEffect(() => {
+    localStorage.setItem('home_pension_config', JSON.stringify(homePension))
+  }, [homePension])
 
   const { data: dash, isLoading, error } = useQuery({
     queryKey: ['dashboard'],
