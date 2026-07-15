@@ -17,8 +17,11 @@ const THIS_YEAR = new Date().getFullYear()
 
 const EMPTY_FORM = {
   recipient_name: '', relationship: 'adult_child', gift_type: 'one_time',
-  amount: 0, start_year: THIS_YEAR + 1, end_year: '', memo: '', is_active: true,
+  amount: 0, start_year: THIS_YEAR + 1, end_year: '', marriage_deduction: false,
+  memo: '', is_active: true,
 }
+
+const DESCENDANTS = ['adult_child', 'minor_child', 'grandchild']
 
 const inputCls = 'w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200'
 
@@ -55,6 +58,7 @@ function GiftForm({ initial, onSubmit, onCancel, saving }) {
       amount:     Number(form.amount) || 0,
       start_year: Number(form.start_year),
       end_year:   form.gift_type === 'recurring' ? Number(form.end_year) || null : null,
+      marriage_deduction: DESCENDANTS.includes(form.relationship) ? !!form.marriage_deduction : false,
       memo:       form.memo || null,
     })
   }
@@ -97,6 +101,20 @@ function GiftForm({ initial, onSubmit, onCancel, saving }) {
           </Field>
         )}
       </div>
+      {DESCENDANTS.includes(form.relationship) && (
+        <label className="flex items-start gap-2 text-sm text-gray-600 cursor-pointer bg-pink-50 border border-pink-100 rounded-lg px-3 py-2.5">
+          <input type="checkbox" checked={!!form.marriage_deduction}
+                 onChange={e => set('marriage_deduction', e.target.checked)}
+                 className="w-4 h-4 mt-0.5" />
+          <span>
+            💍 혼인·출산 공제 적용 <span className="font-bold">(+1억원)</span>
+            <span className="block text-[11px] text-gray-400 mt-0.5">
+              혼인신고일 전후 2년(또는 출생·입양 후 2년) 이내 증여만 해당 · 기본공제와 별도 ·
+              성인 자녀는 합계 1억 5,000만원까지 비과세 · 수증자별 평생 1회(통합 한도 1억)
+            </span>
+          </span>
+        </label>
+      )}
       <Field label="메모">
         <input value={form.memo ?? ''} onChange={e => set('memo', e.target.value)}
                placeholder="예: 주택 자금 지원" className={inputCls} />
@@ -287,6 +305,10 @@ export default function EstatePlan() {
                         <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${rel.badge}`}>
                           {rel.label}
                         </span>
+                        {p.marriage_deduction && (
+                          <span className="ml-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-pink-100 text-pink-700"
+                                title="혼인·출산 공제 +1억 적용">💍 +1억</span>
+                        )}
                       </td>
                       <td className="py-2 pr-2 text-center text-gray-500">
                         {isRecurring ? `정기 (${years}년)` : '일회성'}

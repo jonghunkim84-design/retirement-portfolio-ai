@@ -13,6 +13,7 @@ from routers.estate import (
     calc_inheritance_tax,
     build_gift_schedule,
     compare_gift_vs_inheritance,
+    aggregate_gift_taxes,
 )
 
 
@@ -81,6 +82,56 @@ def test_grandchild_generation_skip_surcharge():
     assert taxes[0]["tax"] == 13_000_000
 
 
+# ── 혼인·출산 공제 (+1억) ────────────────────────────────────────
+
+def test_marriage_deduction_150m_tax_free():
+    # 자녀 결혼 시 1.5억: 기본 5,000만 + 혼인공제 1억 → 전액 비과세
+    taxes = calc_gift_taxes_for_recipient(
+        [(2027, 150_000_000)], "adult_child", extra_deduction=100_000_000)
+    assert taxes[0]["taxable"] == 0
+    assert taxes[0]["tax"] == 0
+    # 공제 없으면 1,000만 과세 (대조)
+    assert calc_gift_taxes_for_recipient([(2027, 150_000_000)], "adult_child")[0]["tax"] == 10_000_000
+
+
+def test_marriage_deduction_over_150m():
+    # 2억 증여: 1.5억 공제 후 5,000만 × 10% = 500만
+    taxes = calc_gift_taxes_for_recipient(
+        [(2027, 200_000_000)], "adult_child", extra_deduction=100_000_000)
+    assert taxes[0]["tax"] == 5_000_000
+
+
+def test_aggregate_marriage_deduction_once_per_recipient():
+    # 같은 수증자에게 혼인 공제 계획 2건 — 공제는 1회(1억)만 적용
+    plans = [
+        {"id": 1, "recipient_name": "첫째", "relationship": "adult_child",
+         "gift_type": "one_time", "amount": 100_000_000, "start_year": 2027,
+         "marriage_deduction": True, "is_active": True},
+        {"id": 2, "recipient_name": "첫째", "relationship": "adult_child",
+         "gift_type": "one_time", "amount": 100_000_000, "start_year": 2028,
+         "marriage_deduction": True, "is_active": True},
+    ]
+    agg = aggregate_gift_taxes(plans)
+    # 누적 2억 − (5,000만 + 1억) = 5,000만 × 10% = 500만 (공제 중복 없음)
+    assert agg["total_gift_tax"] == 5_000_000
+    r = agg["recipients"][0]
+    assert r["marriage_deduction"] is True
+    assert r["extra_deduction"] == 100_000_000
+
+
+def test_aggregate_groups_same_recipient_across_plans():
+    # 같은 수증자의 별도 계획 2건도 10년 합산되어야 함 (compare와 summary 일관성)
+    plans = [
+        {"id": 1, "recipient_name": "둘째", "relationship": "adult_child",
+         "gift_type": "one_time", "amount": 50_000_000, "start_year": 2027, "is_active": True},
+        {"id": 2, "recipient_name": "둘째", "relationship": "adult_child",
+         "gift_type": "one_time", "amount": 50_000_000, "start_year": 2028, "is_active": True},
+    ]
+    agg = aggregate_gift_taxes(plans)
+    # 누적 1억 − 공제 5,000만 = 5,000만 × 10% = 500만 (각각 따로면 0원이 되어버림)
+    assert agg["total_gift_tax"] == 5_000_000
+
+
 # ── calc_inheritance_tax ─────────────────────────────────────────
 
 def test_inheritance_below_deduction_is_zero():
@@ -122,9 +173,9 @@ def test_schedule_merges_same_year():
 def test_comparison_gift_saves_tax():
     # 총 30억 (금융 10억), 배우자 有, 자녀 2명에게 각 1.5억 사전증여
     plans = [
-        {"gift_type": "one_time", "amount": 150_000_000, "start_year": 2027,
+        {"id": 1, "gift_type": "one_time", "amount": 150_000_000, "start_year": 2027,
          "relationship": "adult_child", "recipient_name": "첫째", "is_active": True},
-        {"gift_type": "one_time", "amount": 150_000_000, "start_year": 2027,
+        {"id": 2, "gift_type": "one_time", "amount": 150_000_000, "start_year": 2027,
          "relationship": "adult_child", "recipient_name": "둘째", "is_active": True},
     ]
     r = compare_gift_vs_inheritance(3_000_000_000, 1_000_000_000, True, plans)
@@ -133,3 +184,15 @@ def test_comparison_gift_saves_tax():
     # 한계세율 40% 구간에서 3억 차감 → 상속세 절감 1.2억 > 증여세 2,000만
     assert r["savings"] > 0
     assert r["no_gift"]["total_cost"] == r["with_gift"]["total_cost"] + r["savings"]
+
+
+def test_comparison_marriage_deduction_reduces_gift_tax():
+    # 결혼하는 자녀에게 1.5억 — 혼인 공제 적용 시 증여세 0
+    plans = [
+        {"id": 1, "gift_type": "one_time", "amount": 150_000_000, "start_year": 2027,
+         "relationship": "adult_child", "recipient_name": "첫째",
+         "marriage_deduction": True, "is_active": True},
+    ]
+    r = compare_gift_vs_inheritance(3_000_000_000, 1_000_000_000, True, plans)
+    assert r["with_gift"]["gift_tax"] == 0
+    assert r["savings"] > 0

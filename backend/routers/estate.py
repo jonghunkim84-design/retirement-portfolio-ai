@@ -26,6 +26,7 @@ from database import supabase
 from utils import get_config, get_active_assets
 from tax_constants import (
     GIFT_DEDUCTION_10YR,
+    MARRIAGE_GIFT_DEDUCTION,
     ESTATE_GIFT_TAX_BRACKETS,
     GENERATION_SKIP_SURCHARGE,
     INHERITANCE_LUMP_DEDUCTION,
@@ -69,13 +70,16 @@ def expand_gift_occurrences(plan: dict) -> list:
     return [(start, amount)]
 
 
-def calc_gift_taxes_for_recipient(occurrences: list, relationship: str) -> list:
+def calc_gift_taxes_for_recipient(
+    occurrences: list, relationship: str, extra_deduction: float = 0.0
+) -> list:
     """수증자 1명의 증여 목록 → 건별 증여세 (10년 합산 방식 근사).
 
     occurrences: [(year, amount)] — 정렬 불필요 (내부 정렬).
+    extra_deduction: 혼인·출산 공제 등 추가 공제 (원, 수증자 평생 1회).
     반환: [{year, amount, window_sum, taxable, tax}] 연도 오름차순.
     """
-    deduction = GIFT_DEDUCTION_10YR.get(relationship, 0)
+    deduction = GIFT_DEDUCTION_10YR.get(relationship, 0) + max(0.0, extra_deduction)
     surcharge = GENERATION_SKIP_SURCHARGE if relationship == "grandchild" else 0.0
 
     occs = sorted(occurrences, key=lambda o: o[0])
@@ -121,6 +125,62 @@ def calc_inheritance_tax(estate_value: float, financial_assets: float, has_spous
     }
 
 
+def aggregate_gift_taxes(plans: list) -> dict:
+    """활성 증여 계획 → 수증자(이름+관계)별 10년 합산 증여세 집계.
+
+    혼인·출산 공제: 수증자의 계획 중 하나라도 marriage_deduction=True면
+    해당 수증자 공제에 +1억 (평생 1회 — 여러 건에 중복 적용되지 않음).
+    반환: recipients / tax_by_plan / total_gifts / total_gift_tax
+    """
+    groups: dict = {}
+    for p in plans:
+        if not p.get("is_active", True):
+            continue
+        key = (p["recipient_name"], p.get("relationship", "other"))
+        g = groups.setdefault(key, {"occ3": [], "marriage": False})
+        g["occ3"].extend([(y, a, p["id"]) for y, a in expand_gift_occurrences(p)])
+        if p.get("marriage_deduction"):
+            g["marriage"] = True
+
+    recipients = []
+    tax_by_plan: dict = {}
+    total_gifts = 0.0
+    total_gift_tax = 0.0
+
+    for (name, rel), g in groups.items():
+        extra = MARRIAGE_GIFT_DEDUCTION if g["marriage"] else 0.0
+        occ3_sorted = sorted(g["occ3"], key=lambda o: o[0])
+        occs = [(y, a) for y, a, _ in occ3_sorted]
+        taxes = calc_gift_taxes_for_recipient(occs, rel, extra)
+
+        # 건별 세금을 계획 id 별로 재귀속 (동일 정렬 사용)
+        for (y, a, pid), t in zip(occ3_sorted, taxes):
+            tax_by_plan[pid] = tax_by_plan.get(pid, 0) + t["tax"]
+
+        amount = sum(a for _, a in occs)
+        tax = sum(t["tax"] for t in taxes)
+        total_gifts += amount
+        total_gift_tax += tax
+        recipients.append({
+            "recipient_name":     name,
+            "relationship":       rel,
+            "relationship_label": RELATIONSHIP_LABELS.get(rel, rel),
+            "deduction_10yr":     GIFT_DEDUCTION_10YR.get(rel, 0),
+            "marriage_deduction": g["marriage"],
+            "extra_deduction":    round(extra),
+            "total_amount":       round(amount),
+            "total_tax":          round(tax),
+            "occurrences":        taxes,
+        })
+
+    return {
+        "recipients":     recipients,
+        "tax_by_plan":    tax_by_plan,
+        "total_gifts":    round(total_gifts),
+        "total_gift_tax": round(total_gift_tax),
+    }
+
+
 def build_gift_schedule(plans: list) -> dict:
     """활성 증여 계획 → {연도: 총 증여액} (연금 시뮬레이션 유출용)."""
     by_year: dict = {}
@@ -143,16 +203,9 @@ def compare_gift_vs_inheritance(
     no_gift = calc_inheritance_tax(estate_value, financial_assets, has_spouse)
 
     # B: 계획 증여 실행 (증여분은 금융자산에서 우선 유출 가정)
-    total_gifts = 0.0
-    total_gift_tax = 0.0
-    for p in plans:
-        if not p.get("is_active", True):
-            continue
-        occs = expand_gift_occurrences(p)
-        total_gifts += sum(a for _, a in occs)
-        total_gift_tax += sum(
-            r["tax"] for r in calc_gift_taxes_for_recipient(occs, p.get("relationship", "other"))
-        )
+    agg = aggregate_gift_taxes(plans)
+    total_gifts = agg["total_gifts"]
+    total_gift_tax = agg["total_gift_tax"]
 
     remaining_estate = max(0.0, estate_value - total_gifts)
     remaining_financial = max(0.0, financial_assets - total_gifts)
@@ -185,6 +238,7 @@ class GiftPlanIn(BaseModel):
     amount: float = 0
     start_year: int
     end_year: Optional[int] = None
+    marriage_deduction: bool = False   # 혼인·출산 공제 (+1억, 직계비속만)
     memo: Optional[str] = None
     is_active: bool = True
 
@@ -218,6 +272,10 @@ class GiftPlanIn(BaseModel):
                 raise ValueError("정기 증여는 종료 연도(시작 연도 이후)가 필요합니다")
         else:
             self.end_year = None
+        if self.marriage_deduction and self.relationship not in (
+            "adult_child", "minor_child", "grandchild"
+        ):
+            raise ValueError("혼인·출산 공제는 직계비속(자녀·손자녀) 증여에만 적용됩니다")
         return self
 
 
@@ -348,37 +406,10 @@ def get_estate_summary():
     plans = _load_plans()
     assets = _current_assets()
 
-    # 수증자(이름+관계)별로 묶어 10년 합산 증여세 계산
-    groups: dict = {}
-    for p in plans:
-        if not p.get("is_active", True):
-            continue
-        key = (p["recipient_name"], p.get("relationship", "other"))
-        groups.setdefault(key, []).extend(
-            [(y, a, p["id"]) for y, a in expand_gift_occurrences(p)]
-        )
-
-    recipients = []
-    tax_by_plan: dict = {}
-    for (name, rel), occ3 in groups.items():
-        occs = [(y, a) for y, a, _ in occ3]
-        taxes = calc_gift_taxes_for_recipient(occs, rel)
-        # 건별 세금을 계획 id 별로 재귀속 (연도·금액 순서 일치 — 동일 정렬 사용)
-        occ3_sorted = sorted(occ3, key=lambda o: o[0])
-        for (y, a, pid), t in zip(occ3_sorted, taxes):
-            tax_by_plan[pid] = tax_by_plan.get(pid, 0) + t["tax"]
-        total_amount = sum(a for _, a in occs)
-        total_tax = sum(t["tax"] for t in taxes)
-        deduction = GIFT_DEDUCTION_10YR.get(rel, 0)
-        recipients.append({
-            "recipient_name": name,
-            "relationship":   rel,
-            "relationship_label": RELATIONSHIP_LABELS.get(rel, rel),
-            "deduction_10yr": deduction,
-            "total_amount":   round(total_amount),
-            "total_tax":      round(total_tax),
-            "occurrences":    taxes,
-        })
+    # 수증자(이름+관계)별로 묶어 10년 합산 증여세 계산 (혼인·출산 공제 포함)
+    agg = aggregate_gift_taxes(plans)
+    recipients = agg["recipients"]
+    tax_by_plan = agg["tax_by_plan"]
 
     plans_out = []
     for p in plans:
@@ -395,6 +426,9 @@ def get_estate_summary():
 
     warnings = [
         "사망 전 10년 이내 증여분은 상속재산에 가산되므로, 절세 효과는 증여 후 10년 이상 생존을 가정한 값입니다.",
+        *([
+            "혼인·출산 공제(+1억)는 혼인신고일 전후 2년(또는 출생·입양 후 2년) 이내 증여에만 적용되며, 혼인+출산 통합 평생 한도 1억원입니다."
+        ] if any(p.get("marriage_deduction") and p.get("is_active", True) for p in plans) else []),
         "배우자 상속공제는 최소 5억원 기준 단순 계산입니다 (법정상속분 한도 최대 30억원 미반영).",
         "증여세는 수증자 부담이 원칙이라 연금 시뮬레이션 유출에는 증여 원금만 반영됩니다.",
     ]

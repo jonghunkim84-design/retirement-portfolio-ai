@@ -145,6 +145,7 @@
 |------|------|
 | 증여 계획 CRUD | 수증자·관계·유형(일회성/정기)·금액·연도 입력 |
 | 증여세 자동 계산 | 관계별 10년 합산 공제(배우자 6억 / 성인 자녀 5,000만 / 미성년 2,000만 / 기타 친족 1,000만) + 누진세율 10~50% + 손자녀 세대생략 30% 할증 |
+| 혼인·출산 공제 | 직계비속 증여 시 +1억원 추가 공제 (성인 자녀 합계 1.5억까지 비과세, 수증자별 평생 1회, 혼인신고 전후 2년 요건) |
 | 상속세 개산 | 현재 총자산(금융+실물 순자산) 기준 — 일괄공제 5억 + 배우자 최소공제 5억 + 금융재산공제 min(금융×20%, 2억) |
 | 사전증여 절세 비교 | 전액 상속 vs 계획 증여 실행 후 상속의 총 이전 비용 비교 (10년 이상 생존 가정) |
 | 상속 목표 설정 | 남길 유산 목표 금액·배우자 유무 저장 (user_config `estate_plan`) |
@@ -294,7 +295,7 @@
 | `notification_log` | id, notification_type, year, sent_at | 이메일 알림 중복 방지 |
 | `health_insurance_simulations` | id, user_id, label, inputs (JSONB), health_premium, long_care_premium, total_monthly, total_annual, income_score, property_score, total_score, is_dependent_eligible | 건강보험료 시뮬레이션 저장 이력 (RLS 적용) |
 | `real_assets` | id, name, category, market_value, official_price, loan_amount, acquisition_price, acquisition_date, address, memo, is_active | 실물자산 (부동산·전세보증금 등 비금융자산) |
-| `gift_plans` | id, recipient_name, relationship, gift_type, amount, start_year, end_year, memo, is_active | 사전증여 계획 (연금 계획 시뮬레이션 유출 반영) |
+| `gift_plans` | id, recipient_name, relationship, gift_type, amount, start_year, end_year, marriage_deduction, memo, is_active | 사전증여 계획 (연금 계획 시뮬레이션 유출 반영) |
 
 ---
 

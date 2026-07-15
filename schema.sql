@@ -295,6 +295,7 @@ CREATE TABLE IF NOT EXISTS public.gift_plans (
   amount         numeric     NOT NULL DEFAULT 0,            -- 1회(연간) 증여 금액 (원)
   start_year     integer     NOT NULL,
   end_year       integer,                                   -- 정기 증여 종료 연도 (일회성은 NULL)
+  marriage_deduction boolean NOT NULL DEFAULT false,        -- 혼인·출산 공제 적용 (직계비속 +1억)
   memo           text,
   is_active      boolean     NOT NULL DEFAULT true,
   created_at     timestamptz NOT NULL DEFAULT now(),

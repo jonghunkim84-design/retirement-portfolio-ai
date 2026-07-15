@@ -10,11 +10,16 @@ CREATE TABLE IF NOT EXISTS public.gift_plans (
   amount         numeric     NOT NULL DEFAULT 0,            -- 1회(연간) 증여 금액 (원)
   start_year     integer     NOT NULL,                      -- 증여 (시작) 연도
   end_year       integer,                                   -- 정기 증여 종료 연도 (일회성은 NULL)
+  marriage_deduction boolean NOT NULL DEFAULT false,        -- 혼인·출산 공제 적용 (직계비속 +1억)
   memo           text,
   is_active      boolean     NOT NULL DEFAULT true,
   created_at     timestamptz NOT NULL DEFAULT now(),
   updated_at     timestamptz NOT NULL DEFAULT now()
 );
+
+-- 이미 테이블을 생성한 경우를 위한 컬럼 추가 (신규 생성 시에는 no-op)
+ALTER TABLE public.gift_plans
+  ADD COLUMN IF NOT EXISTS marriage_deduction boolean NOT NULL DEFAULT false;
 
 COMMENT ON TABLE public.gift_plans IS
   '사전증여 계획. relationship 별 10년 합산 증여재산공제 적용, 손자녀(grandchild)는 세대생략 30% 할증.';

@@ -50,6 +50,11 @@ ESTATE_GIFT_TAX_BRACKETS = [
 
 GENERATION_SKIP_SURCHARGE = 0.30   # 세대생략 증여 할증 (미성년+20억 초과 40%는 미반영)
 
+# 혼인·출산 증여재산공제 (2024.1.1 시행): 직계존속 → 직계비속,
+# 혼인신고일 전후 2년(또는 출생·입양 후 2년) 이내 증여 시 기본공제와 별도 적용.
+# 혼인+출산 통합 평생 한도 1억원 → 성인 자녀 기본 5천만과 합쳐 1.5억까지 비과세.
+MARRIAGE_GIFT_DEDUCTION = 100_000_000
+
 # 상속공제 (개산용 단순화)
 INHERITANCE_LUMP_DEDUCTION      = 500_000_000  # 일괄공제
 INHERITANCE_SPOUSE_MIN_DEDUCTION = 500_000_000 # 배우자 상속공제 최소 (최대 30억은 미반영)
