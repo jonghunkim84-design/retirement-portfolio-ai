@@ -122,6 +122,7 @@
 | 비교 시나리오 | 주택연금 있을 때 vs 없을 때 자산 곡선 비교 |
 | 기대수익률 조정 | 슬라이더로 즉시 재계산 |
 | 인플레이션 가정 | 물가상승률 설정 반영 |
+| 상속·증여 연동 | 계획된 증여를 해당 연도 유출로 차감, 상속 목표 금액을 잔액 차트 목표선으로 표시 + 95세 잔액 기준 달성 여부 배너 |
 
 #### 연금 최적화 (`/pension-optimize`)
 | 기능 | 설명 |
@@ -138,6 +139,16 @@
 | 나이별 세율 적용 | 55~69세 5.5% / 70~79세 4.4% / 80세↑ 3.3% (지방소득세 포함) |
 | 한도 초과 시 세율 | 16.5% 분리과세 또는 종합과세 선택 |
 | 인출 기록 연동 | `withdrawals` 테이블 기반 실제 인출 이력 반영 |
+
+#### 상속·증여 계획 (`/estate-plan`)
+| 기능 | 설명 |
+|------|------|
+| 증여 계획 CRUD | 수증자·관계·유형(일회성/정기)·금액·연도 입력 |
+| 증여세 자동 계산 | 관계별 10년 합산 공제(배우자 6억 / 성인 자녀 5,000만 / 미성년 2,000만 / 기타 친족 1,000만) + 누진세율 10~50% + 손자녀 세대생략 30% 할증 |
+| 상속세 개산 | 현재 총자산(금융+실물 순자산) 기준 — 일괄공제 5억 + 배우자 최소공제 5억 + 금융재산공제 min(금융×20%, 2억) |
+| 사전증여 절세 비교 | 전액 상속 vs 계획 증여 실행 후 상속의 총 이전 비용 비교 (10년 이상 생존 가정) |
+| 상속 목표 설정 | 남길 유산 목표 금액·배우자 유무 저장 (user_config `estate_plan`) |
+| 연금 계획 연동 | 증여 유출·상속 목표가 연금 계획 시뮬레이션에 자동 반영 |
 
 #### 인출 전략 (`/withdrawal-strategy`)
 | 기능 | 설명 |
@@ -283,6 +294,7 @@
 | `notification_log` | id, notification_type, year, sent_at | 이메일 알림 중복 방지 |
 | `health_insurance_simulations` | id, user_id, label, inputs (JSONB), health_premium, long_care_premium, total_monthly, total_annual, income_score, property_score, total_score, is_dependent_eligible | 건강보험료 시뮬레이션 저장 이력 (RLS 적용) |
 | `real_assets` | id, name, category, market_value, official_price, loan_amount, acquisition_price, acquisition_date, address, memo, is_active | 실물자산 (부동산·전세보증금 등 비금융자산) |
+| `gift_plans` | id, recipient_name, relationship, gift_type, amount, start_year, end_year, memo, is_active | 사전증여 계획 (연금 계획 시뮬레이션 유출 반영) |
 
 ---
 
@@ -367,6 +379,7 @@
 │   │   │   ├── PensionOptimize.jsx    # 연금 최적화
 │   │   │   ├── PensionTax.jsx         # 연금 세금 계산
 │   │   │   ├── WithdrawalStrategy.jsx # 인출 전략 (세금+건보료 최적 인출 순서)
+│   │   │   ├── EstatePlan.jsx         # 상속·증여 계획 (증여세·상속세 개산)
 │   │   │   ├── TaxOptimization.jsx    # 세금 최적화 (금융소득 모니터)
 │   │   │   ├── HealthInsurance.jsx    # 건강보험료 시뮬레이터 (저장·불러오기 포함)
 │   │   │   ├── RiskScore.jsx          # 위험 점수
@@ -406,6 +419,7 @@
 │   │   ├── dashboard.py               # GET /dashboard (종합 집계)
 │   │   ├── pension_tax.py             # 연금소득세 계산 (퇴직연금·연금저축·ISA)
 │   │   ├── withdrawal_strategy.py     # 인출 순서 최적화 (세금+건보료 통합)
+│   │   ├── estate.py                  # 상속·증여 계획 (증여세 10년 합산·상속세 개산)
 │   │   ├── pension_plan.py            # 장기 연금 시뮬레이션
 │   │   ├── returns.py                 # 수익률 분석
 │   │   ├── rebalance.py               # 리밸런싱 계산
@@ -428,6 +442,7 @@
 │   │   ├── test_withdrawal_strategy_api.py # 인출 전략 라우트 스모크 테스트 (DB 모킹)
 │   │   ├── test_daily_cron.py         # Cron 로직 테스트
 │   │   ├── test_real_assets.py        # 실물자산 과세표준·요약 테스트
+│   │   ├── test_estate.py             # 상속·증여세 계산 테스트
 │   │   └── test_assumptions.py        # 계획 가정값 테스트
 │   └── requirements.txt
 │
@@ -440,7 +455,8 @@
 │   ├── 2026-06-15_expenses.sql
 │   ├── 2026-06-16_income_type_earned.sql
 │   ├── 2026-06-25_health_insurance_simulations.sql
-│   └── 2026-07-14_real_assets.sql
+│   ├── 2026-07-14_real_assets.sql
+│   └── 2026-07-15_gift_plans.sql
 │
 ├── vercel.json                        # Vercel 배포 (experimentalServices + Cron)
 ├── .env                               # 로컬 환경 변수 (Git 제외)
@@ -502,6 +518,7 @@ Supabase Dashboard
 | `recommendations` | AI 포트폴리오 요약 |
 | `health_insurance_simulations` | 건강보험료 시뮬레이션 저장 이력 |
 | `real_assets` | 실물자산 (부동산·전세보증금 등) |
+| `gift_plans` | 사전증여 계획 |
 
 > 이미 운영 중인 DB에 새 마이그레이션만 적용하려면 `migrations/` 폴더의 해당 파일을 순서대로 실행합니다.
 

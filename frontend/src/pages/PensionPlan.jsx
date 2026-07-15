@@ -32,7 +32,7 @@ function calcHomePensionMonthly(houseValueEok, age, paymentType, yearsFromStart 
 }
 
 // ── 추이 계산 ────────────────────────────────────────────────────
-function calcProjections(config, initialBalance, returnRate, homePension) {
+function calcProjections(config, initialBalance, returnRate, homePension, giftsByYear = {}) {
   const birthYear   = config.user.birth_year
   const baseMonthly = config.user.monthly_expense
   const inflation   = config.inflation?.assumed_rate ?? 0.025
@@ -93,14 +93,18 @@ function calcProjections(config, initialBalance, returnRate, homePension) {
     const annualHomePension = homePensionMonthly * 12
     const annualWithdrawal = Math.max(0, annualExpense - annualPension - annualHomePension)
 
+    // 계획된 증여 유출 (상속·증여 페이지 연동)
+    const annualGift = giftsByYear[year] ?? 0
+
     const balanceStart = balance
-    balance = Math.max(0, balanceStart * (1 + returnRate) - annualWithdrawal)
+    balance = Math.max(0, balanceStart * (1 + returnRate) - annualWithdrawal - annualGift)
 
     let note = ''
     if (year === hpStartYear && homePension.enabled) note = '🏠 주택연금 수령 시작'
     else if (year === pensionStartYear)              note = '🏛 국민연금 수령 시작'
     else if (age === 70)                             note = '📉 생활비 10% 감액'
     else if (age === 80)                             note = '📉 생활비 추가 10% 감액'
+    if (annualGift > 0) note = note ? `${note} · 🎁 증여` : '🎁 증여 실행'
 
     rows.push({
       year, age, note,
@@ -109,6 +113,7 @@ function calcProjections(config, initialBalance, returnRate, homePension) {
       homePensionMonthly: Math.round(homePensionMonthly),
       monthlyWithdrawal:  Math.round(annualWithdrawal / 12),
       annualWithdrawal:   Math.round(annualWithdrawal),
+      annualGift:         Math.round(annualGift),
       portfolioBalance:   Math.round(balanceStart),
     })
   }
@@ -297,6 +302,16 @@ export default function PensionPlan() {
     enabled: !isLoading,
   })
 
+  // 상속·증여 계획 (연도별 증여 유출 + 상속 목표선)
+  const { data: estate } = useQuery({
+    queryKey: ['estate-schedule'],
+    queryFn: () => api.get('/estate/schedule').then(r => r.data),
+    enabled: !isLoading,
+  })
+  const giftsByYear   = estate?.gifts_by_year ?? {}
+  const estateTarget  = estate?.target_amount ?? 0
+  const hasGifts      = Object.keys(giftsByYear).length > 0
+
   // 저장된 계획용 목표 수익률 (단일 출처: config.plan.target_annual_return)
   const savedTarget = dash?.config?.plan?.target_annual_return ?? null
 
@@ -335,14 +350,14 @@ export default function PensionPlan() {
 
   const rows = useMemo(() => {
     if (!dash) return []
-    return calcProjections(dash.config, dash.buckets.total, returnRate / 100, homePension)
-  }, [dash, returnRate, homePension])
+    return calcProjections(dash.config, dash.buckets.total, returnRate / 100, homePension, giftsByYear)
+  }, [dash, returnRate, homePension, giftsByYear])
 
   // ⚠️ useMemo는 early return 이전에 선언 (Rules of Hooks)
   const rowsWithout = useMemo(() => {
     if (!dash || !homePension.enabled) return []
-    return calcProjections(dash.config, dash.buckets.total, returnRate / 100, { ...homePension, enabled: false })
-  }, [dash, returnRate, homePension])
+    return calcProjections(dash.config, dash.buckets.total, returnRate / 100, { ...homePension, enabled: false }, giftsByYear)
+  }, [dash, returnRate, homePension, giftsByYear])
 
   if (isLoading) return <div className="flex items-center justify-center h-64 text-gray-400">불러오는 중...</div>
   if (error)     return <div className="text-red-500 p-4">오류: {error.message}</div>
@@ -395,6 +410,11 @@ export default function PensionPlan() {
 
   // 주택연금 없는 시나리오와 비교
   const exhaustWithout = rowsWithout.find(r => r.portfolioBalance === 0)
+
+  // 상속 목표 달성 여부 (95세 잔액 기준)
+  const meetsEstateTarget = estateTarget > 0 && !exhaustRow && lastRow.portfolioBalance >= estateTarget
+  const estateShortfall   = estateTarget > 0 ? Math.max(0, estateTarget - (exhaustRow ? 0 : lastRow.portfolioBalance)) : 0
+  const totalPlannedGifts = rows.reduce((s, r) => s + (r.annualGift || 0), 0)
 
   // 주택연금 활성화 시 예상 월지급금 (시작 시점)
   const hpMonthly = homePension.enabled
@@ -552,6 +572,32 @@ export default function PensionPlan() {
         ))}
       </div>
 
+      {/* 상속·증여 계획 반영 배너 */}
+      {(hasGifts || estateTarget > 0) && (
+        <div className={`rounded-xl px-5 py-4 flex items-start gap-3 border
+          ${estateTarget > 0 && !meetsEstateTarget ? 'bg-amber-50 border-amber-300' : 'bg-emerald-50 border-emerald-300'}`}>
+          <span className="text-xl flex-shrink-0 mt-0.5">🎁</span>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-gray-800 mb-1">
+              상속·증여 계획 반영됨
+              {hasGifts && <> — 계획 증여 총 <span className="font-bold">{fmt.eok(totalPlannedGifts)}</span> 유출 차감</>}
+            </p>
+            {estateTarget > 0 && (
+              <p className={`text-xs ${meetsEstateTarget ? 'text-emerald-700' : 'text-amber-700'}`}>
+                상속 목표 {fmt.eok(estateTarget)} — 95세 잔액 기준{' '}
+                {meetsEstateTarget
+                  ? `✅ 달성 (여유 ${fmt.eok(lastRow.portfolioBalance - estateTarget)})`
+                  : `⚠️ 미달 (부족 ${fmt.eok(estateShortfall)})`}
+              </p>
+            )}
+          </div>
+          <a href="/estate-plan"
+            className="text-xs text-gray-500 hover:text-gray-700 underline flex-shrink-0 mt-0.5">
+            상속·증여에서 조정
+          </a>
+        </div>
+      )}
+
       {/* 주택연금 시뮬레이션 패널 */}
       <HomePensionPanel
         homePension={homePension}
@@ -621,6 +667,10 @@ export default function PensionPlan() {
               <ReferenceLine x={exhaustRow.year} stroke="#dc2626" strokeWidth={2}
                 label={{ value: '소진', position: 'top', fontSize: 10, fill: '#dc2626' }} />
             )}
+            {estateTarget > 0 && (
+              <ReferenceLine y={+(estateTarget / 1e8).toFixed(1)} stroke="#10b981" strokeWidth={2} strokeDasharray="8 4"
+                label={{ value: `상속 목표 ${(estateTarget / 1e8).toFixed(1)}억`, position: 'insideTopRight', fontSize: 10, fill: '#10b981' }} />
+            )}
             <Area type="monotone" dataKey="balance" name="포트폴리오 잔액"
               stroke="#3b82f6" fill="url(#balGrad)" strokeWidth={2.5} dot={false} />
           </AreaChart>
@@ -641,6 +691,9 @@ export default function PensionPlan() {
                 <th className="text-right py-2 px-3 font-semibold text-amber-700">주택연금/월</th>
               )}
               <th className="text-right py-2 px-3 font-semibold">포트폴리오 인출/월</th>
+              {hasGifts && (
+                <th className="text-right py-2 px-3 font-semibold text-emerald-700">증여/년</th>
+              )}
               <th className="text-right py-2 px-3 font-semibold">포트폴리오 잔액</th>
               <th className="text-center py-2 px-3 font-semibold">비고</th>
             </tr>
@@ -669,6 +722,11 @@ export default function PensionPlan() {
                   <td className={`py-2 px-3 text-right font-medium ${r.monthlyWithdrawal === 0 ? 'text-green-600' : 'text-orange-600'}`}>
                     {r.monthlyWithdrawal === 0 ? '연금으로 충당' : fmt.won(r.monthlyWithdrawal)}
                   </td>
+                  {hasGifts && (
+                    <td className={`py-2 px-3 text-right font-medium ${r.annualGift > 0 ? 'text-emerald-600' : 'text-gray-300'}`}>
+                      {r.annualGift > 0 ? fmt.won(r.annualGift) : '—'}
+                    </td>
+                  )}
                   <td className={`py-2 px-3 text-right font-semibold
                     ${isDepleted ? 'text-red-600' : isLow ? 'text-orange-500' : 'text-gray-800'}`}>
                     {fmt.eok(r.portfolioBalance)}

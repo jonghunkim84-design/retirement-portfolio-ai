@@ -283,3 +283,23 @@ CREATE TABLE IF NOT EXISTS public.real_assets (
 
 COMMENT ON TABLE public.real_assets IS
   '실물자산 (부동산·전세보증금 등). category: house=주택, building=건물·상가·토지, jeonse=전세보증금, other=기타(건보료 재산 미부과).';
+
+
+-- ── 13. gift_plans ────────────────────────────────────────────────────────────
+-- 사전증여 계획. 연금 계획 시뮬레이션에서 해당 연도 자산 유출로 반영.
+CREATE TABLE IF NOT EXISTS public.gift_plans (
+  id             bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  recipient_name text        NOT NULL,                      -- 수증자 (예: 첫째)
+  relationship   text        NOT NULL DEFAULT 'adult_child',-- spouse | adult_child | minor_child | grandchild | other_relative | other
+  gift_type      text        NOT NULL DEFAULT 'one_time',   -- one_time(일회성) | recurring(정기)
+  amount         numeric     NOT NULL DEFAULT 0,            -- 1회(연간) 증여 금액 (원)
+  start_year     integer     NOT NULL,
+  end_year       integer,                                   -- 정기 증여 종료 연도 (일회성은 NULL)
+  memo           text,
+  is_active      boolean     NOT NULL DEFAULT true,
+  created_at     timestamptz NOT NULL DEFAULT now(),
+  updated_at     timestamptz NOT NULL DEFAULT now()
+);
+
+COMMENT ON TABLE public.gift_plans IS
+  '사전증여 계획. relationship 별 10년 합산 증여재산공제 적용, 손자녀(grandchild)는 세대생략 30% 할증.';
