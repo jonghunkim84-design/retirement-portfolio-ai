@@ -166,9 +166,15 @@ function TaxCompareModal({ onClose }) {
 
             <div className="grid grid-cols-2 gap-3">
               <div className={`rounded-lg p-3 border ${result.better_option === 'withholding' ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>
-                <p className="text-xs text-gray-500 font-medium">원천징수 ({result.withholding.rate_pct}%)</p>
+                <p className="text-xs text-gray-500 font-medium">원천징수 (평균 {result.withholding.rate_pct}%)</p>
                 <p className="text-lg font-bold text-blue-700 mt-1">{fmt.won(result.withholding.tax)}</p>
                 <p className="text-[11px] text-gray-400 mt-1">세후 실수령 {fmt.won(result.withholding.net_income)}</p>
+                {result.withholding.earned_income > 0 && (
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    금융소득 {fmt.won(result.withholding.financial_income)} ({result.withholding.financial_rate_pct}%) ·
+                    근로소득 {fmt.won(result.withholding.earned_income)} ({result.withholding.earned_rate_pct}%)
+                  </p>
+                )}
                 {result.better_option === 'withholding' && <p className="text-[11px] text-green-600 font-semibold mt-1">✓ 더 유리</p>}
               </div>
               <div className={`rounded-lg p-3 border ${result.better_option === 'comprehensive' ? 'border-green-400 bg-green-50' : 'border-gray-200'}`}>

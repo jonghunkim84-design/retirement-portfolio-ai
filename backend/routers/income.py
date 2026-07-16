@@ -6,6 +6,7 @@ from database import supabase
 from utils import get_config, get_pension_info
 from tax_constants import (
     FINANCIAL_WITHHOLDING_RATE,
+    EARNED_INCOME_WITHHOLDING_RATE,
     COMPREHENSIVE_TAX_BRACKETS,
     LOCAL_INCOME_TAX_RATE,
     PERSONAL_DEDUCTION_PER_PERSON,
@@ -270,16 +271,23 @@ def compare_tax(dependents: int = 1, card_amount: float = 0):
         .select("amount,asset_name,income_type") \
         .gte("income_date", year_start).lte("income_date", year_end).execute()
     pension_asset_names = _get_pension_asset_names()
-    total_income = sum(
-        float(r["amount"]) for r in (res.data or [])
-        if not _is_pension_fin_income(r, pension_asset_names)
-    )
+    rows = [r for r in (res.data or []) if not _is_pension_fin_income(r, pension_asset_names)]
 
-    withholding_tax = total_income * FINANCIAL_WITHHOLDING_RATE
+    # 근로소득은 3.3%, 그 외(이자·배당·기타)는 15.4% 원천징수율을 각각 적용해 가중 합산
+    earned_income    = sum(float(r["amount"]) for r in rows if r.get("income_type") == "earned")
+    financial_income = sum(float(r["amount"]) for r in rows if r.get("income_type") != "earned")
+    total_income     = financial_income + earned_income
+
+    withholding_tax = financial_income * FINANCIAL_WITHHOLDING_RATE \
+        + earned_income * EARNED_INCOME_WITHHOLDING_RATE
     withholding = {
-        "rate_pct":   round(FINANCIAL_WITHHOLDING_RATE * 100, 1),
-        "tax":        round(withholding_tax),
-        "net_income": round(total_income - withholding_tax),
+        "rate_pct":           round(withholding_tax / total_income * 100, 1) if total_income else 0.0,
+        "tax":                round(withholding_tax),
+        "net_income":         round(total_income - withholding_tax),
+        "financial_income":   round(financial_income),
+        "financial_rate_pct": round(FINANCIAL_WITHHOLDING_RATE * 100, 1),
+        "earned_income":      round(earned_income),
+        "earned_rate_pct":    round(EARNED_INCOME_WITHHOLDING_RATE * 100, 1),
     }
 
     comprehensive = _calc_comprehensive_tax(total_income, dependents, card_amount)
@@ -298,7 +306,8 @@ def compare_tax(dependents: int = 1, card_amount: float = 0):
         "comprehensive":  comprehensive,
         "better_option":  better,
         "diff":           diff,
-        "disclaimer":     "인적공제(기본공제)와 신용카드 소득공제만 반영한 단순화 계산입니다. "
+        "disclaimer":     "원천징수는 이자·배당·기타 15.4%, 근로소득 3.3%를 각각 적용해 합산했습니다. "
+                           "종합소득세는 인적공제(기본공제)와 신용카드 소득공제만 반영한 단순화 계산입니다. "
                            "근로소득공제, 경로우대·장애인 추가공제, 자녀·의료비 등 세액공제는 "
                            "반영되지 않아 실제 신고세액과 차이가 있을 수 있습니다.",
     }
