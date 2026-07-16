@@ -317,10 +317,10 @@ export default function Dashboard() {
   const wdBorder = actualRate == null ? 'border-gray-300' : actualRate <= 4 ? 'border-green-500' : actualRate <= 5 ? 'border-yellow-400' : 'border-red-500'
   const wdText   = actualRate == null ? 'text-gray-700'   : actualRate <= 4 ? 'text-green-600'   : actualRate <= 5 ? 'text-yellow-600'   : 'text-red-600'
 
-  // ④ 올해 수입 합계
+  // ④ 올해 수입 합계 (퇴직연금·개인연금 이자·배당 제외)
   const incomeYear     = incomeSummary?.current_year ?? new Date().getFullYear()
-  const incomeThisYear = incomeSummary?.total_this_year ?? 0
-  const incomeTypes    = incomeSummary?.type_totals ?? {}
+  const incomeThisYear = incomeSummary?.total_this_year_excl_pension ?? incomeSummary?.total_this_year ?? 0
+  const incomeTypes    = incomeSummary?.type_totals_excl_pension ?? incomeSummary?.type_totals ?? {}
 
   // ⑤ 금융소득 2,000만원 한도
   const finYtd       = taxData?.financial_income_ytd ?? 0

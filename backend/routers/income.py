@@ -23,6 +23,24 @@ INCOME_TYPE_LABEL = {
     "other":    "기타",
 }
 
+# 세제상 연금 계좌 (퇴직연금 IRP/DC, 연금저축=개인연금) — 이자·배당은 연금소득세 대상이라
+# 금융소득종합과세 성격의 "수입 합계"/세금 비교에서는 제외한다.
+_PENSION_TAX_ACCOUNT_TYPES = ("retirement_pension", "pension_savings")
+
+
+def _get_pension_asset_names() -> set:
+    res = supabase.table("assets").select("asset_name,tax_account_type").execute()
+    return {
+        a["asset_name"] for a in (res.data or [])
+        if a.get("tax_account_type") in _PENSION_TAX_ACCOUNT_TYPES
+    }
+
+
+def _is_pension_fin_income(row: dict, pension_asset_names: set) -> bool:
+    """퇴직연금·개인연금 계좌에서 받은 이자·배당 소득인지 여부."""
+    return row.get("income_type") in ("interest", "dividend") \
+        and row.get("asset_name") in pension_asset_names
+
 
 class IncomeIn(BaseModel):
     income_date:  str           # YYYY-MM-DD
@@ -85,6 +103,13 @@ def get_income_summary():
     # ── 올해 수입 ──────────────────────────────────────────────────
     this_year = [r for r in rows if r["income_date"][:4] == str(current_year)]
     total_this_year = sum(float(r["amount"]) for r in this_year)
+
+    # ── 퇴직연금·개인연금 이자·배당 제외 합계 ─────────────────────────
+    pension_asset_names = _get_pension_asset_names()
+    pension_income_this_year = sum(
+        float(r["amount"]) for r in this_year if _is_pension_fin_income(r, pension_asset_names)
+    )
+    total_this_year_excl_pension = total_this_year - pension_income_this_year
 
     # ── 월별 집계 (올해) ───────────────────────────────────────────
     monthly: dict = {}
@@ -160,15 +185,20 @@ def get_income_summary():
 
     # ── 소득 유형별 합계 (올해) ────────────────────────────────────
     type_totals = {"interest": 0, "dividend": 0, "earned": 0, "other": 0}
+    type_totals_excl_pension = {"interest": 0, "dividend": 0, "earned": 0, "other": 0}
     for r in this_year:
         typ = r.get("income_type", "other")
-        if typ in type_totals:
-            type_totals[typ] += float(r["amount"])
-        else:
-            type_totals["other"] += float(r["amount"])
+        typ = typ if typ in type_totals else "other"
+        amount = float(r["amount"])
+        type_totals[typ] += amount
+        if not _is_pension_fin_income(r, pension_asset_names):
+            type_totals_excl_pension[typ] += amount
 
     return {
-        "total_this_year":      total_this_year,
+        "total_this_year":              total_this_year,
+        "total_this_year_excl_pension": total_this_year_excl_pension,
+        "pension_income_this_year":     pension_income_this_year,
+        "type_totals_excl_pension":     type_totals_excl_pension,
         "total_all":            total_all,
         "monthly_avg":          monthly_avg,
         "self_sufficiency":     self_suf,
@@ -237,9 +267,13 @@ def compare_tax(dependents: int = 1, card_amount: float = 0):
     year_end      = today.isoformat()
 
     res = supabase.table("income_log") \
-        .select("amount") \
+        .select("amount,asset_name,income_type") \
         .gte("income_date", year_start).lte("income_date", year_end).execute()
-    total_income = sum(float(r["amount"]) for r in (res.data or []))
+    pension_asset_names = _get_pension_asset_names()
+    total_income = sum(
+        float(r["amount"]) for r in (res.data or [])
+        if not _is_pension_fin_income(r, pension_asset_names)
+    )
 
     withholding_tax = total_income * FINANCIAL_WITHHOLDING_RATE
     withholding = {

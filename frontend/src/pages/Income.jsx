@@ -267,7 +267,7 @@ export default function Income() {
   const s = summary || {}
   const monthlyList  = s.monthly_list  || []
   const byAsset      = s.by_asset      || []
-  const typeTotals   = s.type_totals   || {}
+  const typeTotals   = s.type_totals_excl_pension || {}
   const currentYear  = s.current_year  || new Date().getFullYear()
 
   // 월별 차트 데이터 (이름을 "MM월" 형식으로)
@@ -307,8 +307,8 @@ export default function Income() {
       {/* KPI 카드 */}
       <div className="grid grid-cols-4 gap-4">
         <SummaryCard icon="📅" label={`${currentYear}년 수입 합계`}
-          value={fmt.eok(s.total_this_year || 0)}
-          sub={`이자 ${fmt.won(typeTotals.interest||0)} · 배당 ${fmt.won(typeTotals.dividend||0)}${typeTotals.earned > 0 ? ` · 근로 ${fmt.won(typeTotals.earned)}` : ''}`}
+          value={fmt.eok(s.total_this_year_excl_pension ?? s.total_this_year ?? 0)}
+          sub={`이자 ${fmt.won(typeTotals.interest||0)} · 배당 ${fmt.won(typeTotals.dividend||0)}${typeTotals.earned > 0 ? ` · 근로 ${fmt.won(typeTotals.earned)}` : ''}${s.pension_income_this_year > 0 ? ` (퇴직·개인연금 이자·배당 ${fmt.won(s.pension_income_this_year)} 제외)` : ''}`}
           color="blue" />
         <SummaryCard icon="📆" label="월 평균 패시브 인컴"
           value={`${Math.round((s.monthly_avg||0)/10000).toLocaleString()}만원`}
