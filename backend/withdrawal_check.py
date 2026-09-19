@@ -57,7 +57,7 @@ def _gt(a: float, b: float) -> bool:
     return a > b + EPS
 
 
-def _minus_months(d: date, months: int) -> date:
+def minus_months(d: date, months: int) -> date:
     y, m = divmod(d.year * 12 + (d.month - 1) - months, 12)
     m += 1
     return date(y, m, min(d.day, calendar.monthrange(y, m)[1]))
@@ -251,7 +251,7 @@ def compute_withdrawal_rate(baseline: Optional[dict], net: dict, total_assets: f
     if withdrawals is None:
         reasons["current_actual"] = "withdrawals_not_provided"
     else:
-        start = _minus_months(as_of, 12)
+        start = minus_months(as_of, 12)
         rows = [w for w in withdrawals if (d := _to_date(w.get("withdrawal_date"))) is not None and start < d <= as_of]
         actual_count = len(rows)
         if not rows:

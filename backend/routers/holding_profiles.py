@@ -3,7 +3,8 @@ from pydantic import BaseModel, Field
 from typing import Optional, Literal
 from datetime import date, datetime
 from database import supabase
-from utils import BUCKET_MAP, get_active_assets
+from utils import get_active_assets
+from withdrawal_check import effective_bucket
 
 router = APIRouter()
 
@@ -54,7 +55,29 @@ def list_profiles():
         ids = [r["holding_id"] for r in rows]
         found = supabase.table("assets").select("*").in_("id", ids).execute().data or []
         assets_by_id = {a["id"]: a for a in found}
-    return [{**r, "warnings": profile_warnings(assets_by_id.get(r["holding_id"]), r)} for r in rows]
+    return [
+        {**r, **effective_bucket(assets_by_id.get(r["holding_id"]) or {}, r),
+         "warnings": profile_warnings(assets_by_id.get(r["holding_id"]), r)}
+        for r in rows
+    ]
+
+
+@router.get("/overview")
+def overview():
+    """인출 설정 보유상품 그리드용 — 활성 자산 전체를 속성·버킷(기본/실효/출처)과 함께 반환.
+    버킷 기본값의 단일 출처는 서버(BUCKET_MAP)이며 프론트엔드는 복제본을 두지 않는다."""
+    assets = get_active_assets()
+    profiles = {r["holding_id"]: r for r in
+                (supabase.table("holding_profiles").select("*").execute().data or [])}
+    items = []
+    for a in sorted(assets, key=lambda x: -float(x.get("current_value") or 0)):
+        p = profiles.get(a["id"])
+        items.append({
+            "asset": a,
+            "profile": ({**p, "warnings": profile_warnings(a, p)} if p else None),
+            **effective_bucket(a, p),
+        })
+    return {"count": len(items), "profile_count": sum(1 for i in items if i["profile"]), "items": items}
 
 
 @router.get("/missing")
@@ -69,7 +92,7 @@ def list_missing():
             "asset_name": a["asset_name"],
             "account_name": a.get("account_name"),
             "asset_type": a["asset_type"],
-            "default_bucket": BUCKET_MAP.get(a["asset_type"]),
+            **effective_bucket(a, None),      # default_bucket, effective_bucket, bucket_source
         }
         for a in assets if a["id"] not in have
     ]

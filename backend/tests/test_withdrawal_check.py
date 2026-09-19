@@ -335,9 +335,9 @@ def test_actual_rate_window_boundaries():
 
 
 def test_actual_rate_window_on_leap_day():
-    assert wc._minus_months(date(2028, 2, 29), 12) == date(2027, 2, 28)
-    assert wc._minus_months(date(2026, 3, 31), 1) == date(2026, 2, 28)
-    assert wc._minus_months(date(2026, 1, 15), 2) == date(2025, 11, 15)
+    assert wc.minus_months(date(2028, 2, 29), 12) == date(2027, 2, 28)
+    assert wc.minus_months(date(2026, 3, 31), 1) == date(2026, 2, 28)
+    assert wc.minus_months(date(2026, 1, 15), 2) == date(2025, 11, 15)
 
 
 def test_actual_rate_without_data_is_null_not_zero():

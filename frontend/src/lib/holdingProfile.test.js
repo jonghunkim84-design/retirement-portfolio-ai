@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  SUGGESTED_ROLE, DEFAULT_BUCKET, fieldEnabled, suggestedForm, formFromProfile,
+  SUGGESTED_ROLE, fieldEnabled, suggestedForm, formFromProfile,
   formsEqual, toPayload, bondWarning,
 } from './holdingProfile.js'
 
@@ -15,10 +15,6 @@ test('역할 제안값', () => {
   })
   assert.equal(suggestedForm(asset('equity'), TODAY).role, 'growth')
   assert.equal(suggestedForm(asset('bond'), TODAY).bucket, '')     // 버킷은 비워 둠 (기본값 안내만)
-})
-
-test('기본 버킷은 서버 BUCKET_MAP 과 동일', () => {
-  assert.deepEqual(DEFAULT_BUCKET, { cash: 1, bond: 2, tdf: 2, fund: 2, equity: 3, income: 3 })
 })
 
 test('자산유형별 활성 필드', () => {

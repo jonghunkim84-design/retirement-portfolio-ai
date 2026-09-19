@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import assets, dashboard, risk, rebalance, price, summary, config, returns, cashflow, income, networth, ai_advisor, tax, export, withdrawals as withdrawals_router, pension_tax, expenses, withdrawal_strategy, real_assets, estate, simulation, holding_profiles, cashflow_items, withdrawal_baseline, sub_allocation_targets
+from routers import assets, dashboard, risk, rebalance, price, summary, config, returns, cashflow, income, networth, ai_advisor, tax, export, withdrawals as withdrawals_router, pension_tax, expenses, withdrawal_strategy, real_assets, estate, simulation, holding_profiles, cashflow_items, withdrawal_baseline, sub_allocation_targets, withdrawal_check
 from notifier import run_daily_alert
 from auth import require_user, require_cron
 
@@ -98,6 +98,7 @@ app.include_router(holding_profiles.router, prefix="/holding-profiles", tags=["w
 app.include_router(cashflow_items.router,   prefix="/cashflow-items",   tags=["withdrawal-data"], dependencies=_AUTH)
 app.include_router(withdrawal_baseline.router, prefix="/withdrawal-baseline", tags=["withdrawal-data"], dependencies=_AUTH)
 app.include_router(sub_allocation_targets.router, prefix="/sub-allocation-targets", tags=["withdrawal-data"], dependencies=_AUTH)
+app.include_router(withdrawal_check.router, prefix="/withdrawal-check", tags=["withdrawal-check"], dependencies=_AUTH)
 
 
 @app.get("/health")
