@@ -2,7 +2,7 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   NULL_TEXT, fmtYears, fmtRate, fmtMultiple, fmtMan, fmtShare, REASON_TEXT, reasonText, pickReason,
-  bucketRuleMeta, guardMeta, bucketLabel, cardModel,
+  bucketRuleMeta, guardMeta, bucketLabel, cardModel, CARD_BASIS,
 } from './withdrawalCheck.js'
 
 test('null 은 "-" 로, 0 은 0 으로 표시한다 (null 을 0 으로 바꾸지 않는다)', () => {
@@ -57,6 +57,13 @@ test('가드레일 상태', () => {
   assert.equal(guardMeta('upper_breach').tone, 'warn')
   assert.equal(guardMeta('lower_breach').tone, 'info')
   assert.equal(guardMeta(null).label, '-')
+})
+
+test('카드 기준 표시 문구', () => {
+  assert.equal(CARD_BASIS.bucket, '재지정 반영 · 순인출 기준')
+  assert.equal(CARD_BASIS.rate, '생활비 계획 기준')
+  assert.match(CARD_BASIS.bucketHelp, /1버킷 개월 수/)      // 기존 지표와의 차이를 설명한다
+  assert.match(CARD_BASIS.rateHelp, /기존 화면의 인출률/)
 })
 
 test('bucketLabel', () => {

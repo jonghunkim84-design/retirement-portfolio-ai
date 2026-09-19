@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/client.js'
 import {
-  NULL_TEXT, fmtYears, fmtRate, fmtMan, cardModel, TONE_BADGE, TONE_TEXT,
+  NULL_TEXT, fmtYears, fmtRate, fmtMan, cardModel, CARD_BASIS, TONE_BADGE, TONE_TEXT,
 } from '../lib/withdrawalCheck.js'
 
 // 값이 null 이면 "-" 와 사유 툴팁 (0 으로 보이지 않게)
@@ -63,7 +63,7 @@ export default function WithdrawalCheckCard() {
 
         {/* 버킷 커버 연수 */}
         <div>
-          <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
+          <div className="text-xs text-gray-500 mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
             버킷 커버 연수
             <span className={TONE_BADGE[m.r01.tone]} title={m.r01Reason || 'R-01 (1버킷 최소·목표 연수) 판정'}>
               R-01 {m.r01.label}
@@ -83,12 +83,16 @@ export default function WithdrawalCheckCard() {
               <div className="text-[11px] text-gray-400">1+2버킷</div>
             </div>
           </div>
+          <div className="text-[11px] text-gray-400 mt-1" title={CARD_BASIS.bucketHelp}
+            style={{ cursor: 'help' }}>
+            ({CARD_BASIS.bucket})
+          </div>
         </div>
 
         {/* 인출률 */}
         <div>
-          <div className="text-xs text-gray-500 mb-1 flex items-center gap-2">
-            인출률
+          <div className="text-xs text-gray-500 mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+            인출률 <span className="text-gray-400" title={CARD_BASIS.rateHelp} style={{ cursor: 'help' }}>({CARD_BASIS.rate})</span>
             <span className={TONE_BADGE[m.guardrail.tone]} title={m.guardrailReason || '가드레일 (R-05·R-06) 판정'}>
               {m.guardrail.label}
             </span>
@@ -98,7 +102,7 @@ export default function WithdrawalCheckCard() {
             <span className="text-gray-400 mx-1.5">→</span>
             <Val text={fmtRate(m.currentRate)} reason={m.currentReason} />
           </div>
-          <div className="text-[11px] text-gray-400">초기 → 현재(계획 기준)</div>
+          <div className="text-[11px] text-gray-400">초기 → 현재</div>
         </div>
       </div>
 
