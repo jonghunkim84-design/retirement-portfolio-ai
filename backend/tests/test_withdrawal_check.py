@@ -303,6 +303,21 @@ def test_baseline_missing():
     assert r["baseline"] is None
 
 
+def test_no_cashflow_is_not_zero_percent_and_does_not_trigger_guardrail():
+    r = run(assets=[asset(1, "cash", 100_000_000)], cashflow_items=[], baseline=baseline())
+    wr = r["withdrawal_rate"]
+    assert wr["current_plan"] is None and wr["reasons"]["current_plan"] == "no_cashflow"
+    assert wr["ratio_to_initial"] is None
+    assert r["rules"]["R-06"]["status"] is None and r["rules"]["R-06"]["reason"] == "no_cashflow"
+    assert r["rules"]["R-05"]["status"] is None
+    assert r["rules"]["guardrail"] is None
+    # 지출 항목은 있으나 정기수입이 전부 충당하면 0% 는 실제 값이다
+    covered = run(assets=[asset(1, "cash", 100_000_000)], baseline=baseline(),
+                  cashflow_items=[item("expense_essential", 1_000_000), item("income_regular", 2_000_000)])
+    assert covered["withdrawal_rate"]["current_plan"] == 0
+    assert covered["rules"]["R-06"]["status"] == "lower_breach"
+
+
 def test_zero_division_cases():
     zero_pv = run(assets=[asset(1, "cash", 100)], cashflow_items=NEED_12M, baseline=baseline(pv=0))
     assert zero_pv["withdrawal_rate"]["initial"] is None

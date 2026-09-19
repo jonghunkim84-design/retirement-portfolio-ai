@@ -244,6 +244,9 @@ def compute_withdrawal_rate(baseline: Optional[dict], net: dict, total_assets: f
     current_plan = None
     if total_assets <= 0:
         reasons["current_plan"] = "no_assets"
+    elif net["counts"]["active_expense"] == 0:
+        # 생활비 항목이 하나도 없으면 0% 가 아니라 '계산 불가' (0% 로 두면 가드레일이 잘못 하단 미만으로 판정된다)
+        reasons["current_plan"] = "no_cashflow"
     else:
         current_plan = net["annual_total"] / total_assets
     # 현재 인출률 (실적 기준, 참고): (as_of − 12개월, as_of] 인출 기록 합계
