@@ -1,0 +1,251 @@
+import { useMemo, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import api, { ASSET_TYPE_LABEL } from '../../api/client.js'
+import { localToday } from '../../lib/cashflow.js'
+import {
+  ROLES, ROLE_LABEL, DEFAULT_BUCKET, fieldEnabled, suggestedForm, formFromProfile,
+  formsEqual, toPayload, bondWarning,
+} from '../../lib/holdingProfile.js'
+import { Loading, Banner, errMsg, won } from './ui.jsx'
+
+const cellInput = 'w-full text-xs px-2 py-1'
+const disabledCls = 'bg-gray-50 text-gray-300 cursor-not-allowed'
+
+export default function HoldingProfilesTab() {
+  const qc = useQueryClient()
+  const today = localToday()
+  const [drafts, setDrafts] = useState({})        // { [assetId]: form } — 사용자가 손댄 행만
+  const [errors, setErrors] = useState({})        // { [assetId]: 메시지 }
+  const [saving, setSaving] = useState({})        // { [assetId]: true }
+  const [batchMsg, setBatchMsg] = useState('')
+
+  const { data: assets, isLoading: aLoading } = useQuery({
+    queryKey: ['wd-assets'], queryFn: () => api.get('/assets').then(r => r.data),
+  })
+  const { data: profiles, isLoading: pLoading } = useQuery({
+    queryKey: ['wd-profiles'], queryFn: () => api.get('/holding-profiles').then(r => r.data),
+  })
+
+  const rows = useMemo(() => {
+    if (!assets || !profiles) return []
+    const byId = new Map(profiles.map(p => [p.holding_id, p]))
+    return assets
+      .filter(a => a.is_active)
+      .sort((a, b) => (Number(b.current_value) || 0) - (Number(a.current_value) || 0))
+      .map(asset => {
+        const profile = byId.get(asset.id)
+        const base = profile ? formFromProfile(profile) : suggestedForm(asset, today)
+        const draft = drafts[asset.id]
+        const form = draft ?? base
+        const edited = !!draft && !formsEqual(draft, base)
+        const status = edited ? 'edited' : profile ? 'saved' : 'suggested'
+        return { asset, profile, form, status }
+      })
+  }, [assets, profiles, drafts, today])
+
+  if (aLoading || pLoading) return <Loading />
+
+  const total = rows.length
+  const done = rows.filter(r => r.profile).length
+  const editedRows = rows.filter(r => r.status === 'edited')
+
+  const setField = (asset, base, field, value) => {
+    setDrafts(d => ({ ...d, [asset.id]: { ...(d[asset.id] ?? base), [field]: value } }))
+    setErrors(e => ({ ...e, [asset.id]: undefined }))
+  }
+
+  async function saveRow({ asset, form }) {
+    const { payload, error } = toPayload(form, asset, today)
+    if (error) { setErrors(e => ({ ...e, [asset.id]: error })); return false }
+    setSaving(s => ({ ...s, [asset.id]: true }))
+    try {
+      await api.put(`/holding-profiles/${asset.id}`, payload)
+      setDrafts(d => { const n = { ...d }; delete n[asset.id]; return n })
+      setErrors(e => ({ ...e, [asset.id]: undefined }))
+      return true
+    } catch (e) {
+      setErrors(er => ({ ...er, [asset.id]: errMsg(e) }))
+      return false
+    } finally {
+      setSaving(s => ({ ...s, [asset.id]: false }))
+    }
+  }
+
+  async function saveOne(row) {
+    setBatchMsg('')
+    await saveRow(row)
+    qc.invalidateQueries({ queryKey: ['wd-profiles'] })
+  }
+
+  async function saveAllEdited() {
+    setBatchMsg('')
+    const results = await Promise.all(editedRows.map(saveRow))
+    qc.invalidateQueries({ queryKey: ['wd-profiles'] })
+    const ok = results.filter(Boolean).length
+    setBatchMsg(`${ok}개 저장${ok < results.length ? `, ${results.length - ok}개 실패 (행의 오류 문구 확인)` : ''}`)
+  }
+
+  const STATUS_BADGE = {
+    saved:     <span className="badge-green">저장됨</span>,
+    edited:    <span className="badge-blue">변경됨</span>,
+    suggested: <span className="badge-gray">미저장(제안)</span>,
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <div className="text-sm font-semibold text-gray-800">
+            전체 {total}개 중 <span className="text-blue-600">{done}개</span> 입력
+            <span className="text-gray-400 font-normal ml-2">({total - done}개 미입력)</span>
+          </div>
+          <div className="mt-1.5 h-2 w-64 bg-gray-100 rounded-full overflow-hidden">
+            <div className="h-full bg-blue-500 rounded-full transition-all"
+              style={{ width: `${total ? (done / total) * 100 : 0}%` }} />
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {batchMsg && <span className="text-xs text-gray-500">{batchMsg}</span>}
+          <button className="btn-primary text-sm" disabled={editedRows.length === 0} onClick={saveAllEdited}>
+            변경 행 일괄 저장 ({editedRows.length})
+          </button>
+        </div>
+      </div>
+
+      <Banner tone="blue">
+        역할은 자산유형 기준 <b>제안값</b>이 미리 채워져 있으며, <b>저장 버튼을 눌러야 기록</b>됩니다.
+        버킷은 비워 두면 자산유형 기준 기본값을 따르고, 선택한 경우에만 재지정으로 저장됩니다.
+        수정듀레이션·금리 민감도 등은 <b>가정</b> / <b>관측</b>을 구분하고 기준일을 남겨 주세요.
+        회색 칸은 해당 자산유형에서 사용하지 않는 항목입니다. 비율은 % 로 입력합니다.
+      </Banner>
+
+      <div className="card p-0 overflow-x-auto">
+        <table style={{ minWidth: 2100 }}>
+          <thead>
+            <tr>
+              <th className="sticky left-0 bg-gray-50 z-10" style={{ minWidth: 220 }}>자산 / 상태</th>
+              <th style={{ minWidth: 110 }}>평가금액</th>
+              <th style={{ minWidth: 100 }}>역할</th>
+              <th style={{ minWidth: 150 }}>버킷</th>
+              <th style={{ minWidth: 110 }}>하위 분류</th>
+              <th style={{ minWidth: 70 }}>통화</th>
+              <th style={{ minWidth: 60 }}>환헤지</th>
+              <th style={{ minWidth: 90 }}>지역</th>
+              <th style={{ minWidth: 90 }}>업종</th>
+              <th style={{ minWidth: 90 }}>듀레이션(년)</th>
+              <th style={{ minWidth: 90 }}>금리유형</th>
+              <th style={{ minWidth: 80 }}>신용등급</th>
+              <th style={{ minWidth: 100 }}>부동산 유형</th>
+              <th style={{ minWidth: 110 }}>금리 민감도</th>
+              <th style={{ minWidth: 90 }}>주식 비중(%)</th>
+              <th style={{ minWidth: 90 }}>총보수(%)</th>
+              <th style={{ minWidth: 90 }}>값 구분</th>
+              <th style={{ minWidth: 130 }}>기준일</th>
+              <th style={{ minWidth: 180 }}>인출 제약 메모</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map(row => {
+              const { asset, profile, form, status } = row
+              const base = profile ? formFromProfile(profile) : suggestedForm(asset, today)
+              const on = f => fieldEnabled(asset.asset_type, f)
+              const set = (f, v) => setField(asset, base, f, v)
+              const warn = bondWarning(asset, form)
+              const inp = (f, extra = {}) => (
+                <input className={`${cellInput} ${on(f) ? '' : disabledCls}`} disabled={!on(f)}
+                  value={on(f) ? form[f] : ''} onChange={e => set(f, e.target.value)} {...extra} />
+              )
+              const defBucket = DEFAULT_BUCKET[asset.asset_type]
+              const showAssumed = form.value_source === 'assumed'
+                && ((on('bond_modified_duration') && form.bond_modified_duration !== '')
+                  || (on('rate_sensitivity') && form.rate_sensitivity !== ''))
+              return (
+                <tr key={asset.id}>
+                  <td className="sticky left-0 bg-white z-10">
+                    <div className="flex items-start gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1.5">
+                          {warn && (
+                            <span title={warn.message} aria-label={warn.message} className="cursor-help">⚠️</span>
+                          )}
+                          <span className="font-medium text-gray-800 truncate" title={asset.asset_name}>{asset.asset_name}</span>
+                        </div>
+                        <div className="text-[11px] text-gray-400 truncate">
+                          {asset.account_name} · {ASSET_TYPE_LABEL[asset.asset_type] || asset.asset_type}
+                        </div>
+                        <div className="mt-1 flex items-center gap-2">
+                          {STATUS_BADGE[status]}
+                          <button className="btn-secondary text-xs px-2 py-1"
+                            disabled={status === 'saved' || saving[asset.id]}
+                            onClick={() => saveOne(row)}>
+                            {saving[asset.id] ? '저장 중' : '저장'}
+                          </button>
+                        </div>
+                        {errors[asset.id] && <div className="text-[11px] text-red-600 mt-1">{errors[asset.id]}</div>}
+                      </div>
+                    </div>
+                  </td>
+                  <td className="text-right tabular-nums text-gray-700">{won(asset.current_value)}</td>
+                  <td>
+                    <select className={cellInput} value={form.role} onChange={e => set('role', e.target.value)}>
+                      {ROLES.map(r => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
+                    </select>
+                  </td>
+                  <td>
+                    <select className={`${cellInput} ${form.bucket === '' ? 'text-gray-400' : ''}`}
+                      value={form.bucket} onChange={e => set('bucket', e.target.value)}
+                      title="비워 두면 자산유형 기준 기본 버킷을 따릅니다. 선택하면 재지정으로 저장됩니다.">
+                      <option value="">기본: {defBucket}버킷(자산유형 기준)</option>
+                      <option value="1">1버킷</option>
+                      <option value="2">2버킷</option>
+                      <option value="3">3버킷</option>
+                    </select>
+                  </td>
+                  <td>{inp('sub_class', { placeholder: '예: 단기채' })}</td>
+                  <td>{inp('currency')}</td>
+                  <td className="text-center">
+                    <input type="checkbox" className="!p-0 !w-4 !h-4" disabled={!on('fx_hedged')}
+                      checked={on('fx_hedged') && !!form.fx_hedged} onChange={e => set('fx_hedged', e.target.checked)} />
+                  </td>
+                  <td>{inp('region')}</td>
+                  <td>{inp('sector')}</td>
+                  <td>{inp('bond_modified_duration', { type: 'number', step: '0.1', min: 0 })}</td>
+                  <td>
+                    <select className={`${cellInput} ${on('bond_rate_type') ? '' : disabledCls}`} disabled={!on('bond_rate_type')}
+                      value={on('bond_rate_type') ? form.bond_rate_type : ''} onChange={e => set('bond_rate_type', e.target.value)}>
+                      <option value="">-</option>
+                      <option value="fixed">고정</option>
+                      <option value="floating">변동</option>
+                    </select>
+                  </td>
+                  <td>{inp('credit_grade', { placeholder: 'AAA' })}</td>
+                  <td>{inp('reit_property_type', { placeholder: '오피스' })}</td>
+                  <td>
+                    <div className="flex items-center gap-1">
+                      {inp('rate_sensitivity', { type: 'number', step: '0.1' })}
+                      {showAssumed && <span className="badge-yellow whitespace-nowrap">가정</span>}
+                    </div>
+                  </td>
+                  <td>{inp('equity_share_pct', { type: 'number', step: '1', min: 0, max: 100, placeholder: '%' })}</td>
+                  <td>{inp('expense_ratio', { type: 'number', step: '0.01', min: 0, max: 100, placeholder: '%' })}</td>
+                  <td>
+                    <select className={`${cellInput} ${on('value_source') ? '' : disabledCls}`} disabled={!on('value_source')}
+                      value={on('value_source') ? form.value_source : 'assumed'} onChange={e => set('value_source', e.target.value)}>
+                      <option value="assumed">가정</option>
+                      <option value="observed">관측</option>
+                    </select>
+                  </td>
+                  <td>{inp('as_of_date', { type: 'date' })}</td>
+                  <td>{inp('liquidity_note', { placeholder: '중도해지 조건 등' })}</td>
+                </tr>
+              )
+            })}
+            {rows.length === 0 && (
+              <tr><td colSpan={19} className="text-center text-gray-400 py-8">활성 자산이 없습니다.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
