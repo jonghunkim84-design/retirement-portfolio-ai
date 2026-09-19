@@ -174,6 +174,17 @@ def test_allowed_email_is_case_insensitive(mini_client, signer):
     assert mini_client.get("/secret", headers=bearer(signer.token(email=OWNER.upper()))).status_code == 200
 
 
+def test_forbidden_logs_masked_diagnostics_without_full_email(mini_client, signer, monkeypatch, caplog):
+    monkeypatch.setenv("ALLOWED_USER_EMAIL", '"owner@example.com"')     # 따옴표가 섞인 값
+    with caplog.at_level("WARNING", logger="auth"):
+        r = mini_client.get("/secret", headers=bearer(signer.token(email="owner@example.com")))
+    assert r.status_code == 403
+    log = caplog.text
+    assert "U+0022" in log                       # 허용값의 따옴표를 짚어 준다
+    assert "ow***" in log and "example.com" in log
+    assert "owner@example.com" not in log        # 이메일 전체는 남기지 않는다
+
+
 def test_allowed_email_unset_denies_everyone(mini_client, signer, monkeypatch):
     monkeypatch.delenv("ALLOWED_USER_EMAIL")
     assert mini_client.get("/secret", headers=bearer(signer.token())).status_code == 403

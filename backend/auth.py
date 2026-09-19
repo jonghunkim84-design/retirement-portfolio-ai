@@ -80,6 +80,21 @@ def _extract_bearer(authorization: Optional[str]) -> str:
     return parts[1]
 
 
+def _mask_email(value: str) -> str:
+    """진단 로그용 마스킹: 앞 2글자 + 길이 + 도메인만. 이메일 전체는 남기지 않는다."""
+    if not value:
+        return "(빈 값)"
+    local, at, domain = value.partition("@")
+    if not at:
+        return f"{value[:2]}***(길이 {len(value)}, '@' 없음)"
+    return f"{local[:2]}***(로컬 {len(local)}자)@{domain}"
+
+
+def _odd_chars(value: str) -> list:
+    """영숫자와 @ . _ - + 밖의 문자(따옴표, 특수 공백, 보이지 않는 문자 등)의 코드포인트."""
+    return sorted({f"U+{ord(c):04X}" for c in value if not (c.isascii() and (c.isalnum() or c in "@._-+"))})
+
+
 def require_user(authorization: Optional[str] = Header(default=None)) -> dict:
     token = _extract_bearer(authorization)
 
@@ -117,6 +132,10 @@ def require_user(authorization: Optional[str] = Header(default=None)) -> dict:
     if not allowed:
         logger.error("ALLOWED_USER_EMAIL 이 설정되지 않아 모든 요청을 거부합니다")
     if not allowed or not email or not secrets.compare_digest(email.encode(), allowed.encode()):
+        logger.warning(
+            "허용되지 않은 계정 — 토큰 이메일=%s, 허용값=%s, 허용값의 특수문자=%s, 토큰의 특수문자=%s",
+            _mask_email(email), _mask_email(allowed), _odd_chars(allowed) or "없음", _odd_chars(email) or "없음",
+        )
         raise HTTPException(status_code=403, detail="허용되지 않은 계정입니다")
     return claims
 
