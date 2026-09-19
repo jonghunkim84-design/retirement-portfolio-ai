@@ -16,6 +16,7 @@ from datetime import date
 import pytest
 from fastapi import HTTPException
 
+import routers.pension_tax as pension_tax_module
 from routers.pension_tax import (
     calc_depletion,
     calc_track_limit_ytd,
@@ -32,10 +33,22 @@ def _months_between(a: date, b: date) -> int:
     return (b.year - a.year) * 12 + (b.month - a.month)
 
 
+def _freeze_today(monkeypatch, fixed: date) -> date:
+    """calc_depletion 은 date.today() 를 직접 읽으므로 routers.pension_tax.date 의 today() 만 고정한다.
+    (date 하위 클래스라 fromisoformat·isoformat·비교는 그대로 동작. 계산 로직은 수정하지 않음.)"""
+    class _FixedDate(date):
+        @classmethod
+        def today(cls):
+            return fixed
+    monkeypatch.setattr(pension_tax_module, "date", _FixedDate)
+    return fixed
+
+
 # ── 케이스 1: 퇴직연금 원금 2억, 월 100만, 개시 2026-07, 실적 없음 ──
 # 기대: 과세 전환 ≈ 200개월 후(≈2043-02), is_estimate=True
 
-def test_case1_rp_depletion_200months():
+def test_case1_rp_depletion_200months(monkeypatch):
+    today = _freeze_today(monkeypatch, date(2026, 7, 1))   # 개시 시점 = 기준일 → 경과 0개월
     result = calc_depletion(
         principal=200_000_000,
         start_date=date(2026, 7, 1),
@@ -47,15 +60,15 @@ def test_case1_rp_depletion_200months():
     assert result["months_remaining"] == 200
 
     dep = date.fromisoformat(result["depletion_date"])
-    today = date.today()
     assert 199 <= _months_between(today, dep) <= 201
 
 
 # ── 케이스 2: 개인연금 비과세 원금 3,600만, 월 60만, 개시 2026-01 ──
 # 기대: 과세 전환 ≈ 개시 후 60개월 (≈2031-01)
 
-def test_case2_pp_depletion_60months():
+def test_case2_pp_depletion_60months(monkeypatch):
     start = date(2026, 1, 1)
+    _freeze_today(monkeypatch, start)                      # 개시 시점 = 기준일
     result = calc_depletion(
         principal=36_000_000,
         start_date=start,
