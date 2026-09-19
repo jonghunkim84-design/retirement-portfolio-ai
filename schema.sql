@@ -18,10 +18,15 @@
 --   2026-06-15  expenses 신설
 --   2026-06-16  income_log income_type 'earned' 허용 (CHECK 없음 — 코드 레벨 제어)
 --   2026-07-14  real_assets 신설 / 2026-07-15 gift_plans 신설
+--   2026-09-19  RLS 전 테이블 활성화 (S1 단계 F, 20번 참조)
 --   2026-09-19  인출 판단 시스템 데이터 기반 6개 신설 (holding_profiles, cashflow_items,
 --               withdrawal_baseline, sub_allocation_targets, ips_rules(+시드 7건), decision_log)
 --
--- 단일 사용자 구조 — RLS 미적용. 다중 사용자 확장 시 user_id + RLS 추가 필요.
+-- 단일 사용자 구조. 모든 public 테이블은 RLS 활성화 + 정책 없음 (파일 끝 '20. RLS' 참조):
+--   anon · authenticated 키로는 접근할 수 없고, 백엔드는 서버 전용 키(SUPABASE_SERVICE_KEY)로 접속한다.
+--   예외: health_insurance_simulations — 사용자 토큰 + auth.uid() = user_id 정책으로 프론트가 직접 접근
+--         (migrations/2026-06-25_health_insurance_simulations.sql, 이 파일에는 포함되지 않음).
+--   다중 사용자 확장 시 user_id 컬럼과 정책 추가 필요.
 -- =============================================================================
 
 SET search_path = public;
@@ -97,7 +102,7 @@ CREATE TABLE IF NOT EXISTS public.user_config (
 );
 
 COMMENT ON TABLE public.user_config IS
-  '앱 설정. key=''config'' 단일 행 구조. RLS 미적용 (단일 사용자).';
+  '앱 설정. key=''config'' 단일 행 구조. RLS 활성화(정책 없음) — 서버 전용 키로만 접근.';
 
 -- 기본값 행 삽입 (이미 존재하면 무시)
 INSERT INTO public.user_config (key, value)
@@ -331,7 +336,7 @@ CREATE TABLE IF NOT EXISTS public.holding_profiles (
 );
 
 COMMENT ON TABLE public.holding_profiles IS
-  '보유상품 속성(assets 1:1). 인출 판단 시스템의 노출도·버킷 계산 입력. RLS 미적용(단일 사용자).';
+  '보유상품 속성(assets 1:1). 인출 판단 시스템의 노출도·버킷 계산 입력. RLS 활성화(정책 없음) — 서버 전용 키로만 접근.';
 COMMENT ON COLUMN public.holding_profiles.bucket IS
   '버킷 재지정 값(1/2/3). NULL=utils.BUCKET_MAP 기본값(자산유형 기준)을 따름.';
 COMMENT ON COLUMN public.holding_profiles.equity_share_pct IS
@@ -458,3 +463,29 @@ CREATE INDEX IF NOT EXISTS idx_decision_log_period ON public.decision_log(period
 
 COMMENT ON TABLE public.decision_log IS
   '분기별 엔진 판단·실행 여부·이탈 사유 기록. period 예: 2026-Q4. executed NULL=미확인.';
+
+
+-- ── 20. RLS (Row Level Security) ─────────────────────────────────────────────
+-- 위 18개 테이블 전부 RLS 를 켜고 정책은 만들지 않는다.
+--   → anon · authenticated 키로는 조회 0행, 쓰기 거부. 백엔드의 서버 전용 키(RLS 우회)만 접근한다.
+-- 새 테이블을 추가할 때는 반드시 같은 방식으로 RLS 를 켠다 (migrations/2026-09-19_enable_rls_all.sql 마지막 검증이
+-- 켜지 않은 public 테이블을 잡아낸다).
+-- health_insurance_simulations 는 별도 마이그레이션에서 RLS + 본인 정책 3개로 이미 보호 (변경하지 않음).
+ALTER TABLE public.assets                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.bucket_snapshots       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.cashflow_items         ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.decision_log           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.expenses               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.gift_plans             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.holding_profiles       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.income_log             ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.ips_rules              ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.notification_log       ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.portfolio_snapshots    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.real_assets            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.recommendations        ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.risk_scores            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.sub_allocation_targets ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_config            ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.withdrawal_baseline    ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.withdrawals            ENABLE ROW LEVEL SECURITY;
