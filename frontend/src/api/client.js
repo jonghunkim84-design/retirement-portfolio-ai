@@ -1,8 +1,29 @@
 import axios from 'axios'
+import { supabase } from '../lib/supabase.js'
+import { installAuthInterceptors } from './authInterceptors.js'
 
 const api = axios.create({
   baseURL: '/api',
   timeout: 60_000,
+})
+
+// ── 인증: 모든 API 호출에 로그인 토큰을 붙이고 401/403 을 처리한다 (백엔드가 토큰을 검증) ──
+let leaving = false
+async function backToLogin(reason) {
+  try { await supabase.auth.signOut() } catch { /* 이미 만료된 세션이면 무시 */ }
+  if (leaving || window.location.pathname === '/login') return
+  leaving = true
+  window.location.replace(`/login?reason=${reason}`)
+}
+
+installAuthInterceptors(api, {
+  getAccessToken: async () => (await supabase.auth.getSession()).data.session?.access_token ?? null,
+  refreshAccessToken: async () => {
+    const { data, error } = await supabase.auth.refreshSession()
+    return error ? null : data.session?.access_token ?? null
+  },
+  onUnauthorized: () => backToLogin('expired'),
+  onForbidden: () => backToLogin('forbidden'),
 })
 
 export default api

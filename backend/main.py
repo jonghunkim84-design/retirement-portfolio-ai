@@ -2,11 +2,12 @@ import os
 import logging
 from contextlib import asynccontextmanager
 
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from routers import assets, dashboard, risk, rebalance, price, summary, config, returns, cashflow, income, networth, ai_advisor, tax, export, withdrawals as withdrawals_router, pension_tax, expenses, withdrawal_strategy, real_assets, estate, simulation, holding_profiles, cashflow_items, withdrawal_baseline, sub_allocation_targets
 from notifier import run_daily_alert
+from auth import require_user, require_cron
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -42,7 +43,13 @@ async def lifespan(app: FastAPI):
         logger.info("[스케줄러] 종료")
 
 
-app = FastAPI(title="은퇴포트폴리오 AI", version="2.0", lifespan=lifespan)
+# 모든 API 는 로그인 토큰 검증을 거친다. 예외: /health(공개), /alert/daily(크론 시크릿)
+_AUTH = [Depends(require_user)]
+
+# 운영(Vercel)에서는 API 문서·스키마를 공개하지 않는다 (로컬 개발에서는 /docs 유지)
+_DOCS = {"docs_url": None, "redoc_url": None, "openapi_url": None} if IS_VERCEL else {}
+
+app = FastAPI(title="은퇴포트폴리오 AI", version="2.0", lifespan=lifespan, **_DOCS)
 
 # ── CORS 설정 ─────────────────────────────────────────────────────────────────
 if IS_VERCEL:
@@ -66,31 +73,31 @@ else:
         allow_headers=["*"],
     )
 
-app.include_router(assets.router,     prefix="/assets",     tags=["assets"])
-app.include_router(dashboard.router,  prefix="/dashboard",  tags=["dashboard"])
-app.include_router(risk.router,       prefix="/risk",       tags=["risk"])
-app.include_router(rebalance.router,  prefix="/rebalance",  tags=["rebalance"])
-app.include_router(price.router,      prefix="/price",      tags=["price"])
-app.include_router(summary.router,    prefix="/summary",    tags=["summary"])
-app.include_router(config.router,     prefix="/config",     tags=["config"])
-app.include_router(returns.router,    prefix="/returns",    tags=["returns"])
-app.include_router(cashflow.router,   prefix="/cashflow",   tags=["cashflow"])
-app.include_router(income.router,     prefix="/income",     tags=["income"])
-app.include_router(networth.router,    prefix="/networth",    tags=["networth"])
-app.include_router(ai_advisor.router, prefix="/ai",           tags=["ai"])
-app.include_router(tax.router,              prefix="/tax",          tags=["tax"])
-app.include_router(export.router,          prefix="/export",       tags=["export"])
-app.include_router(withdrawals_router.router, prefix="/withdrawals", tags=["withdrawals"])
-app.include_router(pension_tax.router,     prefix="/pension-tax",  tags=["pension-tax"])
-app.include_router(expenses.router,        prefix="/expenses",     tags=["expenses"])
-app.include_router(withdrawal_strategy.router, prefix="/withdrawal-strategy", tags=["withdrawal-strategy"])
-app.include_router(real_assets.router,     prefix="/real-assets",  tags=["real-assets"])
-app.include_router(estate.router,          prefix="/estate",       tags=["estate"])
-app.include_router(simulation.router,      prefix="/simulation",   tags=["simulation"])
-app.include_router(holding_profiles.router, prefix="/holding-profiles", tags=["withdrawal-data"])
-app.include_router(cashflow_items.router,   prefix="/cashflow-items",   tags=["withdrawal-data"])
-app.include_router(withdrawal_baseline.router, prefix="/withdrawal-baseline", tags=["withdrawal-data"])
-app.include_router(sub_allocation_targets.router, prefix="/sub-allocation-targets", tags=["withdrawal-data"])
+app.include_router(assets.router,     prefix="/assets",     tags=["assets"], dependencies=_AUTH)
+app.include_router(dashboard.router,  prefix="/dashboard",  tags=["dashboard"], dependencies=_AUTH)
+app.include_router(risk.router,       prefix="/risk",       tags=["risk"], dependencies=_AUTH)
+app.include_router(rebalance.router,  prefix="/rebalance",  tags=["rebalance"], dependencies=_AUTH)
+app.include_router(price.router,      prefix="/price",      tags=["price"], dependencies=_AUTH)
+app.include_router(summary.router,    prefix="/summary",    tags=["summary"], dependencies=_AUTH)
+app.include_router(config.router,     prefix="/config",     tags=["config"], dependencies=_AUTH)
+app.include_router(returns.router,    prefix="/returns",    tags=["returns"], dependencies=_AUTH)
+app.include_router(cashflow.router,   prefix="/cashflow",   tags=["cashflow"], dependencies=_AUTH)
+app.include_router(income.router,     prefix="/income",     tags=["income"], dependencies=_AUTH)
+app.include_router(networth.router,    prefix="/networth",    tags=["networth"], dependencies=_AUTH)
+app.include_router(ai_advisor.router, prefix="/ai",           tags=["ai"], dependencies=_AUTH)
+app.include_router(tax.router,              prefix="/tax",          tags=["tax"], dependencies=_AUTH)
+app.include_router(export.router,          prefix="/export",       tags=["export"], dependencies=_AUTH)
+app.include_router(withdrawals_router.router, prefix="/withdrawals", tags=["withdrawals"], dependencies=_AUTH)
+app.include_router(pension_tax.router,     prefix="/pension-tax",  tags=["pension-tax"], dependencies=_AUTH)
+app.include_router(expenses.router,        prefix="/expenses",     tags=["expenses"], dependencies=_AUTH)
+app.include_router(withdrawal_strategy.router, prefix="/withdrawal-strategy", tags=["withdrawal-strategy"], dependencies=_AUTH)
+app.include_router(real_assets.router,     prefix="/real-assets",  tags=["real-assets"], dependencies=_AUTH)
+app.include_router(estate.router,          prefix="/estate",       tags=["estate"], dependencies=_AUTH)
+app.include_router(simulation.router,      prefix="/simulation",   tags=["simulation"], dependencies=_AUTH)
+app.include_router(holding_profiles.router, prefix="/holding-profiles", tags=["withdrawal-data"], dependencies=_AUTH)
+app.include_router(cashflow_items.router,   prefix="/cashflow-items",   tags=["withdrawal-data"], dependencies=_AUTH)
+app.include_router(withdrawal_baseline.router, prefix="/withdrawal-baseline", tags=["withdrawal-data"], dependencies=_AUTH)
+app.include_router(sub_allocation_targets.router, prefix="/sub-allocation-targets", tags=["withdrawal-data"], dependencies=_AUTH)
 
 
 @app.get("/health")
@@ -98,7 +105,7 @@ def health():
     return {"status": "ok", "service": "은퇴포트폴리오 AI v2"}
 
 
-@app.post("/alert/test")
+@app.post("/alert/test", dependencies=_AUTH)
 def test_alert():
     """알림 즉시 발송 테스트용 엔드포인트 (개발/검증용)"""
     from notifier import collect_alerts, send_alert_email
@@ -115,7 +122,7 @@ def test_alert():
     }
 
 
-@app.post("/assets/deactivate-expired")
+@app.post("/assets/deactivate-expired", dependencies=_AUTH)
 def deactivate_expired():
     """만기 도래 자산 수동 비활성화 — 앱에서 직접 호출 가능"""
     from notifier import auto_deactivate_expired
@@ -130,7 +137,7 @@ def deactivate_expired():
     }
 
 
-@app.api_route("/alert/daily", methods=["GET", "POST"])
+@app.api_route("/alert/daily", methods=["GET", "POST"], dependencies=[Depends(require_cron)])
 def daily_alert_cron():
     """Vercel Cron Job 전용 엔드포인트 — 매일 오전 8시 KST (23:00 UTC) 자동 호출
     vercel.json의 crons 설정에 의해 호출됨 (Vercel은 GET 요청 사용).

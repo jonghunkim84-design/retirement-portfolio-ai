@@ -7,6 +7,10 @@ export default function Login() {
   const navigate     = useNavigate()
   const location     = useLocation()
   const from         = location.state?.from?.pathname || '/'
+  const notice       = {
+    expired:   '로그인 세션이 만료되었습니다. 다시 로그인해 주세요.',
+    forbidden: '허용되지 않은 계정입니다. 허용된 계정으로 다시 로그인해 주세요.',
+  }[new URLSearchParams(location.search).get('reason')]
 
   const [email,    setEmail]    = useState('')
   const [password, setPassword] = useState('')
@@ -100,6 +104,14 @@ export default function Login() {
                 </button>
               </div>
             </div>
+
+            {/* 세션 만료·허용되지 않은 계정 안내 */}
+            {notice && (
+              <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded-lg px-4 py-3">
+                <span className="flex-shrink-0 mt-0.5">ℹ️</span>
+                <span>{notice}</span>
+              </div>
+            )}
 
             {/* 에러 메시지 */}
             {error && (
