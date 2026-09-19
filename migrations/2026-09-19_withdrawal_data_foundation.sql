@@ -5,15 +5,19 @@
 -- 기존 테이블은 변경하지 않는다 (CREATE TABLE IF NOT EXISTS + INSERT ... ON CONFLICT DO NOTHING 만 사용).
 -- 기존 패턴을 따름: RLS 미적용(단일 사용자), bigint identity PK, text + CHECK, created_at/updated_at.
 -- updated_at 은 기존 테이블과 동일하게 API 에서 갱신한다 (트리거 없음).
--- 비율 컬럼(target_pct, band_pct, equity_share_pct, expense_ratio)은 0~1 소수.
+-- 비율 컬럼(target_pct, band_pct, equity_share_pct, expense_ratio 및 ips_rules.parameters 의 *_ratio/*_threshold)은 0~1 소수.
+-- 전체를 하나의 트랜잭션으로 실행 — 중간에 오류가 나면 전부 롤백된다.
 -- =============================================================================
+
+BEGIN;
 
 SET search_path = public;
 
 
 -- ── 1. holding_profiles ───────────────────────────────────────────────────────
 -- 보유상품(assets) 속성. assets 와 1:1.
--- 계좌 유형은 assets.tax_account_type 을 단일 기준으로 사용 (여기에 컬럼을 두지 않는다).
+-- 계좌 유형은 assets.tax_account_type, 채권 만기는 assets.maturity_date 를 단일 기준으로 사용
+-- (여기에 중복 컬럼을 두지 않는다).
 -- bucket 은 재지정 값: NULL 이면 utils.BUCKET_MAP(자산유형 기준) 기본값을 따른다.
 CREATE TABLE IF NOT EXISTS public.holding_profiles (
   id                     bigint      GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -31,7 +35,6 @@ CREATE TABLE IF NOT EXISTS public.holding_profiles (
   region                 text,
   sector                 text,
   bond_modified_duration numeric     CHECK (bond_modified_duration >= 0),
-  bond_maturity_date     date,
   bond_rate_type         text
     CHECK (bond_rate_type IN ('fixed', 'floating')),
   credit_grade           text,
@@ -141,16 +144,16 @@ INSERT INTO public.ips_rules (rule_code, category, name, parameters, enabled, de
      '2버킷(중기채·인컴)의 목표 커버 연수.'),
   ('R-03', 'rebalance',     '자산군 허용 폭 초과 시 초과분에서 우선 인출',
      '{}'::jsonb, true,
-     '허용 폭을 초과한 자산군이 있으면 그 초과분에서 먼저 인출한다. 기존 허용 폭을 사용.'),
+     '허용 폭을 초과한 자산군이 있으면 그 초과분에서 먼저 인출한다. 허용 폭은 기존 user_config.portfolio.rebalance_threshold(자산군 공통, 미설정 시 0.1)를 사용하며 이 규칙은 별도 값을 갖지 않는다.'),
   ('R-04', 'market_regime', '하락 국면 판정·3버킷 매도 금지',
-     '{"drawdown_threshold_pct": 15}'::jsonb, true,
-     '주식 기준지수가 고점 대비 임계값 이상 하락하면 하락 국면. 3버킷 매도를 금지하고 1버킷에서 인출.'),
+     '{"drawdown_threshold": 0.15}'::jsonb, true,
+     '주식 기준지수가 고점 대비 drawdown_threshold(0~1, 0.15=15%) 이상 하락하면 하락 국면. 3버킷 매도를 금지하고 1버킷에서 인출.'),
   ('R-05', 'guardrail',     '인출률 상단 가드레일',
-     '{"upper_multiplier": 1.2, "cut_pct": 10}'::jsonb, true,
-     '현재 인출률이 초기 인출률 × upper_multiplier 초과 시 선택생활비 감액 권고. 필수생활비는 제외.'),
+     '{"upper_multiplier": 1.2, "cut_ratio": 0.10}'::jsonb, true,
+     '현재 인출률이 초기 인출률 × upper_multiplier 초과 시 선택생활비를 cut_ratio(0~1, 0.10=10%) 감액 권고. 필수생활비는 제외.'),
   ('R-06', 'guardrail',     '인출률 하단 가드레일',
-     '{"lower_multiplier": 0.8, "raise_pct": 10}'::jsonb, true,
-     '현재 인출률이 초기 인출률 × lower_multiplier 미만이면 증액 여지 표시.'),
+     '{"lower_multiplier": 0.8, "raise_ratio": 0.10}'::jsonb, true,
+     '현재 인출률이 초기 인출률 × lower_multiplier 미만이면 raise_ratio(0~1, 0.10=10%) 증액 여지 표시.'),
   ('R-07', 'pre_trade',     '매매 전 세금·수수료·계좌 제약 확인',
      '{}'::jsonb, true,
      '매매 전 세금·수수료·중도해지·계좌 제약을 확인한다.')
@@ -175,6 +178,8 @@ CREATE INDEX IF NOT EXISTS idx_decision_log_period ON public.decision_log(period
 COMMENT ON TABLE public.decision_log IS
   '분기별 엔진 판단·실행 여부·이탈 사유 기록. period 예: 2026-Q4. executed NULL=미확인.';
 
+COMMIT;
+
 
 -- =============================================================================
 -- 적용 후 확인용 쿼리 (아래를 SQL Editor 에서 실행해 결과를 알려 주세요)
@@ -186,6 +191,15 @@ COMMENT ON TABLE public.decision_log IS
 --     AND c.relname IN ('holding_profiles','cashflow_items','withdrawal_baseline',
 --                       'sub_allocation_targets','ips_rules','decision_log')
 --   ORDER BY c.relname;
+--
+-- (c) anon 역할 권한 (모두 true 여야 함. false 면 아래 GRANT 는 실행하지 말고 먼저 알려 주세요 — 필요 시 별도 제시)
+--   SELECT t, has_table_privilege('anon', 'public.'||t, 'SELECT,INSERT,UPDATE,DELETE')
+--   FROM unnest(array['holding_profiles','cashflow_items','withdrawal_baseline',
+--                     'sub_allocation_targets','ips_rules','decision_log']) t;
+--
+--   [참고용 · 실행 SQL 아님] false 가 나온 경우에만 검토:
+--   -- GRANT SELECT, INSERT, UPDATE, DELETE ON public.<table> TO anon;
+--   -- (bigint identity 시퀀스 사용 테이블은 GRANT USAGE ON ALL SEQUENCES IN SCHEMA public TO anon; 도 필요할 수 있음)
 --
 -- (b) 시드 7건
 --   SELECT rule_code, category, name, parameters, enabled FROM public.ips_rules ORDER BY rule_code;
