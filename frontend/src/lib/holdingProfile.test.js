@@ -1,7 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
-  SUGGESTED_ROLE, fieldEnabled, suggestedForm, formFromProfile,
+  SUGGESTED_ROLE, CALC_INPUTS, fieldEnabled, suggestedForm, formFromProfile,
   formsEqual, toPayload, bondWarning,
 } from './holdingProfile.js'
 
@@ -29,6 +29,28 @@ test('자산유형별 활성 필드', () => {
   assert.equal(fieldEnabled('equity', 'equity_share_pct'), false)
   assert.equal(fieldEnabled('cash', 'expense_ratio'), false)
   assert.equal(fieldEnabled('cash', 'role'), true)
+})
+
+test('TDF·펀드는 채권 부분 듀레이션과 값 구분을 입력할 수 있다 (내 노출도의 "듀레이션이 입력되지 않았습니다" 해소)', () => {
+  for (const t of ['tdf', 'fund']) {
+    assert.equal(fieldEnabled(t, 'bond_modified_duration'), true, t)
+    assert.equal(fieldEnabled(t, 'value_source'), true, t)
+    assert.equal(fieldEnabled(t, 'rate_sensitivity'), false, t)      // 리츠·인컴 전용
+    const f = { ...suggestedForm(asset(t), TODAY), equity_share_pct: '60', bond_modified_duration: '4.5', value_source: 'observed' }
+    const { payload, error } = toPayload(f, asset(t), TODAY)
+    assert.equal(error, undefined)
+    assert.equal(payload.bond_modified_duration, 4.5)
+    assert.equal(payload.equity_share_pct, 0.6)
+    assert.equal(payload.value_source, 'observed')
+  }
+  assert.match(toPayload({ ...suggestedForm(asset('tdf'), TODAY), bond_modified_duration: '-1' }, asset('tdf'), TODAY).error, /수정듀레이션/)
+})
+
+test('계산이 읽는 속성은 자산유형별로 모두 입력 가능하다 (막힌 칸이 없어야 함)', () => {
+  for (const [type, fields] of Object.entries(CALC_INPUTS)) {
+    for (const f of fields) assert.equal(fieldEnabled(type, f), true, `${type}.${f} 입력칸이 막혀 있음`)
+  }
+  assert.deepEqual(Object.keys(CALC_INPUTS).sort(), ['bond', 'cash', 'equity', 'fund', 'income', 'tdf'])
 })
 
 test('toPayload: % → 0~1 변환, 빈 버킷은 null', () => {

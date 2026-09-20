@@ -50,7 +50,7 @@ export const REASON_TEXT = {
   no_duration_no_maturity: '듀레이션도 만기도 없어 금리 노출을 계산할 수 없습니다',
   maturity_passed: '만기가 지나 금리 노출에서 제외했습니다',
   no_equity_share: '주식 비중이 입력되지 않았습니다',
-  no_duration: '듀레이션이 입력되지 않았습니다',
+  no_duration: 'TDF·펀드의 채권 부분 듀레이션이 입력되지 않았습니다 (인출 설정 › 보유상품 속성)',
   no_rate_sensitivity: '금리 민감도가 입력되지 않았습니다',
   foreign_region_currency_krw: '해외 지역인데 통화가 원화로 되어 있어 환율 노출을 알 수 없습니다',
   rate_market_unclear: '채권의 통화·지역으로 대응 금리(한국/미국)를 정할 수 없습니다',

@@ -14,17 +14,28 @@ export const SUGGESTED_ROLE = {
 
 // 자산유형별로 활성화되는 필드. 여기에 없는 필드는 입력 불가(저장 시 null/기본값).
 const ALWAYS = ['role', 'bucket', 'sub_class', 'currency', 'liquidity_note', 'as_of_date']
+// TDF·펀드는 채권 부분의 수정듀레이션(금리 노출 계산)과 그 값의 가정/관측 구분을 함께 입력한다.
 const BY_TYPE = {
   cash:   [],
   bond:   ['fx_hedged', 'region', 'expense_ratio', 'bond_modified_duration', 'bond_rate_type', 'credit_grade', 'value_source'],
-  tdf:    ['fx_hedged', 'region', 'sector', 'expense_ratio', 'equity_share_pct'],
-  fund:   ['fx_hedged', 'region', 'sector', 'expense_ratio', 'equity_share_pct'],
+  tdf:    ['fx_hedged', 'region', 'sector', 'expense_ratio', 'equity_share_pct', 'bond_modified_duration', 'value_source'],
+  fund:   ['fx_hedged', 'region', 'sector', 'expense_ratio', 'equity_share_pct', 'bond_modified_duration', 'value_source'],
   equity: ['fx_hedged', 'region', 'sector', 'expense_ratio'],
   income: ['fx_hedged', 'region', 'sector', 'expense_ratio', 'reit_property_type', 'rate_sensitivity', 'value_source'],
 }
 
 export function fieldEnabled(assetType, field) {
   return ALWAYS.includes(field) || (BY_TYPE[assetType] || []).includes(field)
+}
+
+/** 노출도·시나리오 계산(market_exposure)이 자산유형별로 읽는 속성 — 입력칸이 막혀 있으면 안 된다(테스트로 보장). */
+export const CALC_INPUTS = {
+  cash:   ['currency'],
+  bond:   ['currency', 'fx_hedged', 'region', 'bond_modified_duration', 'bond_rate_type'],
+  tdf:    ['currency', 'fx_hedged', 'region', 'equity_share_pct', 'bond_modified_duration'],
+  fund:   ['currency', 'fx_hedged', 'region', 'equity_share_pct', 'bond_modified_duration'],
+  equity: ['currency', 'fx_hedged', 'region'],
+  income: ['currency', 'fx_hedged', 'region', 'rate_sensitivity'],
 }
 
 export const ALL_FIELDS = [
