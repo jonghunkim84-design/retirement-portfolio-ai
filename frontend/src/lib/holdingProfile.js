@@ -12,9 +12,6 @@ export const SUGGESTED_ROLE = {
   equity: 'growth', income: 'income',
 }
 
-// backend/utils.py BUCKET_MAP 과 동일 (표시용 안내값. 계산 기준은 서버).
-export const DEFAULT_BUCKET = { cash: 1, bond: 2, tdf: 2, fund: 2, equity: 3, income: 3 }
-
 // 자산유형별로 활성화되는 필드. 여기에 없는 필드는 입력 불가(저장 시 null/기본값).
 const ALWAYS = ['role', 'bucket', 'sub_class', 'currency', 'liquidity_note', 'as_of_date']
 const BY_TYPE = {

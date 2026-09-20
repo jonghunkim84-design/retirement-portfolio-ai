@@ -1,18 +1,23 @@
-import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import HoldingProfilesTab from './withdrawal-settings/HoldingProfilesTab.jsx'
 import CashflowTab from './withdrawal-settings/CashflowTab.jsx'
 import BaselineTab from './withdrawal-settings/BaselineTab.jsx'
 import SubTargetsTab from './withdrawal-settings/SubTargetsTab.jsx'
+import CheckTab from './withdrawal-settings/CheckTab.jsx'
 
 const TABS = [
   { key: 'holdings', label: '보유상품 속성',   Component: HoldingProfilesTab },
   { key: 'cashflow', label: '생활비·정기수입', Component: CashflowTab },
   { key: 'baseline', label: '인출 기준점',     Component: BaselineTab },
   { key: 'targets',  label: '자산군 내부 목표', Component: SubTargetsTab },
+  { key: 'check',    label: '점검 결과',       Component: CheckTab },
 ]
 
 export default function WithdrawalSettings() {
-  const [tab, setTab] = useState('holdings')
+  // 탭은 ?tab= 쿼리로 유지한다 (대시보드 카드에서 '점검 결과' 탭으로 바로 이동). 알 수 없는 값은 첫 탭.
+  const [params, setParams] = useSearchParams()
+  const tab = TABS.some(t => t.key === params.get('tab')) ? params.get('tab') : 'holdings'
+  const setTab = key => setParams({ tab: key }, { replace: true })
   const { Component } = TABS.find(t => t.key === tab)
 
   return (

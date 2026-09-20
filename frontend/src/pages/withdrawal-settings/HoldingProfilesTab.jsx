@@ -3,7 +3,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { ASSET_TYPE_LABEL } from '../../api/client.js'
 import { localToday } from '../../lib/cashflow.js'
 import {
-  ROLES, ROLE_LABEL, DEFAULT_BUCKET, fieldEnabled, suggestedForm, formFromProfile,
+  ROLES, ROLE_LABEL, fieldEnabled, suggestedForm, formFromProfile,
   formsEqual, toPayload, bondWarning,
 } from '../../lib/holdingProfile.js'
 import { Loading, Banner, errMsg, won } from './ui.jsx'
@@ -19,31 +19,25 @@ export default function HoldingProfilesTab() {
   const [saving, setSaving] = useState({})        // { [assetId]: true }
   const [batchMsg, setBatchMsg] = useState('')
 
-  const { data: assets, isLoading: aLoading } = useQuery({
-    queryKey: ['wd-assets'], queryFn: () => api.get('/assets').then(r => r.data),
-  })
-  const { data: profiles, isLoading: pLoading } = useQuery({
-    queryKey: ['wd-profiles'], queryFn: () => api.get('/holding-profiles').then(r => r.data),
+  // 활성 자산 전체 + 속성 + 버킷(기본/실효/출처)을 서버가 한 번에 준다. 기본 버킷의 단일 출처는 서버(BUCKET_MAP).
+  const { data: overview, isLoading } = useQuery({
+    queryKey: ['wd-overview'], queryFn: () => api.get('/holding-profiles/overview').then(r => r.data),
   })
 
   const rows = useMemo(() => {
-    if (!assets || !profiles) return []
-    const byId = new Map(profiles.map(p => [p.holding_id, p]))
-    return assets
-      .filter(a => a.is_active)
-      .sort((a, b) => (Number(b.current_value) || 0) - (Number(a.current_value) || 0))
-      .map(asset => {
-        const profile = byId.get(asset.id)
+    if (!overview) return []
+    return overview.items                                  // 서버가 금액 내림차순으로 정렬해 준다
+      .map(({ asset, profile, default_bucket: defaultBucket }) => {
         const base = profile ? formFromProfile(profile) : suggestedForm(asset, today)
         const draft = drafts[asset.id]
         const form = draft ?? base
         const edited = !!draft && !formsEqual(draft, base)
         const status = edited ? 'edited' : profile ? 'saved' : 'suggested'
-        return { asset, profile, form, status }
+        return { asset, profile, form, status, defaultBucket }
       })
-  }, [assets, profiles, drafts, today])
+  }, [overview, drafts, today])
 
-  if (aLoading || pLoading) return <Loading />
+  if (isLoading) return <Loading />
 
   const total = rows.length
   const done = rows.filter(r => r.profile).length
@@ -74,13 +68,13 @@ export default function HoldingProfilesTab() {
   async function saveOne(row) {
     setBatchMsg('')
     await saveRow(row)
-    qc.invalidateQueries({ queryKey: ['wd-profiles'] })
+    qc.invalidateQueries({ queryKey: ['wd-overview'] })
   }
 
   async function saveAllEdited() {
     setBatchMsg('')
     const results = await Promise.all(editedRows.map(saveRow))
-    qc.invalidateQueries({ queryKey: ['wd-profiles'] })
+    qc.invalidateQueries({ queryKey: ['wd-overview'] })
     const ok = results.filter(Boolean).length
     setBatchMsg(`${ok}개 저장${ok < results.length ? `, ${results.length - ok}개 실패 (행의 오류 문구 확인)` : ''}`)
   }
@@ -155,7 +149,7 @@ export default function HoldingProfilesTab() {
                 <input className={`${cellInput} ${on(f) ? '' : disabledCls}`} disabled={!on(f)}
                   value={on(f) ? form[f] : ''} onChange={e => set(f, e.target.value)} {...extra} />
               )
-              const defBucket = DEFAULT_BUCKET[asset.asset_type]
+              const defBucket = row.defaultBucket                     // 서버가 준 기본 버킷
               const showAssumed = form.value_source === 'assumed'
                 && ((on('bond_modified_duration') && form.bond_modified_duration !== '')
                   || (on('rate_sensitivity') && form.rate_sensitivity !== ''))
@@ -195,7 +189,7 @@ export default function HoldingProfilesTab() {
                     <select className={`${cellInput} ${form.bucket === '' ? 'text-gray-400' : ''}`}
                       value={form.bucket} onChange={e => set('bucket', e.target.value)}
                       title="비워 두면 자산유형 기준 기본 버킷을 따릅니다. 선택하면 재지정으로 저장됩니다.">
-                      <option value="">기본: {defBucket}버킷(자산유형 기준)</option>
+                      <option value="">{defBucket ? `기본: ${defBucket}버킷(자산유형 기준)` : '기본: 미지정(자산유형 기준 없음)'}</option>
                       <option value="1">1버킷</option>
                       <option value="2">2버킷</option>
                       <option value="3">3버킷</option>

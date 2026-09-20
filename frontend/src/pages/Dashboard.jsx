@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import api, { fmt } from '../api/client.js'
+import WithdrawalCheckCard from '../components/WithdrawalCheckCard.jsx'
 
 const ASSET_TYPE_KO = {
   cash: '현금성', bond: '채권', tdf: 'TDF',
@@ -499,6 +500,8 @@ export default function Dashboard() {
           <div className="text-[11px] text-gray-400 mt-0.5">권장 12개월 · 현금성 기준</div>
         </div>
       </div>
+
+      <WithdrawalCheckCard />
 
       {/* ─── Zone 3: 3개 패널 ──────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
