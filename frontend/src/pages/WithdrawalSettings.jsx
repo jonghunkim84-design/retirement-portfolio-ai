@@ -4,6 +4,7 @@ import CashflowTab from './withdrawal-settings/CashflowTab.jsx'
 import BaselineTab from './withdrawal-settings/BaselineTab.jsx'
 import SubTargetsTab from './withdrawal-settings/SubTargetsTab.jsx'
 import CheckTab from './withdrawal-settings/CheckTab.jsx'
+import RulesTab from './withdrawal-settings/RulesTab.jsx'
 
 const TABS = [
   { key: 'holdings', label: '보유상품 속성',   Component: HoldingProfilesTab },
@@ -11,6 +12,7 @@ const TABS = [
   { key: 'baseline', label: '인출 기준점',     Component: BaselineTab },
   { key: 'targets',  label: '자산군 내부 목표', Component: SubTargetsTab },
   { key: 'check',    label: '점검 결과',       Component: CheckTab },
+  { key: 'rules',    label: '규칙',           Component: RulesTab },
 ]
 
 export default function WithdrawalSettings() {
