@@ -34,6 +34,16 @@ export default function Layout({ children }) {
     return new Set(NAV_GROUPS.map(g => g.id))
   })
 
+  // 새로 생긴 그룹은 저장된 펼침 상태에 없어 접힌 채 나타나므로, 처음 보는 그룹만 펼쳐 준다
+  useEffect(() => {
+    try {
+      const known = new Set(JSON.parse(localStorage.getItem('nav_known_groups') || 'null') ?? [])
+      const fresh = NAV_GROUPS.map(g => g.id).filter(id => !known.has(id))
+      if (fresh.length) setOpenGroups(prev => new Set([...prev, ...fresh]))
+      localStorage.setItem('nav_known_groups', JSON.stringify(NAV_GROUPS.map(g => g.id)))
+    } catch {}
+  }, [])
+
   // 현재 경로가 속한 그룹 자동 펼침
   useEffect(() => {
     const gid = activeGroupId(location.pathname)
