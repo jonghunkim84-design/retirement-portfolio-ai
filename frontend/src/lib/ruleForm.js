@@ -3,7 +3,7 @@
 // 검증 범위는 서버(ips_rules_validation.py)와 같다. 서버가 최종 판정하며 서버 오류는 필드별로 다시 표시한다.
 import { ratioToPctInput, pctInputToRatio } from './pct.js'
 
-// type: years(년) | multiple(배) | percent(%, 저장은 0~1)
+// type: years(년) | multiple(배) | percent(%, 저장은 0~1) | days(일, 정수). optional: 비우면 저장하지 않는다(서버 기본값 사용)
 export const RULE_SPECS = {
   'R-01': [
     { key: 'min_years', label: '최소 연수', unit: '년', type: 'years' },
@@ -14,7 +14,10 @@ export const RULE_SPECS = {
     { key: 'relative', label: '목표 대비 상대 폭', unit: '%', type: 'percent', onlyMode: 'relative' },
     { key: 'min_abs', label: '최소 절대 폭', unit: '%p', type: 'percent', onlyMode: 'relative' },
   ],
-  'R-04': [{ key: 'drawdown_threshold', label: '하락 국면 기준 (고점 대비 하락률)', unit: '%', type: 'percent' }],
+  'R-04': [
+    { key: 'drawdown_threshold', label: '하락 국면 기준 (고점 대비 하락률)', unit: '%', type: 'percent' },
+    { key: 'lookback_days', label: '고점 기간 (30~1095일, 비우면 365일)', unit: '일', type: 'days', optional: true },
+  ],
   'R-05': [
     { key: 'upper_multiplier', label: '상단 배수 (초기 인출률 대비)', unit: '배', type: 'multiple' },
     { key: 'cut_ratio', label: '선택생활비 감액 비율', unit: '%', type: 'percent' },
@@ -61,6 +64,7 @@ const RANGE = {
   relative: [v => v > 0 && v <= 1, '0보다 크고 100% 이하여야 합니다'],
   min_abs: [v => v >= 0 && v <= 1, '0% 이상 100% 이하여야 합니다'],
   drawdown_threshold: [v => v > 0 && v < 1, '0%보다 크고 100%보다 작아야 합니다'],
+  lookback_days: [v => Number.isInteger(v) && v >= 30 && v <= 1095, '30 이상 1095 이하의 정수(일)여야 합니다'],
   upper_multiplier: [v => v > 1, '1보다 커야 합니다'],
   cut_ratio: [v => v > 0 && v < 1, '0%보다 크고 100%보다 작아야 합니다'],
   lower_multiplier: [v => v > 0 && v < 1, '0보다 크고 1보다 작아야 합니다'],
@@ -75,6 +79,7 @@ export function formToParameters(code, form) {
   if (code === 'R-03') params.mode = 'relative'
 
   for (const f of RULE_SPECS[code] || []) {
+    if (f.optional && str(form.values[f.key]).trim() === '') continue          // 선택 항목을 비우면 저장하지 않는다
     const { value, error } = toNumber(f, form.values[f.key])
     if (error) { errors[f.key] = error; continue }
     const [ok, msg] = RANGE[f.key]
