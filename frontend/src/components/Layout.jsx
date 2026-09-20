@@ -174,7 +174,8 @@ export default function Layout({ children }) {
       </header>
 
       {/* ── 메인 콘텐츠 ─────────────────────────────────────────── */}
-      <main className="w-full md:ml-52 flex-1 p-4 md:p-6 min-h-screen pt-16 md:pt-6 pb-28 md:pb-6">
+      {/* min-w-0: 넓은 표가 main 을 늘려 페이지 전체가 가로로 넘치지 않게 한다 (표는 자기 상자 안에서 스크롤) */}
+      <main className="w-full min-w-0 md:ml-52 flex-1 p-4 md:p-6 min-h-screen pt-16 md:pt-6 pb-28 md:pb-6">
         {children}
       </main>
 
