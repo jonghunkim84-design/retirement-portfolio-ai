@@ -174,7 +174,7 @@ export default function Settings() {
           합계: {(totalTarget * 100).toFixed(0)}% {totalOk ? '✅' : '⚠️ 합계가 100%가 아닙니다'}
         </div>
         <FieldRow label="리밸런싱 기준" sub="이 수치 이상 이탈 시 조정 권장 (예: 0.1 = 10%p)">
-          <input type="number" step="0.01" value={form.portfolio?.rebalance_threshold || 0.1}
+          <input type="number" step="0.01" value={form.portfolio?.rebalance_threshold ?? 0.1}
             onChange={e => set('portfolio.rebalance_threshold', +e.target.value)} className="w-full" />
         </FieldRow>
       </Section>
