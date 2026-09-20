@@ -19,6 +19,7 @@
 --   2026-06-16  income_log income_type 'earned' 허용 (CHECK 없음 — 코드 레벨 제어)
 --   2026-07-14  real_assets 신설 / 2026-07-15 gift_plans 신설
 --   2026-09-19  RLS 전 테이블 활성화 (S1 단계 F, 20번 참조)
+--   2026-09-20  ips_rules R-03 parameters 를 {"mode": "config"} 로 명시 (지시서 03 단계 B)
 --   2026-09-19  인출 판단 시스템 데이터 기반 6개 신설 (holding_profiles, cashflow_items,
 --               withdrawal_baseline, sub_allocation_targets, ips_rules(+시드 7건), decision_log)
 --
@@ -429,8 +430,8 @@ INSERT INTO public.ips_rules (rule_code, category, name, parameters, enabled, de
      '{"target_years": 5.0}'::jsonb, true,
      '2버킷(중기채·인컴)의 목표 커버 연수.'),
   ('R-03', 'rebalance',     '자산군 허용 폭 초과 시 초과분에서 우선 인출',
-     '{}'::jsonb, true,
-     '허용 폭을 초과한 자산군이 있으면 그 초과분에서 먼저 인출한다. 허용 폭은 기존 user_config.portfolio.rebalance_threshold(자산군 공통, 미설정 시 0.1)를 사용하며 이 규칙은 별도 값을 갖지 않는다.'),
+     '{"mode": "config"}'::jsonb, true,
+     '허용 폭을 초과한 자산군이 있으면 그 초과분에서 먼저 인출·보충한다. 판정은 기존 리밸런싱과 같이 |현재 비중 − 목표 비중| ≥ 허용 폭(이상)이다. mode=config: 기존 user_config.portfolio.rebalance_threshold 공통값을 사용한다(기본값). mode=relative: 자산군별 허용 폭 = max(목표 비중 × relative, min_abs).'),
   ('R-04', 'market_regime', '하락 국면 판정·3버킷 매도 금지',
      '{"drawdown_threshold": 0.15}'::jsonb, true,
      '주식 기준지수가 고점 대비 drawdown_threshold(0~1, 0.15=15%) 이상 하락하면 하락 국면. 3버킷 매도를 금지하고 1버킷에서 인출.'),
