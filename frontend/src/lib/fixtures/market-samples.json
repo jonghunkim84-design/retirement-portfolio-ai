@@ -1,0 +1,2700 @@
+{
+ "series": {
+  "as_of": "2026-09-18",
+  "lookback_days": 365,
+  "series": [
+   {
+    "code": "EEM",
+    "name": "신흥국 (EEM ETF)",
+    "category": "etf_proxy",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": true,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 95.0,
+    "latest_date": "2026-09-18",
+    "latest_flag": null,
+    "latest_source": "fdr",
+    "stale": false,
+    "change_1m": {
+     "value": -0.050000000000000044,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-08-18"
+    },
+    "change_3m": {
+     "value": -0.050000000000000044,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-06-18"
+    },
+    "drawdown": {
+     "value": 0.050000000000000044,
+     "latest_value": 95.0,
+     "latest_date": "2026-09-18",
+     "peak_value": 100.0,
+     "peak_date": "2026-09-17",
+     "window_start": "2025-09-18",
+     "stale": false,
+     "flagged_dates": [],
+     "excluded_flagged": 0,
+     "reason": null
+    },
+    "yoy": null,
+    "reason": null
+   },
+   {
+    "code": "KR_10Y",
+    "name": "국고채 10년",
+    "category": "rate",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 3.4,
+    "latest_date": "2026-09-18",
+    "latest_flag": null,
+    "latest_source": "fdr",
+    "stale": false,
+    "change_1m": {
+     "value": 0.3999999999999999,
+     "unit": "pp",
+     "reason": null,
+     "ref_date": "2026-08-18"
+    },
+    "change_3m": {
+     "value": 0.3999999999999999,
+     "unit": "pp",
+     "reason": null,
+     "ref_date": "2026-06-18"
+    },
+    "drawdown": null,
+    "yoy": null,
+    "reason": null
+   },
+   {
+    "code": "KR_CPI",
+    "name": "한국 CPI",
+    "category": "cpi",
+    "frequency": "monthly",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 120.0,
+    "latest_date": "2026-08-01",
+    "latest_flag": null,
+    "latest_source": "ecos",
+    "stale": false,
+    "change_1m": {
+     "value": 0.0016694490818029983,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-07-01"
+    },
+    "change_3m": {
+     "value": null,
+     "reason": "insufficient_history"
+    },
+    "drawdown": null,
+    "yoy": 0.02564102564102555,
+    "reason": null
+   },
+   {
+    "code": "KS11",
+    "name": "KOSPI",
+    "category": "equity_index",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 90.0,
+    "latest_date": "2026-09-18",
+    "latest_flag": null,
+    "latest_source": "fdr",
+    "stale": false,
+    "change_1m": {
+     "value": -0.09999999999999998,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-08-18"
+    },
+    "change_3m": {
+     "value": -0.09999999999999998,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-06-18"
+    },
+    "drawdown": {
+     "value": 0.09999999999999998,
+     "latest_value": 90.0,
+     "latest_date": "2026-09-18",
+     "peak_value": 100.0,
+     "peak_date": "2026-09-17",
+     "window_start": "2025-09-18",
+     "stale": false,
+     "flagged_dates": [
+      "2026-03-01"
+     ],
+     "excluded_flagged": 1,
+     "reason": null
+    },
+    "yoy": null,
+    "reason": null
+   },
+   {
+    "code": "US10Y",
+    "name": "미국 국채 10년",
+    "category": "rate",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 4.3,
+    "latest_date": "2026-09-18",
+    "latest_flag": null,
+    "latest_source": "fdr",
+    "stale": false,
+    "change_1m": {
+     "value": 0.2999999999999998,
+     "unit": "pp",
+     "reason": null,
+     "ref_date": "2026-08-18"
+    },
+    "change_3m": {
+     "value": 0.2999999999999998,
+     "unit": "pp",
+     "reason": null,
+     "ref_date": "2026-06-18"
+    },
+    "drawdown": null,
+    "yoy": null,
+    "reason": null
+   },
+   {
+    "code": "US500",
+    "name": "S&P 500",
+    "category": "equity_index",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 80.0,
+    "latest_date": "2026-09-18",
+    "latest_flag": null,
+    "latest_source": "fdr",
+    "stale": false,
+    "change_1m": {
+     "value": -0.19999999999999996,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-08-18"
+    },
+    "change_3m": {
+     "value": -0.19999999999999996,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-06-18"
+    },
+    "drawdown": {
+     "value": 0.19999999999999996,
+     "latest_value": 80.0,
+     "latest_date": "2026-09-18",
+     "peak_value": 100.0,
+     "peak_date": "2026-09-17",
+     "window_start": "2025-09-18",
+     "stale": false,
+     "flagged_dates": [],
+     "excluded_flagged": 0,
+     "reason": null
+    },
+    "yoy": null,
+    "reason": null
+   },
+   {
+    "code": "USD_KRW",
+    "name": "원/달러",
+    "category": "fx",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": 1330.0,
+    "latest_date": "2026-09-18",
+    "latest_flag": null,
+    "latest_source": "fdr",
+    "stale": false,
+    "change_1m": {
+     "value": -0.050000000000000044,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-08-18"
+    },
+    "change_3m": {
+     "value": -0.050000000000000044,
+     "unit": "ratio",
+     "reason": null,
+     "ref_date": "2026-06-18"
+    },
+    "drawdown": null,
+    "yoy": null,
+    "reason": null
+   }
+  ],
+  "provenance": "observed"
+ },
+ "history": {
+  "as_of": "2026-09-18",
+  "start": "2026-08-19",
+  "series": {
+   "code": "KS11",
+   "name": "KOSPI",
+   "category": "equity_index",
+   "frequency": "daily",
+   "currency": null,
+   "unit": "level",
+   "is_proxy": false,
+   "enabled": true,
+   "note": null,
+   "sources": [
+    "fdr"
+   ]
+  },
+  "points": [
+   {
+    "date": "2026-08-19",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-20",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-21",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-22",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-23",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-24",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-25",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-26",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-27",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-28",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-29",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-30",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-08-31",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-01",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-02",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-03",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-04",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-05",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-06",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-07",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-08",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-09",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-10",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-11",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-12",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-13",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-14",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-15",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-16",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-17",
+    "value": 100.0,
+    "flag": null,
+    "source": "fdr"
+   },
+   {
+    "date": "2026-09-18",
+    "value": 90.0,
+    "flag": null,
+    "source": "fdr"
+   }
+  ],
+  "provenance": "observed"
+ },
+ "regime": {
+  "as_of": "2026-09-18",
+  "lookback_days": 365,
+  "weighted_drawdown": 0.1333333333333333,
+  "bucket3_value": 110000000.0,
+  "included_value": 90000000.0,
+  "excluded_value": 20000000.0,
+  "excluded_share": 0.18181818181818182,
+  "unreliable": false,
+  "regions": [
+   {
+    "region": "한국",
+    "series_code": "KS11",
+    "series_name": "KOSPI",
+    "is_proxy": false,
+    "drawdown": 0.09999999999999998,
+    "latest_date": "2026-09-18",
+    "peak_date": "2026-09-17",
+    "flagged_dates": [
+     "2026-03-01"
+    ],
+    "excluded_flagged": 1,
+    "value": 60000000.0,
+    "asset_count": 1,
+    "share_of_bucket3": 0.5454545454545454
+   },
+   {
+    "region": "미국",
+    "series_code": "US500",
+    "series_name": "S&P 500",
+    "is_proxy": false,
+    "drawdown": 0.19999999999999996,
+    "latest_date": "2026-09-18",
+    "peak_date": "2026-09-17",
+    "flagged_dates": [],
+    "excluded_flagged": 0,
+    "value": 30000000.0,
+    "asset_count": 1,
+    "share_of_bucket3": 0.2727272727272727
+   }
+  ],
+  "excluded": [
+   {
+    "asset_id": 5,
+    "asset_name": "자산5",
+    "value": 10000000.0,
+    "reason": "region_no_benchmark",
+    "region": "독일",
+    "original_region": "독일"
+   },
+   {
+    "asset_id": 7,
+    "asset_name": "자산7",
+    "value": 10000000.0,
+    "reason": "region_missing",
+    "region": null,
+    "original_region": null
+   }
+  ],
+  "excluded_by_reason": [
+   {
+    "reason": "region_no_benchmark",
+    "count": 1,
+    "value": 10000000.0,
+    "regions": [
+     "독일"
+    ],
+    "share_of_bucket3": 0.09090909090909091
+   },
+   {
+    "reason": "region_missing",
+    "count": 1,
+    "value": 10000000.0,
+    "regions": [],
+    "share_of_bucket3": 0.09090909090909091
+   }
+  ],
+  "latest_date": "2026-09-18",
+  "reasons": [],
+  "assumptions": [
+   "하락률은 각 지역 기준지수의 현지 통화 기준(원화 환산 손익은 시나리오에서 다룸)",
+   "고점 = as_of 이전 lookback_days 기간의 최고값(이상치 플래그가 달린 관측은 제외), 최신값 = as_of 이하 마지막 관측(이상치 포함)",
+   "지역 미입력·대응 지수 없음·데이터 부족(stale 포함) 자산은 제외하고 나머지 금액으로 가중"
+  ],
+  "lookback_source": "rule",
+  "rule": {
+   "enabled": true,
+   "threshold": 0.15
+  },
+  "judgement": {
+   "drawdown": 0.1333333333333333,
+   "threshold": 0.15,
+   "index_name": "가중 하락률(3버킷 지역 가중)",
+   "reason": null,
+   "status": "normal"
+  },
+  "suggested_input": {
+   "index_name": "가중 하락률(3버킷 지역 가중)",
+   "drawdown": 0.1333333333333333,
+   "source": "auto",
+   "lookback_days": 365,
+   "data_date": "2026-09-18",
+   "unreliable": false,
+   "excluded_share": 0.18181818181818182,
+   "components": [
+    {
+     "region": "한국",
+     "series_code": "KS11",
+     "drawdown": 0.09999999999999998,
+     "share": 0.5454545454545454,
+     "is_proxy": false
+    },
+    {
+     "region": "미국",
+     "series_code": "US500",
+     "drawdown": 0.19999999999999996,
+     "share": 0.2727272727272727,
+     "is_proxy": false
+    }
+   ]
+  },
+  "provenance": "observed"
+ },
+ "exposure": {
+  "as_of": "2026-09-18",
+  "total_assets": 235000000.0,
+  "rate": {
+   "rows": [
+    {
+     "asset_id": 1,
+     "asset_name": "자산1",
+     "asset_type": "cash",
+     "bucket": 1,
+     "value": 40000000.0,
+     "kind": "cash",
+     "amount": 40000000.0,
+     "duration": 0.0,
+     "basis": "input",
+     "price_change_per_1pp": 0.0,
+     "interest_change_per_1pp": 400000.0,
+     "rate_market": "KR",
+     "market_reason": null
+    },
+    {
+     "asset_id": 2,
+     "asset_name": "자산2",
+     "asset_type": "bond",
+     "bucket": 2,
+     "value": 60000000.0,
+     "kind": "bond",
+     "amount": 60000000.0,
+     "duration": 5.0,
+     "basis": "input",
+     "price_change_per_1pp": -3000000.0,
+     "interest_change_per_1pp": null,
+     "rate_market": "KR",
+     "market_reason": null
+    },
+    {
+     "asset_id": 8,
+     "asset_name": "자산8",
+     "asset_type": "bond",
+     "bucket": 2,
+     "value": 5000000.0,
+     "kind": "bond",
+     "amount": 5000000.0,
+     "duration": 4.0,
+     "basis": "input",
+     "price_change_per_1pp": -200000.0,
+     "interest_change_per_1pp": null,
+     "rate_market": "US",
+     "market_reason": null
+    }
+   ],
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "asset_type": "fund",
+     "bucket": 2,
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    },
+    {
+     "asset_id": 7,
+     "asset_name": "자산7",
+     "asset_type": "income",
+     "bucket": 3,
+     "value": 10000000.0,
+     "reason": "no_rate_sensitivity"
+    }
+   ],
+   "price_change_per_1pp": -3200000.0,
+   "interest_change_per_1pp": 400000.0,
+   "price_change_per_1pp_by_bucket": {
+    "1": 0.0,
+    "2": -3200000.0,
+    "3": 0.0
+   },
+   "assumed_count": 0
+  },
+  "equity": {
+   "rows": [
+    {
+     "asset_id": 3,
+     "asset_name": "자산3",
+     "asset_type": "equity",
+     "bucket": 3,
+     "value": 60000000.0,
+     "amount": 60000000.0,
+     "region": "한국",
+     "has_benchmark": true
+    },
+    {
+     "asset_id": 4,
+     "asset_name": "자산4",
+     "asset_type": "equity",
+     "bucket": 3,
+     "value": 30000000.0,
+     "amount": 30000000.0,
+     "region": "미국",
+     "has_benchmark": true
+    },
+    {
+     "asset_id": 5,
+     "asset_name": "자산5",
+     "asset_type": "equity",
+     "bucket": 3,
+     "value": 10000000.0,
+     "amount": 10000000.0,
+     "region": "독일",
+     "has_benchmark": false
+    },
+    {
+     "asset_id": 7,
+     "asset_name": "자산7",
+     "asset_type": "income",
+     "bucket": 3,
+     "value": 10000000.0,
+     "amount": 10000000.0,
+     "region": null,
+     "has_benchmark": false
+    }
+   ],
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "asset_type": "fund",
+     "bucket": 2,
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    }
+   ],
+   "total": 110000000.0,
+   "by_region": [
+    {
+     "region": "한국",
+     "amount": 60000000.0,
+     "has_benchmark": true,
+     "asset_count": 1,
+     "share_of_equity": 0.5454545454545454,
+     "share_of_total": 0.2553191489361702
+    },
+    {
+     "region": "미국",
+     "amount": 30000000.0,
+     "has_benchmark": true,
+     "asset_count": 1,
+     "share_of_equity": 0.2727272727272727,
+     "share_of_total": 0.1276595744680851
+    },
+    {
+     "region": "독일",
+     "amount": 10000000.0,
+     "has_benchmark": false,
+     "asset_count": 1,
+     "share_of_equity": 0.09090909090909091,
+     "share_of_total": 0.0425531914893617
+    },
+    {
+     "region": null,
+     "amount": 10000000.0,
+     "has_benchmark": false,
+     "asset_count": 1,
+     "share_of_equity": 0.09090909090909091,
+     "share_of_total": 0.0425531914893617
+    }
+   ],
+   "by_bucket": {
+    "1": 0.0,
+    "2": 0.0,
+    "3": 110000000.0
+   },
+   "unknown_region_amount": 10000000.0
+  },
+  "fx": {
+   "rows": [
+    {
+     "asset_id": 4,
+     "asset_name": "자산4",
+     "asset_type": "equity",
+     "bucket": 3,
+     "value": 30000000.0,
+     "currency": "USD"
+    },
+    {
+     "asset_id": 5,
+     "asset_name": "자산5",
+     "asset_type": "equity",
+     "bucket": 3,
+     "value": 10000000.0,
+     "currency": "EUR"
+    },
+    {
+     "asset_id": 8,
+     "asset_name": "자산8",
+     "asset_type": "bond",
+     "bucket": 2,
+     "value": 5000000.0,
+     "currency": "USD"
+    }
+   ],
+   "by_currency": {
+    "USD": 35000000.0,
+    "EUR": 10000000.0
+   },
+   "total": 45000000.0,
+   "hedged": [],
+   "unclear": [],
+   "hedged_value": 0
+  },
+  "completeness": {
+   "rate_excluded": {
+    "count": 2,
+    "value": 30000000.0,
+    "share_of_total": 0.1276595744680851
+   },
+   "equity_excluded": {
+    "count": 1,
+    "value": 20000000.0,
+    "share_of_total": 0.0851063829787234
+   },
+   "fx_unclear": {
+    "count": 0,
+    "value": 0,
+    "share_of_total": 0.0
+   }
+  },
+  "assumptions": [
+   "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+   "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+   "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+   "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+   "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+   "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+   "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+   "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외"
+  ],
+  "provenance": {
+   "observed": [
+    "assets[].current_value",
+    "지표 관측값(market_observations)"
+   ],
+   "assumed": [
+    "듀레이션 대용(잔존만기)",
+    "리츠·인컴 금리 민감도",
+    "TDF·펀드 주식 비중",
+    "충격 크기(시나리오 입력)"
+   ]
+  }
+ },
+ "signals": {
+  "as_of": "2026-09-18",
+  "signals": [
+   {
+    "kind": "rate",
+    "market": "KR",
+    "series_code": "KR_10Y",
+    "observed_change_pp": 0.3999999999999999,
+    "exposure_per_1pp": -3000000.0,
+    "estimated_impact": -1199999.9999999998,
+    "reason": null,
+    "meta": {
+     "latest_date": "2026-09-18",
+     "ref_date": "2026-08-18",
+     "unit": "pp"
+    },
+    "asset_count": 1
+   },
+   {
+    "kind": "rate",
+    "market": "US",
+    "series_code": "US10Y",
+    "observed_change_pp": 0.2999999999999998,
+    "exposure_per_1pp": -200000.0,
+    "estimated_impact": -59999.99999999996,
+    "reason": null,
+    "meta": {
+     "latest_date": "2026-09-18",
+     "ref_date": "2026-08-18",
+     "unit": "pp"
+    },
+    "asset_count": 1
+   },
+   {
+    "kind": "equity",
+    "region": "한국",
+    "series_code": "KS11",
+    "is_proxy": false,
+    "observed_change": -0.09999999999999998,
+    "exposure": 60000000.0,
+    "estimated_impact": -5999999.999999999,
+    "reason": null,
+    "meta": {
+     "latest_date": "2026-09-18",
+     "ref_date": "2026-08-18",
+     "unit": "ratio"
+    },
+    "asset_count": 1
+   },
+   {
+    "kind": "equity",
+    "region": "미국",
+    "series_code": "US500",
+    "is_proxy": false,
+    "observed_change": -0.19999999999999996,
+    "exposure": 30000000.0,
+    "estimated_impact": -5999999.999999999,
+    "reason": null,
+    "meta": {
+     "latest_date": "2026-09-18",
+     "ref_date": "2026-08-18",
+     "unit": "ratio"
+    },
+    "asset_count": 1
+   },
+   {
+    "kind": "equity",
+    "region": "독일",
+    "series_code": null,
+    "observed_change": null,
+    "exposure": 10000000.0,
+    "estimated_impact": null,
+    "reason": "region_no_benchmark",
+    "asset_count": 1
+   },
+   {
+    "kind": "equity",
+    "region": null,
+    "series_code": null,
+    "observed_change": null,
+    "exposure": 10000000.0,
+    "estimated_impact": null,
+    "reason": "region_missing",
+    "asset_count": 1
+   },
+   {
+    "kind": "fx",
+    "currency": "USD",
+    "series_code": "USD_KRW",
+    "observed_change": -0.050000000000000044,
+    "exposure": 35000000.0,
+    "estimated_impact": -1750000.0000000016,
+    "reason": null,
+    "meta": {
+     "latest_date": "2026-09-18",
+     "ref_date": "2026-08-18",
+     "unit": "ratio"
+    },
+    "asset_count": 2
+   },
+   {
+    "kind": "fx",
+    "currency": "EUR",
+    "series_code": "EUR_KRW",
+    "observed_change": null,
+    "exposure": 10000000.0,
+    "estimated_impact": null,
+    "reason": "series_missing",
+    "meta": null,
+    "asset_count": 1
+   }
+  ],
+  "total_impact": -15010000.0,
+  "before": {
+   "total_assets": 235000000.0,
+   "annual_need_total": 36000000.0,
+   "annual_need_essential": 24000000.0,
+   "buckets": {
+    "1": {
+     "value": 40000000.0,
+     "years_total": 1.1111111111111112,
+     "years_essential": 1.6666666666666667
+    },
+    "2": {
+     "value": 85000000.0,
+     "years_total": 2.361111111111111,
+     "years_essential": 3.5416666666666665
+    },
+    "3": {
+     "value": 110000000.0,
+     "years_total": 3.0555555555555554,
+     "years_essential": 4.583333333333333
+    }
+   },
+   "cumulative": {
+    "b1_b2_years_total": 3.4722222222222223,
+    "b1_b2_years_essential": 5.208333333333333,
+    "all_years_total": 6.527777777777778,
+    "all_years_essential": 9.791666666666666
+   },
+   "r01_status": "below_min",
+   "r01_reason": null
+  },
+  "after": {
+   "total_assets": 219990000.0,
+   "annual_need_total": 36000000.0,
+   "annual_need_essential": 24000000.0,
+   "buckets": {
+    "1": {
+     "value": 40000000.0,
+     "years_total": 1.1111111111111112,
+     "years_essential": 1.6666666666666667
+    },
+    "2": {
+     "value": 83490000.0,
+     "years_total": 2.319166666666667,
+     "years_essential": 3.47875
+    },
+    "3": {
+     "value": 96500000.0,
+     "years_total": 2.6805555555555554,
+     "years_essential": 4.020833333333333
+    }
+   },
+   "cumulative": {
+    "b1_b2_years_total": 3.430277777777778,
+    "b1_b2_years_essential": 5.145416666666667,
+    "all_years_total": 6.110833333333333,
+    "all_years_essential": 9.16625
+   },
+   "r01_status": "below_min",
+   "r01_reason": null
+  },
+  "excluded": [
+   {
+    "asset_id": 5,
+    "asset_name": "자산5",
+    "value": 10000000.0,
+    "signal": "equity",
+    "reason": "region_no_benchmark",
+    "region": "독일"
+   },
+   {
+    "asset_id": 7,
+    "asset_name": "자산7",
+    "value": 10000000.0,
+    "signal": "equity",
+    "reason": "region_missing",
+    "region": null
+   },
+   {
+    "asset_id": 5,
+    "asset_name": "자산5",
+    "value": 10000000.0,
+    "signal": "fx",
+    "reason": "fx_series_missing"
+   }
+  ],
+  "assumptions": [
+   "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+   "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+   "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+   "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+   "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+   "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+   "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+   "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+   "관측된 1개월 변화(최신 관측일 기준)를 현재 노출에 곱한 참고값 — 예측이 아니며 실제 손익과 다를 수 있음",
+   "국내 채권은 한국 국고채 10년, 해외(USD) 채권은 미국 국채 10년 변화를 사용(채권별 만기 차이는 미반영)",
+   "주식 변화는 지역 기준지수의 현지 통화 변화이고 환율 영향은 환율 신호로 따로 더함(교차 효과 미반영)"
+  ],
+  "provenance": {
+   "observed": [
+    "assets[].current_value",
+    "지표 관측값(market_observations)"
+   ],
+   "assumed": [
+    "듀레이션 대용(잔존만기)",
+    "리츠·인컴 금리 민감도",
+    "TDF·펀드 주식 비중",
+    "충격 크기(시나리오 입력)"
+   ]
+  }
+ },
+ "presets": [
+  {
+   "id": "rate_up_1",
+   "kind": "rate",
+   "label": "금리 +1%p",
+   "params": {
+    "delta_pp": 1.0
+   }
+  },
+  {
+   "id": "rate_down_1",
+   "kind": "rate",
+   "label": "금리 −1%p",
+   "params": {
+    "delta_pp": -1.0
+   }
+  },
+  {
+   "id": "equity_down_20",
+   "kind": "equity",
+   "label": "주가 −20%",
+   "params": {
+    "mode": "uniform",
+    "pct": 0.2
+   }
+  },
+  {
+   "id": "fx_down_10",
+   "kind": "fx",
+   "label": "원/달러 −10% (원화 강세)",
+   "params": {
+    "currency": "USD",
+    "pct": -0.1
+   }
+  },
+  {
+   "id": "fx_up_10",
+   "kind": "fx",
+   "label": "원/달러 +10% (원화 약세)",
+   "params": {
+    "currency": "USD",
+    "pct": 0.1
+   }
+  },
+  {
+   "id": "inflation_up_2",
+   "kind": "inflation",
+   "label": "물가 +2%p (1년)",
+   "params": {
+    "delta_pp": 2.0
+   }
+  }
+ ],
+ "scenarios": {
+  "rate_up": {
+   "as_of": "2026-09-18",
+   "kind": "rate",
+   "label": "금리 +1%p",
+   "params": {
+    "delta_pp": 1.0
+   },
+   "change": {
+    "total": -3200000.0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": -3200000.0,
+     "3": 0.0
+    },
+    "unassigned": 0.0,
+    "by_asset": [
+     {
+      "asset_id": 2,
+      "asset_name": "자산2",
+      "before": 60000000.0,
+      "change": -3000000.0,
+      "after": 57000000.0
+     },
+     {
+      "asset_id": 8,
+      "asset_name": "자산8",
+      "before": 5000000.0,
+      "change": -200000.0,
+      "after": 4800000.0
+     }
+    ]
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.527777777777778,
+     "all_years_essential": 9.791666666666666
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 231800000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 81800000.0,
+      "years_total": 2.272222222222222,
+      "years_essential": 3.408333333333333
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.3833333333333333,
+     "b1_b2_years_essential": 5.075,
+     "all_years_total": 6.438888888888889,
+     "all_years_essential": 9.658333333333333
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "below_min",
+    "after": "below_min",
+    "changed": false
+   },
+   "need_note": {
+    "interest_change_per_year_ref": 400000.0
+   },
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    },
+    {
+     "asset_id": 7,
+     "asset_name": "자산7",
+     "value": 10000000.0,
+     "reason": "no_rate_sensitivity"
+    }
+   ],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  },
+  "rate_down": {
+   "as_of": "2026-09-18",
+   "kind": "rate",
+   "label": "금리 −1%p",
+   "params": {
+    "delta_pp": -1.0
+   },
+   "change": {
+    "total": 3200000.0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": 3200000.0,
+     "3": 0.0
+    },
+    "unassigned": 0.0,
+    "by_asset": [
+     {
+      "asset_id": 8,
+      "asset_name": "자산8",
+      "before": 5000000.0,
+      "change": 200000.0,
+      "after": 5200000.0
+     },
+     {
+      "asset_id": 2,
+      "asset_name": "자산2",
+      "before": 60000000.0,
+      "change": 3000000.0,
+      "after": 63000000.0
+     }
+    ]
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.527777777777778,
+     "all_years_essential": 9.791666666666666
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 238200000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 88200000.0,
+      "years_total": 2.45,
+      "years_essential": 3.675
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.561111111111111,
+     "b1_b2_years_essential": 5.341666666666667,
+     "all_years_total": 6.616666666666666,
+     "all_years_essential": 9.925
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "below_min",
+    "after": "below_min",
+    "changed": false
+   },
+   "need_note": {
+    "interest_change_per_year_ref": -400000.0
+   },
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    },
+    {
+     "asset_id": 7,
+     "asset_name": "자산7",
+     "value": 10000000.0,
+     "reason": "no_rate_sensitivity"
+    }
+   ],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  },
+  "equity_uniform": {
+   "as_of": "2026-09-18",
+   "kind": "equity",
+   "label": "주가 −20%",
+   "params": {
+    "mode": "uniform",
+    "pct": 0.2
+   },
+   "change": {
+    "total": -22000000.0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": -22000000.0
+    },
+    "unassigned": 0.0,
+    "by_asset": [
+     {
+      "asset_id": 3,
+      "asset_name": "자산3",
+      "before": 60000000.0,
+      "change": -12000000.0,
+      "after": 48000000.0
+     },
+     {
+      "asset_id": 4,
+      "asset_name": "자산4",
+      "before": 30000000.0,
+      "change": -6000000.0,
+      "after": 24000000.0
+     },
+     {
+      "asset_id": 5,
+      "asset_name": "자산5",
+      "before": 10000000.0,
+      "change": -2000000.0,
+      "after": 8000000.0
+     },
+     {
+      "asset_id": 7,
+      "asset_name": "자산7",
+      "before": 10000000.0,
+      "change": -2000000.0,
+      "after": 8000000.0
+     }
+    ]
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.527777777777778,
+     "all_years_essential": 9.791666666666666
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 213000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 88000000.0,
+      "years_total": 2.4444444444444446,
+      "years_essential": 3.6666666666666665
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 5.916666666666667,
+     "all_years_essential": 8.875
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "below_min",
+    "after": "below_min",
+    "changed": false
+   },
+   "need_note": null,
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    }
+   ],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  },
+  "equity_region": {
+   "as_of": "2026-09-18",
+   "kind": "equity",
+   "label": null,
+   "params": {
+    "mode": "by_region",
+    "by_region": {
+     "미국": 0.3,
+     "한국": 0.1
+    },
+    "default_pct": 0.05
+   },
+   "change": {
+    "total": -16000000.0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": -16000000.0
+    },
+    "unassigned": 0.0,
+    "by_asset": [
+     {
+      "asset_id": 4,
+      "asset_name": "자산4",
+      "before": 30000000.0,
+      "change": -9000000.0,
+      "after": 21000000.0
+     },
+     {
+      "asset_id": 3,
+      "asset_name": "자산3",
+      "before": 60000000.0,
+      "change": -6000000.0,
+      "after": 54000000.0
+     },
+     {
+      "asset_id": 5,
+      "asset_name": "자산5",
+      "before": 10000000.0,
+      "change": -500000.0,
+      "after": 9500000.0
+     },
+     {
+      "asset_id": 7,
+      "asset_name": "자산7",
+      "before": 10000000.0,
+      "change": -500000.0,
+      "after": 9500000.0
+     }
+    ]
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.527777777777778,
+     "all_years_essential": 9.791666666666666
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 219000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 94000000.0,
+      "years_total": 2.611111111111111,
+      "years_essential": 3.9166666666666665
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.083333333333333,
+     "all_years_essential": 9.125
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "below_min",
+    "after": "below_min",
+    "changed": false
+   },
+   "need_note": null,
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    }
+   ],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  },
+  "fx_down": {
+   "as_of": "2026-09-18",
+   "kind": "fx",
+   "label": "원/달러 −10% (원화 강세)",
+   "params": {
+    "currency": "USD",
+    "pct": -0.1
+   },
+   "change": {
+    "total": -3500000.0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": -500000.0,
+     "3": -3000000.0
+    },
+    "unassigned": 0.0,
+    "by_asset": [
+     {
+      "asset_id": 4,
+      "asset_name": "자산4",
+      "before": 30000000.0,
+      "change": -3000000.0,
+      "after": 27000000.0
+     },
+     {
+      "asset_id": 8,
+      "asset_name": "자산8",
+      "before": 5000000.0,
+      "change": -500000.0,
+      "after": 4500000.0
+     }
+    ]
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.527777777777778,
+     "all_years_essential": 9.791666666666666
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 231500000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 84500000.0,
+      "years_total": 2.3472222222222223,
+      "years_essential": 3.5208333333333335
+     },
+     "3": {
+      "value": 107000000.0,
+      "years_total": 2.9722222222222223,
+      "years_essential": 4.458333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4583333333333335,
+     "b1_b2_years_essential": 5.1875,
+     "all_years_total": 6.430555555555555,
+     "all_years_essential": 9.645833333333334
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "below_min",
+    "after": "below_min",
+    "changed": false
+   },
+   "need_note": null,
+   "excluded": [],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  },
+  "inflation": {
+   "as_of": "2026-09-18",
+   "kind": "inflation",
+   "label": "물가 +2%p (1년)",
+   "params": {
+    "delta_pp": 2.0
+   },
+   "change": {
+    "total": 0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": 0.0,
+     "3": 0.0
+    },
+    "unassigned": 0.0,
+    "by_asset": []
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36000000.0,
+    "annual_need_essential": 24000000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.1111111111111112,
+      "years_essential": 1.6666666666666667
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.361111111111111,
+      "years_essential": 3.5416666666666665
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0555555555555554,
+      "years_essential": 4.583333333333333
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4722222222222223,
+     "b1_b2_years_essential": 5.208333333333333,
+     "all_years_total": 6.527777777777778,
+     "all_years_essential": 9.791666666666666
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 36480000.0,
+    "annual_need_essential": 24480000.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 1.0964912280701755,
+      "years_essential": 1.6339869281045751
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 2.330043859649123,
+      "years_essential": 3.4722222222222223
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 3.0153508771929824,
+      "years_essential": 4.493464052287582
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 3.4265350877192984,
+     "b1_b2_years_essential": 5.106209150326797,
+     "all_years_total": 6.441885964912281,
+     "all_years_essential": 9.59967320261438
+    },
+    "r01_status": "below_min",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "below_min",
+    "after": "below_min",
+    "changed": false
+   },
+   "need_note": {
+    "linked_expense_items": 1
+   },
+   "excluded": [],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과",
+    "물가 충격은 inflation_linked=true 인 생활비(필수·선택) 항목만 증액하고 정기수입·자산 가격은 그대로 둠"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  },
+  "rate_up_income_covers_essential": {
+   "as_of": "2026-09-18",
+   "kind": "rate",
+   "label": "금리 +1%p",
+   "params": {
+    "delta_pp": 1.0
+   },
+   "change": {
+    "total": -3200000.0,
+    "by_bucket": {
+     "1": 0.0,
+     "2": -3200000.0,
+     "3": 0.0
+    },
+    "unassigned": 0.0,
+    "by_asset": [
+     {
+      "asset_id": 2,
+      "asset_name": "자산2",
+      "before": 60000000.0,
+      "change": -3000000.0,
+      "after": 57000000.0
+     },
+     {
+      "asset_id": 8,
+      "asset_name": "자산8",
+      "before": 5000000.0,
+      "change": -200000.0,
+      "after": 4800000.0
+     }
+    ]
+   },
+   "before": {
+    "total_assets": 235000000.0,
+    "annual_need_total": 6000000.0,
+    "annual_need_essential": 0.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 6.666666666666667,
+      "years_essential": null
+     },
+     "2": {
+      "value": 85000000.0,
+      "years_total": 14.166666666666666,
+      "years_essential": null
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 18.333333333333332,
+      "years_essential": null
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 20.833333333333332,
+     "b1_b2_years_essential": null,
+     "all_years_total": 39.166666666666664,
+     "all_years_essential": null
+    },
+    "r01_status": "ok",
+    "r01_reason": null
+   },
+   "after": {
+    "total_assets": 231800000.0,
+    "annual_need_total": 6000000.0,
+    "annual_need_essential": 0.0,
+    "buckets": {
+     "1": {
+      "value": 40000000.0,
+      "years_total": 6.666666666666667,
+      "years_essential": null
+     },
+     "2": {
+      "value": 81800000.0,
+      "years_total": 13.633333333333333,
+      "years_essential": null
+     },
+     "3": {
+      "value": 110000000.0,
+      "years_total": 18.333333333333332,
+      "years_essential": null
+     }
+    },
+    "cumulative": {
+     "b1_b2_years_total": 20.3,
+     "b1_b2_years_essential": null,
+     "all_years_total": 38.63333333333333,
+     "all_years_essential": null
+    },
+    "r01_status": "ok",
+    "r01_reason": null
+   },
+   "r01": {
+    "before": "ok",
+    "after": "ok",
+    "changed": false
+   },
+   "need_note": {
+    "interest_change_per_year_ref": 400000.0
+   },
+   "excluded": [
+    {
+     "asset_id": 6,
+     "asset_name": "자산6",
+     "value": 20000000.0,
+     "reason": "no_equity_share"
+    },
+    {
+     "asset_id": 7,
+     "asset_name": "자산7",
+     "value": 10000000.0,
+     "reason": "no_rate_sensitivity"
+    }
+   ],
+   "reasons": [],
+   "assumptions": [
+    "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+    "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+    "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+    "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+    "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+    "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+    "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+    "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+    "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+    "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+    "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+   ],
+   "provenance": {
+    "observed": [
+     "assets[].current_value",
+     "지표 관측값(market_observations)"
+    ],
+    "assumed": [
+     "듀레이션 대용(잔존만기)",
+     "리츠·인컴 금리 민감도",
+     "TDF·펀드 주식 비중",
+     "충격 크기(시나리오 입력)"
+    ]
+   }
+  }
+ },
+ "regime_all_excluded": {
+  "as_of": "2026-09-18",
+  "lookback_days": 365,
+  "weighted_drawdown": null,
+  "bucket3_value": 110000000.0,
+  "included_value": 0,
+  "excluded_value": 110000000.0,
+  "excluded_share": 1.0,
+  "unreliable": true,
+  "regions": [],
+  "excluded": [
+   {
+    "asset_id": 3,
+    "asset_name": "자산3",
+    "value": 60000000.0,
+    "reason": "region_missing",
+    "region": null,
+    "original_region": null
+   },
+   {
+    "asset_id": 4,
+    "asset_name": "자산4",
+    "value": 30000000.0,
+    "reason": "region_missing",
+    "region": null,
+    "original_region": null
+   },
+   {
+    "asset_id": 5,
+    "asset_name": "자산5",
+    "value": 10000000.0,
+    "reason": "region_missing",
+    "region": null,
+    "original_region": null
+   },
+   {
+    "asset_id": 7,
+    "asset_name": "자산7",
+    "value": 10000000.0,
+    "reason": "region_missing",
+    "region": null,
+    "original_region": null
+   }
+  ],
+  "excluded_by_reason": [
+   {
+    "reason": "region_missing",
+    "count": 4,
+    "value": 110000000.0,
+    "regions": [],
+    "share_of_bucket3": 1.0
+   }
+  ],
+  "latest_date": null,
+  "reasons": [
+   {
+    "code": "no_included_assets"
+   }
+  ],
+  "assumptions": [
+   "하락률은 각 지역 기준지수의 현지 통화 기준(원화 환산 손익은 시나리오에서 다룸)",
+   "고점 = as_of 이전 lookback_days 기간의 최고값(이상치 플래그가 달린 관측은 제외), 최신값 = as_of 이하 마지막 관측(이상치 포함)",
+   "지역 미입력·대응 지수 없음·데이터 부족(stale 포함) 자산은 제외하고 나머지 금액으로 가중"
+  ],
+  "lookback_source": "rule",
+  "rule": {
+   "enabled": true,
+   "threshold": 0.15
+  },
+  "judgement": null,
+  "suggested_input": null,
+  "provenance": "observed"
+ },
+ "scenario_no_effect": {
+  "as_of": "2026-09-18",
+  "kind": "fx",
+  "label": null,
+  "params": {
+   "currency": "USD",
+   "pct": -0.1
+  },
+  "change": {
+   "total": 0,
+   "by_bucket": {
+    "1": 0.0,
+    "2": 0.0,
+    "3": 0.0
+   },
+   "unassigned": 0.0,
+   "by_asset": []
+  },
+  "before": {
+   "total_assets": 235000000.0,
+   "annual_need_total": 36000000.0,
+   "annual_need_essential": 24000000.0,
+   "buckets": {
+    "1": {
+     "value": 40000000.0,
+     "years_total": 1.1111111111111112,
+     "years_essential": 1.6666666666666667
+    },
+    "2": {
+     "value": 85000000.0,
+     "years_total": 2.361111111111111,
+     "years_essential": 3.5416666666666665
+    },
+    "3": {
+     "value": 110000000.0,
+     "years_total": 3.0555555555555554,
+     "years_essential": 4.583333333333333
+    }
+   },
+   "cumulative": {
+    "b1_b2_years_total": 3.4722222222222223,
+    "b1_b2_years_essential": 5.208333333333333,
+    "all_years_total": 6.527777777777778,
+    "all_years_essential": 9.791666666666666
+   },
+   "r01_status": "below_min",
+   "r01_reason": null
+  },
+  "after": {
+   "total_assets": 235000000.0,
+   "annual_need_total": 36000000.0,
+   "annual_need_essential": 24000000.0,
+   "buckets": {
+    "1": {
+     "value": 40000000.0,
+     "years_total": 1.1111111111111112,
+     "years_essential": 1.6666666666666667
+    },
+    "2": {
+     "value": 85000000.0,
+     "years_total": 2.361111111111111,
+     "years_essential": 3.5416666666666665
+    },
+    "3": {
+     "value": 110000000.0,
+     "years_total": 3.0555555555555554,
+     "years_essential": 4.583333333333333
+    }
+   },
+   "cumulative": {
+    "b1_b2_years_total": 3.4722222222222223,
+    "b1_b2_years_essential": 5.208333333333333,
+    "all_years_total": 6.527777777777778,
+    "all_years_essential": 9.791666666666666
+   },
+   "r01_status": "below_min",
+   "r01_reason": null
+  },
+  "r01": {
+   "before": "below_min",
+   "after": "below_min",
+   "changed": false
+  },
+  "need_note": null,
+  "excluded": [],
+  "reasons": [
+   {
+    "code": "no_affected_assets"
+   }
+  ],
+  "assumptions": [
+   "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+   "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+   "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+   "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+   "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+   "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+   "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+   "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+   "충격은 한 번에 하나만 적용(단일 충격) — 복합 시나리오·순서위험은 다루지 않음",
+   "충격 직후의 즉시 영향이며 이후 수익·리밸런싱·인출은 반영하지 않음",
+   "커버 연수는 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 호출한 결과"
+  ],
+  "provenance": {
+   "observed": [
+    "assets[].current_value",
+    "지표 관측값(market_observations)"
+   ],
+   "assumed": [
+    "듀레이션 대용(잔존만기)",
+    "리츠·인컴 금리 민감도",
+    "TDF·펀드 주식 비중",
+    "충격 크기(시나리오 입력)"
+   ]
+  }
+ },
+ "series_empty": {
+  "as_of": "2026-09-18",
+  "lookback_days": 365,
+  "series": [
+   {
+    "code": "EEM",
+    "name": "신흥국 (EEM ETF)",
+    "category": "etf_proxy",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": true,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   },
+   {
+    "code": "KR_10Y",
+    "name": "국고채 10년",
+    "category": "rate",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   },
+   {
+    "code": "KR_CPI",
+    "name": "한국 CPI",
+    "category": "cpi",
+    "frequency": "monthly",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   },
+   {
+    "code": "KS11",
+    "name": "KOSPI",
+    "category": "equity_index",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   },
+   {
+    "code": "US10Y",
+    "name": "미국 국채 10년",
+    "category": "rate",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   },
+   {
+    "code": "US500",
+    "name": "S&P 500",
+    "category": "equity_index",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   },
+   {
+    "code": "USD_KRW",
+    "name": "원/달러",
+    "category": "fx",
+    "frequency": "daily",
+    "currency": null,
+    "unit": "level",
+    "is_proxy": false,
+    "enabled": true,
+    "note": null,
+    "sources": [
+     "fdr"
+    ],
+    "latest_value": null,
+    "latest_date": null,
+    "latest_flag": null,
+    "latest_source": null,
+    "stale": null,
+    "change_1m": null,
+    "change_3m": null,
+    "drawdown": null,
+    "yoy": null,
+    "reason": "no_data"
+   }
+  ],
+  "provenance": "observed"
+ },
+ "signals_no_data": {
+  "as_of": "2026-09-18",
+  "signals": [
+   {
+    "kind": "rate",
+    "market": "KR",
+    "series_code": "KR_10Y",
+    "observed_change_pp": null,
+    "exposure_per_1pp": -3000000.0,
+    "estimated_impact": null,
+    "reason": "no_data",
+    "meta": null,
+    "asset_count": 1
+   },
+   {
+    "kind": "equity",
+    "region": null,
+    "series_code": null,
+    "observed_change": null,
+    "exposure": 110000000.0,
+    "estimated_impact": null,
+    "reason": "region_missing",
+    "asset_count": 4
+   }
+  ],
+  "total_impact": 0,
+  "before": {
+   "total_assets": 235000000.0,
+   "annual_need_total": 36000000.0,
+   "annual_need_essential": 24000000.0,
+   "buckets": {
+    "1": {
+     "value": 40000000.0,
+     "years_total": 1.1111111111111112,
+     "years_essential": 1.6666666666666667
+    },
+    "2": {
+     "value": 85000000.0,
+     "years_total": 2.361111111111111,
+     "years_essential": 3.5416666666666665
+    },
+    "3": {
+     "value": 110000000.0,
+     "years_total": 3.0555555555555554,
+     "years_essential": 4.583333333333333
+    }
+   },
+   "cumulative": {
+    "b1_b2_years_total": 3.4722222222222223,
+    "b1_b2_years_essential": 5.208333333333333,
+    "all_years_total": 6.527777777777778,
+    "all_years_essential": 9.791666666666666
+   },
+   "r01_status": "below_min",
+   "r01_reason": null
+  },
+  "after": {
+   "total_assets": 235000000.0,
+   "annual_need_total": 36000000.0,
+   "annual_need_essential": 24000000.0,
+   "buckets": {
+    "1": {
+     "value": 40000000.0,
+     "years_total": 1.1111111111111112,
+     "years_essential": 1.6666666666666667
+    },
+    "2": {
+     "value": 85000000.0,
+     "years_total": 2.361111111111111,
+     "years_essential": 3.5416666666666665
+    },
+    "3": {
+     "value": 110000000.0,
+     "years_total": 3.0555555555555554,
+     "years_essential": 4.583333333333333
+    }
+   },
+   "cumulative": {
+    "b1_b2_years_total": 3.4722222222222223,
+    "b1_b2_years_essential": 5.208333333333333,
+    "all_years_total": 6.527777777777778,
+    "all_years_essential": 9.791666666666666
+   },
+   "r01_status": "below_min",
+   "r01_reason": null
+  },
+  "excluded": [
+   {
+    "asset_id": 2,
+    "asset_name": "자산2",
+    "value": 60000000.0,
+    "signal": "rate",
+    "reason": "rate_no_data"
+   },
+   {
+    "asset_id": 3,
+    "asset_name": "자산3",
+    "value": 60000000.0,
+    "signal": "equity",
+    "reason": "region_missing",
+    "region": null
+   },
+   {
+    "asset_id": 4,
+    "asset_name": "자산4",
+    "value": 30000000.0,
+    "signal": "equity",
+    "reason": "region_missing",
+    "region": null
+   },
+   {
+    "asset_id": 5,
+    "asset_name": "자산5",
+    "value": 10000000.0,
+    "signal": "equity",
+    "reason": "region_missing",
+    "region": null
+   },
+   {
+    "asset_id": 7,
+    "asset_name": "자산7",
+    "value": 10000000.0,
+    "signal": "equity",
+    "reason": "region_missing",
+    "region": null
+   }
+  ],
+  "assumptions": [
+   "금리 노출은 선형 근사(−수정듀레이션 × 금리 변화 × 금액) — 볼록성·신용 스프레드 미반영",
+   "만기만 있는 채권은 잔존만기(년)를 듀레이션 대용으로 씀 (assumed 표시)",
+   "리츠·인컴 금리 민감도는 사용자 입력 가정값이며 듀레이션처럼 부호를 해석(양수 = 금리 상승 시 하락)",
+   "현금·변동금리 채권은 가격 변화 0, 연간 이자 변화는 금리 변화 × 금액 (참고값)",
+   "원화 채권(프로필 없음 포함)은 한국 금리, 통화 USD 는 미국 금리에 대응. 대응이 불명확하면 신호 영향에서 제외",
+   "환율 노출은 환헤지하지 않은 외화(KRW 아님) 자산 금액. 통화 미입력 해외 자산은 별도 표시",
+   "주식성 금액 = 주식 + 리츠·인컴 + TDF·펀드의 주식 부분(금액 × 주식 비중)",
+   "자산 금액은 assets.current_value(원화) 기준이며 실물자산은 제외",
+   "관측된 1개월 변화(최신 관측일 기준)를 현재 노출에 곱한 참고값 — 예측이 아니며 실제 손익과 다를 수 있음",
+   "국내 채권은 한국 국고채 10년, 해외(USD) 채권은 미국 국채 10년 변화를 사용(채권별 만기 차이는 미반영)",
+   "주식 변화는 지역 기준지수의 현지 통화 변화이고 환율 영향은 환율 신호로 따로 더함(교차 효과 미반영)"
+  ],
+  "provenance": {
+   "observed": [
+    "assets[].current_value",
+    "지표 관측값(market_observations)"
+   ],
+   "assumed": [
+    "듀레이션 대용(잔존만기)",
+    "리츠·인컴 금리 민감도",
+    "TDF·펀드 주식 비중",
+    "충격 크기(시나리오 입력)"
+   ]
+  }
+ },
+ "refresh": {
+  "as_of": "2026-09-18",
+  "results": [
+   {
+    "code": "BAD",
+    "start": "2026-08-04",
+    "end": "2026-09-18",
+    "source": null,
+    "attempts": [
+     {
+      "source": "fdr",
+      "ok": false,
+      "reason": "boom"
+     }
+    ],
+    "fetched": 0,
+    "stored": 0,
+    "flagged": 0,
+    "status": "failed",
+    "reason": "all_sources_failed",
+    "last_date": null
+   },
+   {
+    "code": "EMPTY",
+    "start": "2026-08-04",
+    "end": "2026-09-18",
+    "source": null,
+    "attempts": [],
+    "fetched": 0,
+    "stored": 0,
+    "flagged": 0,
+    "status": "skipped",
+    "reason": "no_sources",
+    "last_date": null
+   },
+   {
+    "code": "KR_3Y",
+    "start": "2026-08-04",
+    "end": "2026-09-18",
+    "source": null,
+    "attempts": [
+     {
+      "source": "ecos",
+      "ok": false,
+      "reason": "ecos_key_missing"
+     }
+    ],
+    "fetched": 0,
+    "stored": 0,
+    "flagged": 0,
+    "status": "skipped",
+    "reason": "ecos_key_missing",
+    "last_date": null
+   },
+   {
+    "code": "KS11",
+    "start": "2026-08-04",
+    "end": "2026-09-18",
+    "source": "fdr",
+    "attempts": [
+     {
+      "source": "fdr",
+      "ok": true,
+      "reason": null
+     }
+    ],
+    "fetched": 3,
+    "stored": 3,
+    "flagged": 0,
+    "status": "ok",
+    "reason": null,
+    "last_date": "2026-09-03",
+    "dropped": 0,
+    "stored_candidate": 3
+   }
+  ],
+  "ok": 1,
+  "failed": 1,
+  "skipped": 2,
+  "stored": 3
+ }
+}

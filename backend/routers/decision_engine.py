@@ -4,7 +4,7 @@ DB 에서 입력을 읽어 02 점검 결과와 함께 판단 엔진(decision_eng
 **DB 에 쓰지 않는다** (저장은 /decision-log). 기준일 as_of 는 여기서만 정한다 (기본값 오늘).
 """
 from datetime import date
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter
 from pydantic import BaseModel, ConfigDict, Field
@@ -21,10 +21,37 @@ router = APIRouter()
 RULE_CODES = ("R-01", "R-02", "R-03", "R-04", "R-05", "R-06", "R-07")
 
 
+class MarketComponent(BaseModel):
+    """자동 계산(04)의 지역별 구성 내역 — 입력 스냅샷에 그대로 남는다."""
+    model_config = ConfigDict(extra="forbid")
+    region: str = Field(max_length=30)
+    series_code: str = Field(max_length=30)
+    drawdown: float = Field(ge=0, le=1)
+    share: Optional[float] = Field(default=None, ge=0, le=1)
+    is_proxy: Optional[bool] = None
+
+
 class MarketInput(BaseModel):
     model_config = ConfigDict(extra="forbid")
     index_name: Optional[str] = Field(default=None, max_length=50)
     drawdown: Optional[float] = Field(default=None, ge=0, le=1)     # 고점 대비 하락률 (0~1)
+    # 지시서 04 — 출처와 구성 내역 (엔진은 읽지 않고 입력 스냅샷에 남기기만 한다). 모두 선택.
+    source: Optional[Literal["auto", "manual"]] = None
+    lookback_days: Optional[int] = Field(default=None, ge=30, le=1095)
+    data_date: Optional[str] = Field(default=None, max_length=10)
+    unreliable: Optional[bool] = None
+    excluded_share: Optional[float] = Field(default=None, ge=0, le=1)
+    components: Optional[list[MarketComponent]] = Field(default=None, max_length=20)
+
+
+_BASE_MARKET_FIELDS = ("index_name", "drawdown")
+
+
+def _market_input_dict(m: Optional[MarketInput]) -> Optional[dict]:
+    """기존 로그와 같은 형식(index_name·drawdown 항상 포함)을 유지하고, 새 항목은 값이 있을 때만 덧붙인다."""
+    if m is None:
+        return None
+    return {k: v for k, v in m.model_dump().items() if k in _BASE_MARKET_FIELDS or v is not None}
 
 
 class RunBody(BaseModel):
@@ -71,7 +98,7 @@ def run_decision(body: Optional[RunBody] = None):
     result = compute_decision(
         as_of=as_of, check=check, rules=rules, assets=assets, targets=targets,
         rebalance_threshold=portfolio.get("rebalance_threshold"), class_totals=class_totals,
-        market_input=body.market_input.model_dump() if body.market_input else None,
+        market_input=_market_input_dict(body.market_input),
         pension_usage=pension_usage,
     )
     result["warnings"] = result["warnings"] + extra_warnings

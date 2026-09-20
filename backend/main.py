@@ -5,7 +5,7 @@ from contextlib import asynccontextmanager
 from fastapi import Depends, FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from routers import assets, dashboard, risk, rebalance, price, summary, config, returns, cashflow, income, networth, ai_advisor, tax, export, withdrawals as withdrawals_router, pension_tax, expenses, withdrawal_strategy, real_assets, estate, simulation, holding_profiles, cashflow_items, withdrawal_baseline, sub_allocation_targets, withdrawal_check, ips_rules, decision_engine, decision_log
+from routers import assets, dashboard, risk, rebalance, price, summary, config, returns, cashflow, income, networth, ai_advisor, tax, export, withdrawals as withdrawals_router, pension_tax, expenses, withdrawal_strategy, real_assets, estate, simulation, holding_profiles, cashflow_items, withdrawal_baseline, sub_allocation_targets, withdrawal_check, ips_rules, decision_engine, decision_log, market, exposure
 from notifier import run_daily_alert
 from auth import require_user, require_cron
 
@@ -102,6 +102,9 @@ app.include_router(withdrawal_check.router, prefix="/withdrawal-check", tags=["w
 app.include_router(ips_rules.router, prefix="/ips-rules", tags=["decision-engine"], dependencies=_AUTH)
 app.include_router(decision_engine.router, prefix="/decision-engine", tags=["decision-engine"], dependencies=_AUTH)
 app.include_router(decision_log.router, prefix="/decision-log", tags=["decision-engine"], dependencies=_AUTH)
+app.include_router(market.router, prefix="/market", tags=["market"], dependencies=_AUTH)
+app.include_router(market.cron_router, prefix="/market", tags=["market"], dependencies=[Depends(require_cron)])   # 크론: GET /market/refresh
+app.include_router(exposure.router, prefix="/exposure", tags=["market"], dependencies=_AUTH)
 
 
 @app.get("/health")

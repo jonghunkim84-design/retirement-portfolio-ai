@@ -1,7 +1,8 @@
-import { useState } from 'react'
-import { useQueryClient } from '@tanstack/react-query'
+import { useEffect, useState } from 'react'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api from '../api/client.js'
-import { marketInputFromForm, won } from '../lib/decisionText.js'
+import { won } from '../lib/decisionText.js'
+import { autoFillFrom, buildMarketInput, describeRegimePanel } from '../lib/marketText.js'
 import { Banner, errMsg } from './withdrawal-settings/ui.jsx'
 import DecisionResult from './quarterly-decision/DecisionResult.jsx'
 import DecisionLog from './quarterly-decision/DecisionLog.jsx'
@@ -18,9 +19,23 @@ export default function QuarterlyDecision() {
   const [saving, setSaving] = useState(false)
   const [saveMsg, setSaveMsg] = useState(null)             // { tone, text }
 
+  // 시장 국면 자동 계산(04): 화면을 열면 가중 하락률을 입력칸에 한 번 채운다. 사용자가 고치면 출처가 수동으로 바뀐다.
+  const { data: regime, isLoading: regimeLoading, error: regimeError } = useQuery({
+    queryKey: ['market-regime'], queryFn: () => api.get('/market/regime').then(r => r.data), staleTime: 60_000,
+  })
+  const auto = autoFillFrom(regime)
+  const panel = describeRegimePanel(regime)
+  const [filled, setFilled] = useState(false)
+  useEffect(() => {
+    if (auto && !filled) { setIndexName(auto.indexName); setDrawdown(auto.text); setFilled(true) }
+  }, [auto, filled])
+  const hasInput = drawdown.trim() !== '' || indexName.trim() !== ''
+  const source = !hasInput ? null : buildMarketInput(indexName, drawdown, auto).marketInput?.source ?? null
+  const resetToAuto = () => { if (auto) { setIndexName(auto.indexName); setDrawdown(auto.text) } }
+
   async function run() {
     setInputError(''); setRunError(''); setSaveMsg(null)
-    const { marketInput, error } = marketInputFromForm(indexName, drawdown)
+    const { marketInput, error } = buildMarketInput(indexName, drawdown, auto)
     if (error) { setInputError(error); return }
     setRunning(true)
     try {
@@ -63,7 +78,12 @@ export default function QuarterlyDecision() {
       </div>
 
       <div className="card">
-        <h3 className="text-sm font-semibold text-gray-700 mb-3">시장 국면 입력</h3>
+        <div className="flex items-center gap-2 mb-3">
+          <h3 className="text-sm font-semibold text-gray-700">시장 국면 입력</h3>
+          {source === 'auto' && <span className="badge-blue" title="3버킷 자산의 지역 구성으로 가중해 자동 계산한 값을 그대로 쓰고 있습니다">자동 계산</span>}
+          {source === 'manual' && <span className="badge-gray" title="직접 입력하거나 자동 값을 수정했습니다">직접 입력</span>}
+          {auto && source === 'manual' && <button className="text-xs text-blue-600 hover:underline" onClick={resetToAuto}>자동값으로 되돌리기</button>}
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
           <div>
             <label className="text-xs text-gray-500 block mb-1">기준지수 이름 (선택)</label>
@@ -77,6 +97,26 @@ export default function QuarterlyDecision() {
           <button className="btn-primary" disabled={running} onClick={run}>{running ? '판단 중...' : '판단 실행'}</button>
         </div>
         {inputError && <p className="text-xs text-red-600 mt-2">{inputError}</p>}
+        {regimeLoading && <p className="text-xs text-gray-400 mt-3">지표로 가중 하락률을 계산하는 중...</p>}
+        {regimeError && <p className="text-xs text-yellow-700 mt-3">자동 계산을 불러오지 못했습니다. 직접 입력하거나 비워 두세요.</p>}
+        {panel && (
+          <div className="mt-3 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2.5 text-xs text-gray-700 space-y-1.5">
+            <div className="font-medium">{panel.headline} <span className="text-gray-400 font-normal">· 지표 기준일 {panel.dataDate} · 고점 기간 {panel.lookbackDays}일 · 현지 통화 기준</span></div>
+            {panel.judgement && <div>{panel.judgement}</div>}
+            {panel.reasons.map(t => <div key={t} className="text-yellow-700">{t}</div>)}
+            {panel.lines.length > 0 && (
+              <ul className="list-disc pl-5">
+                {panel.lines.map(l => (
+                  <li key={l.region}>{l.region}: 하락 {l.drawdown} (3버킷 중 {l.share}, {l.series}{l.isProxy ? ' · 대용 지표' : ''}{l.flaggedNote ? ` · ${l.flaggedNote}` : ''})</li>
+                ))}
+              </ul>
+            )}
+            {panel.excluded.length > 0 && (
+              <div className="text-gray-500">제외 {panel.excludedShare}: {panel.excluded.map(x => `${x.text} (${x.count}건, ${x.share})`).join(' / ')}</div>
+            )}
+            {panel.unreliable && <div className="text-red-600 font-medium">⚠️ {panel.unreliableText}</div>}
+          </div>
+        )}
         <p className="text-xs text-gray-500 mt-3 leading-relaxed">
           <b>본인 주식·리츠 자산이 추종하는 지수 기준으로 입력하세요.</b> 하락률이 하락 국면 기준(R-04) 이상이면 3버킷(주식·리츠) 자산은 매도 대상에서 제외됩니다.
           입력하지 않으면 <b>정상 국면으로 간주</b>합니다. 판단은 저장되지 않으며, 아래에서 저장을 눌러야 기록됩니다.

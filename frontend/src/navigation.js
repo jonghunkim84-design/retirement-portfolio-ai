@@ -16,6 +16,7 @@ export const NAV_GROUPS = [
       { path: '/real-assets',   label: '실물자산',     icon: '🏘' },
       { path: '/returns',       label: '수익률 분석',  icon: '📈' },
       { path: '/rebalance',     label: '리밸런싱·만기', icon: '⚖️' },
+      { path: '/market-exposure', label: '시장·노출',  icon: '🌐' },
     ],
   },
   {

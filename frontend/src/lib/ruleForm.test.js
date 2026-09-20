@@ -24,7 +24,7 @@ test('저장값 → 폼 → parameters 왕복이 값을 보존한다 (비율은 
 })
 
 test('비율은 % 로, 연수·배수는 그대로 표시한다', () => {
-  assert.deepEqual(ruleToForm(rule('R-04', SEEDS['R-04'])).values, { drawdown_threshold: '15' })
+  assert.deepEqual(ruleToForm(rule('R-04', SEEDS['R-04'])).values, { drawdown_threshold: '15', lookback_days: '' })
   assert.deepEqual(ruleToForm(rule('R-05', SEEDS['R-05'])).values, { upper_multiplier: '1.2', cut_ratio: '10' })
   assert.deepEqual(ruleToForm(rule('R-06', SEEDS['R-06'])).values, { lower_multiplier: '0.8', raise_ratio: '10' })
   assert.deepEqual(ruleToForm(rule('R-01', SEEDS['R-01'])).values, { min_years: '1', target_years: '2' })
@@ -93,4 +93,17 @@ test('서버 422 detail → 필드별 메시지', () => {
   assert.deepEqual(serverErrorsToFields('규칙을 찾을 수 없습니다'), { _form: '규칙을 찾을 수 없습니다' })
   assert.deepEqual(serverErrorsToFields([{ msg: '오류' }]), { _form: '오류' })
   assert.deepEqual(serverErrorsToFields(undefined), {})
+})
+
+test('R-04 고점 기간(lookback_days): 기존 값 보존, 비우면 저장하지 않음, 범위·정수 검증', () => {
+  const f = ruleToForm(rule('R-04', { drawdown_threshold: 0.15, lookback_days: 180 }))
+  assert.deepEqual(f.values, { drawdown_threshold: '15', lookback_days: '180' })
+  // 하락 기준만 고쳐 저장해도 고점 기간이 사라지지 않는다
+  assert.deepEqual(formToParameters('R-04', { enabled: true, values: { drawdown_threshold: '12', lookback_days: '180' } }).parameters,
+    { drawdown_threshold: 0.12, lookback_days: 180 })
+  assert.deepEqual(formToParameters('R-04', { enabled: true, values: { drawdown_threshold: '12', lookback_days: '' } }).parameters,
+    { drawdown_threshold: 0.12 })
+  const v = t => formToParameters('R-04', { enabled: true, values: { drawdown_threshold: '12', lookback_days: t } })
+  for (const ok of ['30', '365', '1095']) assert.ok(v(ok).parameters, ok)
+  for (const bad of ['29', '1096', '365.5', 'abc', '-5']) assert.ok(v(bad).errors?.lookback_days, bad)
 })
