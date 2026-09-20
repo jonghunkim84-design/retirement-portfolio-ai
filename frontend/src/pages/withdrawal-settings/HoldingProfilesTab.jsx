@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import api, { ASSET_TYPE_LABEL } from '../../api/client.js'
 import { localToday } from '../../lib/cashflow.js'
@@ -6,10 +6,15 @@ import {
   ROLES, ROLE_LABEL, fieldEnabled, suggestedForm, formFromProfile,
   formsEqual, toPayload, bondWarning,
 } from '../../lib/holdingProfile.js'
-import { Loading, Banner, errMsg, won } from './ui.jsx'
+import { Loading, errMsg, won } from './ui.jsx'
 
 const cellInput = 'w-full text-xs px-2 py-1'
 const disabledCls = 'bg-gray-50 text-gray-300 cursor-not-allowed'
+// 머리글 행은 위에, 자산 열은 왼쪽에 고정 (엑셀의 틀 고정). 겹치는 순서: 모서리 > 머리글 > 자산 열
+const TH = 'sticky top-0 z-20 bg-gray-50'
+const TH_CORNER = 'sticky left-0 top-0 z-30 bg-gray-50'
+const TH_STYLE = { boxShadow: '0 1px 0 #e5e7eb' }
+const MIN_BOX_HEIGHT = 320
 
 export default function HoldingProfilesTab() {
   const qc = useQueryClient()
@@ -18,6 +23,11 @@ export default function HoldingProfilesTab() {
   const [errors, setErrors] = useState({})        // { [assetId]: 메시지 }
   const [saving, setSaving] = useState({})        // { [assetId]: true }
   const [batchMsg, setBatchMsg] = useState('')
+
+  // 표 상자를 화면 아래 끝까지 채운다: 세로·가로 스크롤 막대가 항상 보이는 화면 안에 있고, 머리글은 고정된다.
+  // 높이는 페이지 스크롤 0 기준의 상자 위치로 계산한다(스크롤할 때마다 바꾸면 페이지 높이가 따라 늘어난다).
+  const boxRef = useRef(null)
+  const [boxHeight, setBoxHeight] = useState(560)
 
   // 활성 자산 전체 + 속성 + 버킷(기본/실효/출처)을 서버가 한 번에 준다. 기본 버킷의 단일 출처는 서버(BUCKET_MAP).
   const { data: overview, isLoading } = useQuery({
@@ -36,6 +46,19 @@ export default function HoldingProfilesTab() {
         return { asset, profile, form, status, defaultBucket }
       })
   }, [overview, drafts, today])
+
+  useLayoutEffect(() => {
+    const fit = () => {
+      const el = boxRef.current
+      if (!el) return
+      const bottomGap = window.innerWidth < 768 ? 84 : 24          // 모바일은 하단 탭 바 위로
+      const top = el.getBoundingClientRect().top + window.scrollY
+      setBoxHeight(Math.max(MIN_BOX_HEIGHT, Math.floor(window.innerHeight - top - bottomGap)))
+    }
+    fit()
+    window.addEventListener('resize', fit)
+    return () => window.removeEventListener('resize', fit)
+  }, [isLoading, batchMsg, rows.length])
 
   if (isLoading) return <Loading />
 
@@ -106,36 +129,41 @@ export default function HoldingProfilesTab() {
         </div>
       </div>
 
-      <Banner tone="blue">
-        역할은 자산유형 기준 <b>제안값</b>이 미리 채워져 있으며, <b>저장 버튼을 눌러야 기록</b>됩니다.
-        버킷은 비워 두면 자산유형 기준 기본값을 따르고, 선택한 경우에만 재지정으로 저장됩니다.
-        수정듀레이션·금리 민감도 등은 <b>가정</b> / <b>관측</b>을 구분하고 기준일을 남겨 주세요.
-        회색 칸은 해당 자산유형에서 사용하지 않는 항목입니다. 비율은 % 로 입력합니다.
-      </Banner>
+      <details className="text-sm bg-blue-50 border border-blue-200 text-blue-700 rounded-xl px-4 py-2">
+        <summary className="cursor-pointer font-medium">입력 안내 (펼치기)</summary>
+        <div className="mt-2 leading-relaxed">
+          역할은 자산유형 기준 <b>제안값</b>이 미리 채워져 있으며, <b>저장 버튼을 눌러야 기록</b>됩니다.
+          버킷은 비워 두면 자산유형 기준 기본값을 따르고, 선택한 경우에만 재지정으로 저장됩니다.
+          수정듀레이션·금리 민감도 등은 <b>가정</b> / <b>관측</b>을 구분하고 기준일을 남겨 주세요.
+          TDF·펀드는 <b>주식 비중</b>과 함께 <b>채권 부분의 수정듀레이션</b>을 입력해야 금리 노출이 계산됩니다.
+          회색 칸은 해당 자산유형에서 사용하지 않는 항목입니다. 비율은 % 로 입력합니다.
+          머리글과 자산 열은 고정되어 있고, 표 안에서 좌우·상하로 스크롤합니다.
+        </div>
+      </details>
 
-      <div className="card p-0 overflow-x-auto">
+      <div ref={boxRef} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-auto" style={{ height: boxHeight }}>   {/* .card 는 p-5 가 유틸리티보다 우선해 고정 머리글이 안쪽으로 밀리므로 쓰지 않는다 */}
         <table style={{ minWidth: 2100 }}>
           <thead>
             <tr>
-              <th className="sticky left-0 bg-gray-50 z-10" style={{ minWidth: 220 }}>자산 / 상태</th>
-              <th style={{ minWidth: 110 }}>평가금액</th>
-              <th style={{ minWidth: 100 }}>역할</th>
-              <th style={{ minWidth: 150 }}>버킷</th>
-              <th style={{ minWidth: 110 }}>하위 분류</th>
-              <th style={{ minWidth: 70 }}>통화</th>
-              <th style={{ minWidth: 60 }}>환헤지</th>
-              <th style={{ minWidth: 90 }}>지역</th>
-              <th style={{ minWidth: 90 }}>업종</th>
-              <th style={{ minWidth: 90 }}>듀레이션(년)</th>
-              <th style={{ minWidth: 90 }}>금리유형</th>
-              <th style={{ minWidth: 80 }}>신용등급</th>
-              <th style={{ minWidth: 100 }}>부동산 유형</th>
-              <th style={{ minWidth: 110 }}>금리 민감도</th>
-              <th style={{ minWidth: 90 }}>주식 비중(%)</th>
-              <th style={{ minWidth: 90 }}>총보수(%)</th>
-              <th style={{ minWidth: 90 }}>값 구분</th>
-              <th style={{ minWidth: 130 }}>기준일</th>
-              <th style={{ minWidth: 180 }}>인출 제약 메모</th>
+              <th className={TH_CORNER} style={{ minWidth: 220, ...TH_STYLE }}>자산 / 상태</th>
+              <th className={TH} style={{ minWidth: 110, ...TH_STYLE }}>평가금액</th>
+              <th className={TH} style={{ minWidth: 100, ...TH_STYLE }}>역할</th>
+              <th className={TH} style={{ minWidth: 150, ...TH_STYLE }}>버킷</th>
+              <th className={TH} style={{ minWidth: 110, ...TH_STYLE }}>하위 분류</th>
+              <th className={TH} style={{ minWidth: 70, ...TH_STYLE }}>통화</th>
+              <th className={TH} style={{ minWidth: 60, ...TH_STYLE }}>환헤지</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>지역</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>업종</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>듀레이션(년)</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>금리유형</th>
+              <th className={TH} style={{ minWidth: 80, ...TH_STYLE }}>신용등급</th>
+              <th className={TH} style={{ minWidth: 100, ...TH_STYLE }}>부동산 유형</th>
+              <th className={TH} style={{ minWidth: 110, ...TH_STYLE }}>금리 민감도</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>주식 비중(%)</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>총보수(%)</th>
+              <th className={TH} style={{ minWidth: 90, ...TH_STYLE }}>값 구분</th>
+              <th className={TH} style={{ minWidth: 130, ...TH_STYLE }}>기준일</th>
+              <th className={TH} style={{ minWidth: 180, ...TH_STYLE }}>인출 제약 메모</th>
             </tr>
           </thead>
           <tbody>
@@ -203,7 +231,8 @@ export default function HoldingProfilesTab() {
                   </td>
                   <td>{inp('region')}</td>
                   <td>{inp('sector')}</td>
-                  <td>{inp('bond_modified_duration', { type: 'number', step: '0.1', min: 0 })}</td>
+                  <td>{inp('bond_modified_duration', { type: 'number', step: '0.1', min: 0,
+                    title: asset.asset_type === 'tdf' || asset.asset_type === 'fund' ? 'TDF·펀드의 채권 부분 수정듀레이션(년)' : '수정듀레이션(년)' })}</td>
                   <td>
                     <select className={`${cellInput} ${on('bond_rate_type') ? '' : disabledCls}`} disabled={!on('bond_rate_type')}
                       value={on('bond_rate_type') ? form.bond_rate_type : ''} onChange={e => set('bond_rate_type', e.target.value)}>
