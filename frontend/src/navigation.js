@@ -16,7 +16,6 @@ export const NAV_GROUPS = [
       { path: '/real-assets',   label: '실물자산',     icon: '🏘' },
       { path: '/returns',       label: '수익률 분석',  icon: '📈' },
       { path: '/rebalance',     label: '리밸런싱·만기', icon: '⚖️' },
-      { path: '/market-exposure', label: '시장·노출',  icon: '🌐' },
     ],
   },
   {
@@ -33,6 +32,18 @@ export const NAV_GROUPS = [
     ],
   },
   {
+    id: 'withdrawal',
+    label: '인출 판단',
+    mobileLabel: '인출판단',
+    icon: '🧭',
+    // 인출 판단 시스템(지시서 01~04)의 화면: 입력 데이터 → 시장·노출 → 분기 판단 순
+    items: [
+      { path: '/withdrawal-settings', label: '인출 설정',      icon: '🧭' },
+      { path: '/market-exposure',     label: '시장·노출',      icon: '🌐' },
+      { path: '/quarterly-decision',  label: '분기 인출 판단', icon: '🗓' },
+    ],
+  },
+  {
     id: 'pension',
     label: '연금·세금',
     mobileLabel: '연금',
@@ -42,8 +53,6 @@ export const NAV_GROUPS = [
       { path: '/pension-optimize', label: '연금 최적화', icon: '🏛' },
       { path: '/pension-tax',      label: '연금 세금',   icon: '🏖' },
       { path: '/withdrawal-strategy', label: '인출 전략', icon: '🪜' },
-      { path: '/withdrawal-settings', label: '인출 설정', icon: '🧭' },
-      { path: '/quarterly-decision', label: '분기 인출 판단', icon: '🗓' },
       { path: '/estate-plan',      label: '상속·증여',   icon: '🎁' },
       { path: '/health-insurance', label: '건강보험료',  icon: '🏥' },
       { path: '/risk',             label: '위험 점수',   icon: '⚠️' },
