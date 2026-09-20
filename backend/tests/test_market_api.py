@@ -170,6 +170,15 @@ def test_series_lookback_comes_from_r04_and_defaults_to_365(client, mdb):
     assert body["lookback_days"] == 365
 
 
+def test_cpi_yoy_uses_year_ago_observation_within_loaded_window(client, mdb):
+    mdb.tables["market_series"].append(series_row("KR_CPI", "cpi", "monthly"))
+    mdb.tables["market_observations"] += [
+        {"series_code": "KR_CPI", "obs_date": "2026-08-01", "value": 120.0, "flag": None, "source": "ecos"},
+        {"series_code": "KR_CPI", "obs_date": "2025-08-01", "value": 117.0, "flag": None, "source": "ecos"}]   # 기준일보다 413일 전
+    s = {x["code"]: x for x in get(client, "/market/series")["series"]}
+    assert s["KR_CPI"]["yoy"] == pytest.approx(120 / 117 - 1) and s["KR_CPI"]["stale"] is False
+
+
 def test_observations_loaded_across_pages_beyond_1000_rows(mdb):
     mdb.tables["market_observations"] = daily("KS11", date(2023, 9, 1), AS_OF, lambda i, d: 100.0 + i)     # 약 1,110행
     out = store.load_observations(mdb, ["KS11"], date(2023, 9, 1), AS_OF)

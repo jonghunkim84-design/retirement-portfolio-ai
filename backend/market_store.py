@@ -57,8 +57,8 @@ def load_r04(db) -> dict:
 
 
 def obs_window_start(as_of: date, lookback_days: int) -> date:
-    """요약·하락률·CPI 전년비에 필요한 관측 구간의 시작일 (고점 기간 + 여유)."""
-    return as_of - timedelta(days=max(lookback_days, 400) + 10)
+    """요약·하락률·CPI 전년비에 필요한 관측 구간의 시작일. 월별 지표의 전년 동월(약 13개월 전) 관측까지 닿도록 여유를 둔다."""
+    return as_of - timedelta(days=max(lookback_days, 400) + 60)
 
 
 def load_portfolio_inputs(db, as_of: date) -> dict:

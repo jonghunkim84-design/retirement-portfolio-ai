@@ -1,5 +1,6 @@
 import { ASSET_TYPE_LABEL } from '../../api/client.js'
 import { fmtRate, fmtYears, TONE_BADGE, bucketLabel, BUCKET_SOURCE_LABEL } from '../../lib/withdrawalCheck.js'
+import { describeMarketInputSource } from '../../lib/marketText.js'
 import {
   won, CONCLUSION_LABEL, CONCLUSION_TONE, ACCOUNT_TYPE_LABEL, describeSummary, describeReason, describeRegime,
   describeWarning, describeSkipped, describeSellRule, describeAccountItem, RULE_LABEL,
@@ -38,6 +39,7 @@ export default function DecisionResult({ result }) {
   const c = result.conclusion
   const pay = result.payment
   const regime = describeRegime(result.regime)
+  const source = describeMarketInputSource(result.inputs_snapshot?.market_input)
   const refill = result.refill
   const b1 = result.bucket1_after
   const snap = result.inputs_snapshot
@@ -74,6 +76,13 @@ export default function DecisionResult({ result }) {
           <span className={TONE_BADGE[regime.tone]}>{regime.label}</span>
           <span className="text-gray-600">{regime.detail}</span>
         </div>
+        {source && (
+          <div className="mt-2 text-xs text-gray-600 space-y-0.5">
+            <div><span className={TONE_BADGE[source.tone]}>{source.label}</span>{source.detail && <span className="ml-2">{source.detail}</span>}</div>
+            {source.components.length > 0 && <div>지역별: {source.components.join(' · ')}</div>}
+            {source.warning && <div className="text-red-600">⚠️ {source.warning}</div>}
+          </div>
+        )}
       </Section>
 
       <Section title="③ 1버킷 보충 판단 (R-01 · R-03 · R-04)">

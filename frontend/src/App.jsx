@@ -23,6 +23,7 @@ import RealAssets from './pages/RealAssets.jsx'
 import EstatePlan from './pages/EstatePlan.jsx'
 import WithdrawalSettings from './pages/WithdrawalSettings.jsx'
 import QuarterlyDecision from './pages/QuarterlyDecision.jsx'
+import MarketExposure from './pages/MarketExposure.jsx'
 
 // 로그인하지 않으면 /login 으로 리다이렉트
 function ProtectedLayout() {
@@ -78,6 +79,7 @@ export default function App() {
             <Route path="/estate-plan"      element={<EstatePlan />} />
             <Route path="/withdrawal-settings" element={<WithdrawalSettings />} />
             <Route path="/quarterly-decision" element={<QuarterlyDecision />} />
+            <Route path="/market-exposure"  element={<MarketExposure />} />
             <Route path="/settings"         element={<Settings />} />
           </Route>
 
