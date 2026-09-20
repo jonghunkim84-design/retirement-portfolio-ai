@@ -91,7 +91,9 @@ export const BASIS_TEXT = {
   input: '입력값', assumed_maturity: '가정 (잔존만기를 듀레이션 대용)', assumed_sensitivity: '가정 (사용자 입력 민감도)',
 }
 export const RATE_KIND_LABEL = { cash: '현금(이자만 변동)', floating: '변동금리 채권(이자만 변동)', bond: '채권', bond_part: 'TDF·펀드의 채권 부분', income: '리츠·인컴' }
-export const FLAG_TEXT = { jump_suspect: '전 관측 대비 급변 — 이상치일 수 있어 확인이 필요합니다(계산에는 포함)' }
+export const FLAG_TEXT = { jump_suspect: '전 관측 대비 급변 — 이상치일 수 있어 확인이 필요합니다 (최신값·변화율에는 포함하고, 고점 계산에서는 제외)' }
+/** 고점 계산에서 제외한 이상치 안내 (0건이면 빈 문자열) */
+export const flaggedNote = n => (Number.isFinite(n) && n > 0 ? `이상치 ${n}건 제외` : '')
 
 // ── 지표 카드 ────────────────────────────────────────────────────────
 /** 최신값 표시: 금리는 %, 환율·지수는 숫자 */
@@ -118,6 +120,7 @@ export function describeSeriesCard(s) {
     change1mReason: s.change_1m?.reason ? reasonText(s.change_1m.reason) : '',
     drawdown: dd ? (isNum(dd.value) ? pctPlain(dd.value) : NULL_TEXT) : null,
     drawdownReason: dd?.reason ? reasonText(dd.reason) : '',
+    drawdownNote: flaggedNote(dd?.excluded_flagged),
     yoy: isNum(s.yoy) ? pctSigned(s.yoy) : null,
     source: SOURCE_LABEL[s.latest_source] ?? s.latest_source ?? '',
     reason: s.reason ? reasonText(s.reason) : '',
@@ -185,7 +188,7 @@ export function describeRegimePanel(regime) {
   const lines = (regime.regions || []).map(r => ({
     region: r.region, series: r.series_name ?? r.series_code, isProxy: !!r.is_proxy,
     drawdown: pctPlain(r.drawdown), share: pctPlain(r.share_of_bucket3, 0),
-    flagged: (r.flagged_dates || []).length > 0,
+    flagged: (r.excluded_flagged || 0) > 0, flaggedNote: flaggedNote(r.excluded_flagged),
   }))
   const excluded = (regime.excluded_by_reason || []).map(g => ({
     reason: g.reason, count: g.count, share: pctPlain(g.share_of_bucket3, 0),

@@ -112,6 +112,53 @@ def test_drawdown_reports_flagged_dates_but_still_uses_them():
     assert r["value"] == pytest.approx(0.2) and r["flagged_dates"] == [AS_OF.isoformat()]
 
 
+def _flagged(obs, date_str, value):
+    return [({**o, "value": value, "flag": "jump_suspect"} if o["obs_date"] == date_str else o) for o in obs]
+
+
+def test_flagged_observation_is_excluded_from_peak():
+    base = daily(date(2025, 9, 1), AS_OF, lambda i, d: 100.0 if d < AS_OF else 90.0)
+    spike = _flagged(base, "2026-03-01", 150.0)                               # 이상치가 최고값
+    r = mx.compute_drawdown(SER["KS11"], spike, AS_OF, 365)
+    assert r["peak_value"] == 100.0 and r["value"] == pytest.approx(0.10)       # 150 이 아니라 100 이 고점
+    assert r["excluded_flagged"] == 1 and r["flagged_dates"] == ["2026-03-01"]
+    unflagged = [{**o, "value": 150.0} if o["obs_date"] == "2026-03-01" else o for o in base]
+    assert mx.compute_drawdown(SER["KS11"], unflagged, AS_OF, 365)["value"] == pytest.approx(1 - 90 / 150)   # 플래그가 없으면 고점으로 인정
+
+
+def test_flagged_outside_lookback_is_not_counted():
+    base = daily(date(2024, 1, 1), AS_OF, lambda i, d: 100.0)
+    r = mx.compute_drawdown(SER["KS11"], _flagged(base, "2025-01-01", 500.0), AS_OF, 365)
+    assert r["excluded_flagged"] == 0 and r["flagged_dates"] == []
+
+
+def test_flagged_latest_is_still_used_as_latest_and_in_changes():
+    base = daily(date(2025, 9, 1), AS_OF, lambda i, d: 100.0)
+    obs = _flagged(base, AS_OF.isoformat(), 70.0)                              # 최신값이 이상치(급락)
+    r = mx.compute_drawdown(SER["KS11"], obs, AS_OF, 365)
+    assert r["latest_value"] == 70.0 and r["value"] == pytest.approx(0.30)     # 최신값에는 포함
+    s = mx.summarize_series(SER["KS11"], obs, AS_OF)
+    assert s["latest_value"] == 70.0 and s["latest_flag"] == "jump_suspect"
+    assert s["change_1m"]["value"] == pytest.approx(-0.30)                     # 변화율에도 포함
+
+
+def test_flagged_high_latest_clamps_to_zero_and_all_flagged_is_insufficient():
+    base = daily(date(2025, 9, 1), AS_OF, lambda i, d: 100.0)
+    assert mx.compute_drawdown(SER["KS11"], _flagged(base, AS_OF.isoformat(), 130.0), AS_OF, 365)["value"] == 0.0
+    all_flagged = [{**o, "flag": "jump_suspect"} for o in base]
+    r = mx.compute_drawdown(SER["KS11"], all_flagged, AS_OF, 365)
+    assert r["value"] is None and r["reason"] == "insufficient_history" and r["excluded_flagged"] == sum(1 for o in base if o["obs_date"] >= r["window_start"])   # 기간 안의 이상치만 센다
+
+
+def test_weighted_drawdown_excludes_flagged_peak_and_reports_count_per_region():
+    obs = {**OBS, "US500": _flagged(OBS["US500"], "2026-03-01", 400.0)}          # 미국 지수에 이상치 고점
+    r = wd([A(1, "equity", 600), A(2, "equity", 400)], [P(1, region="미국"), P(2, region="한국")], obs=obs)
+    by = {x["region"]: x for x in r["regions"]}
+    assert by["미국"]["drawdown"] == pytest.approx(0.20) and by["미국"]["excluded_flagged"] == 1
+    assert by["한국"]["excluded_flagged"] == 0
+    assert r["weighted_drawdown"] == pytest.approx((600 * 0.20 + 400 * 0.10) / 1000)
+
+
 def test_monthly_stale_uses_month_end_and_60_days():
     obs = [{"obs_date": "2026-08-01", "value": 120.0}, {"obs_date": "2025-08-01", "value": 116.0}]
     s = mx.summarize_series(SER["KR_CPI"], obs, AS_OF)

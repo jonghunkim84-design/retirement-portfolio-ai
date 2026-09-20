@@ -107,7 +107,7 @@ export default function QuarterlyDecision() {
             {panel.lines.length > 0 && (
               <ul className="list-disc pl-5">
                 {panel.lines.map(l => (
-                  <li key={l.region}>{l.region}: 하락 {l.drawdown} (3버킷 중 {l.share}, {l.series}{l.isProxy ? ' · 대용 지표' : ''}{l.flagged ? ' · 이상치 의심 관측 포함' : ''})</li>
+                  <li key={l.region}>{l.region}: 하락 {l.drawdown} (3버킷 중 {l.share}, {l.series}{l.isProxy ? ' · 대용 지표' : ''}{l.flaggedNote ? ` · ${l.flaggedNote}` : ''})</li>
                 ))}
               </ul>
             )}

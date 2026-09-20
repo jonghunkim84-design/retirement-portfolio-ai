@@ -112,11 +112,14 @@ def _value_at_or_before(rows: list, target: date, tol_days: int):
 # ── 7.1 지표 요약 ───────────────────────────────────────────────────────────
 
 def compute_drawdown(series: dict, obs: list, as_of: date, lookback_days: int) -> dict:
-    """고점 대비 하락률 = 1 − 최신값 ÷ (as_of−lookback_days ~ as_of) 기간 최고값. 고점 당일이면 0."""
+    """고점 대비 하락률 = 1 − 최신값 ÷ (as_of−lookback_days ~ as_of) 기간 최고값. 고점 당일이면 0.
+
+    이상치 플래그가 달린 관측값은 기간 최고값(극값) 계산에서 제외한다(excluded_flagged 에 건수).
+    최신값·변화율에는 그대로 포함한다."""
     rows = _prep(obs, as_of)
     out = {"value": None, "latest_value": None, "latest_date": None, "peak_value": None, "peak_date": None,
            "window_start": (as_of - timedelta(days=lookback_days)).isoformat(), "stale": None,
-           "flagged_dates": [], "reason": None}
+           "flagged_dates": [], "excluded_flagged": 0, "reason": None}
     if not rows:
         out["reason"] = "no_data"
         return out
@@ -126,13 +129,18 @@ def compute_drawdown(series: dict, obs: list, as_of: date, lookback_days: int) -
     start = as_of - timedelta(days=lookback_days)
     window = [r for r in rows if r[0] >= start]
     out["flagged_dates"] = [r[0].isoformat() for r in window if r[2]]
+    out["excluded_flagged"] = len(out["flagged_dates"])
     if out["stale"]:
         out["reason"] = "stale"
         return out
     if len(window) < 2 or (window[0][0] - start).days > WINDOW_START_TOLERANCE_DAYS:
         out["reason"] = "insufficient_history"
         return out
-    peak = max(window, key=lambda r: (r[1], r[0]))
+    candidates = [r for r in window if not r[2]]                 # 이상치는 고점 후보에서 제외
+    if not candidates:
+        out["reason"] = "insufficient_history"
+        return out
+    peak = max(candidates, key=lambda r: (r[1], r[0]))
     out["peak_value"], out["peak_date"] = peak[1], peak[0].isoformat()
     out["value"] = max(0.0, 1 - last[1] / peak[1]) if peak[1] > 0 else None
     if out["value"] is None:
@@ -224,7 +232,7 @@ def compute_weighted_drawdown(*, as_of: date, assets: list, profiles: list, benc
             "region": res["region"], "series_code": res["series_code"], "series_name": series[res["series_code"]].get("name"),
             "is_proxy": bool(series[res["series_code"]].get("is_proxy")), "drawdown": dd["value"],
             "latest_date": dd["latest_date"], "peak_date": dd["peak_date"], "flagged_dates": dd["flagged_dates"],
-            "value": 0.0, "asset_count": 0})
+            "excluded_flagged": dd["excluded_flagged"], "value": 0.0, "asset_count": 0})
         row["value"] += value
         row["asset_count"] += 1
 
@@ -260,7 +268,7 @@ def compute_weighted_drawdown(*, as_of: date, assets: list, profiles: list, benc
         "excluded": excluded, "excluded_by_reason": sorted(by_reason.values(), key=lambda g: -g["value"]),
         "latest_date": max(dates) if dates else None, "reasons": reasons,
         "assumptions": ["하락률은 각 지역 기준지수의 현지 통화 기준(원화 환산 손익은 시나리오에서 다룸)",
-                        "고점 = as_of 이전 lookback_days 기간의 최고값, 최신값 = as_of 이하 마지막 관측",
+                        "고점 = as_of 이전 lookback_days 기간의 최고값(이상치 플래그가 달린 관측은 제외), 최신값 = as_of 이하 마지막 관측(이상치 포함)",
                         "지역 미입력·대응 지수 없음·데이터 부족(stale 포함) 자산은 제외하고 나머지 금액으로 가중"],
     }
 

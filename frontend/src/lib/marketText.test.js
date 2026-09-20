@@ -57,6 +57,8 @@ test('지표 카드: 값·변화 단위, 대용·지연·이상치 배지', () =
   assert.match(by.USD_KRW.change1m, /%$/) ; assert.doesNotMatch(by.USD_KRW.change1m, /%p/)
   assert.ok(by.EEM.badges.some(b => b.key === 'proxy'))                    // 대용 지표 표시
   assert.equal(by.KS11.drawdown, '10.0%')
+  assert.equal(by.KS11.drawdownNote, '이상치 1건 제외')         // 고점 계산에서 제외한 이상치 표시
+  assert.equal(by.US500.drawdownNote, '')
   assert.equal(by.KR_CPI.yoy, '+2.6%')                                     // 전년 동월 대비
   const empty = F.series_empty.series.map(describeSeriesCard)
   assert.ok(empty.every(c => c.value === '-' && c.reason === REASON_TEXT.no_data))
@@ -82,6 +84,9 @@ test('가중 하락률 패널: 값·판정 참고·지역별 내역·제외 사�
   assert.match(p.headline, /지역 가중 하락률 \d+\.\d%/)
   assert.match(p.judgement, /기준\(15\.0%\) 미만이라 .* 정상 국면/)
   assert.deepEqual(p.lines.map(l => l.region).sort(), ['미국', '한국'])
+  assert.equal(p.lines.find(l => l.region === '한국').flaggedNote, '이상치 1건 제외')
+  assert.equal(p.lines.find(l => l.region === '미국').flaggedNote, '')
+  assert.equal(p.hasFlag, true)
   assert.ok(p.excluded.some(x => /"독일"/.test(x.text)), '독일이 원래 값으로 표시')
   assert.ok(p.excluded.some(x => x.reason === 'region_missing'))
   assert.equal(p.unreliable, false); assert.equal(p.unreliableText, '')

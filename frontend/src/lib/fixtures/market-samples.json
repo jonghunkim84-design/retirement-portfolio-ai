@@ -42,6 +42,7 @@
      "window_start": "2025-09-18",
      "stale": false,
      "flagged_dates": [],
+     "excluded_flagged": 0,
      "reason": null
     },
     "yoy": null,
@@ -151,7 +152,10 @@
      "peak_date": "2026-09-17",
      "window_start": "2025-09-18",
      "stale": false,
-     "flagged_dates": [],
+     "flagged_dates": [
+      "2026-03-01"
+     ],
+     "excluded_flagged": 1,
      "reason": null
     },
     "yoy": null,
@@ -230,6 +234,7 @@
      "window_start": "2025-09-18",
      "stale": false,
      "flagged_dates": [],
+     "excluded_flagged": 0,
      "reason": null
     },
     "yoy": null,
@@ -497,7 +502,10 @@
     "drawdown": 0.09999999999999998,
     "latest_date": "2026-09-18",
     "peak_date": "2026-09-17",
-    "flagged_dates": [],
+    "flagged_dates": [
+     "2026-03-01"
+    ],
+    "excluded_flagged": 1,
     "value": 60000000.0,
     "asset_count": 1,
     "share_of_bucket3": 0.5454545454545454
@@ -511,6 +519,7 @@
     "latest_date": "2026-09-18",
     "peak_date": "2026-09-17",
     "flagged_dates": [],
+    "excluded_flagged": 0,
     "value": 30000000.0,
     "asset_count": 1,
     "share_of_bucket3": 0.2727272727272727
@@ -556,7 +565,7 @@
   "reasons": [],
   "assumptions": [
    "하락률은 각 지역 기준지수의 현지 통화 기준(원화 환산 손익은 시나리오에서 다룸)",
-   "고점 = as_of 이전 lookback_days 기간의 최고값, 최신값 = as_of 이하 마지막 관측",
+   "고점 = as_of 이전 lookback_days 기간의 최고값(이상치 플래그가 달린 관측은 제외), 최신값 = as_of 이하 마지막 관측(이상치 포함)",
    "지역 미입력·대응 지수 없음·데이터 부족(stale 포함) 자산은 제외하고 나머지 금액으로 가중"
   ],
   "lookback_source": "rule",
@@ -2151,7 +2160,7 @@
   ],
   "assumptions": [
    "하락률은 각 지역 기준지수의 현지 통화 기준(원화 환산 손익은 시나리오에서 다룸)",
-   "고점 = as_of 이전 lookback_days 기간의 최고값, 최신값 = as_of 이하 마지막 관측",
+   "고점 = as_of 이전 lookback_days 기간의 최고값(이상치 플래그가 달린 관측은 제외), 최신값 = as_of 이하 마지막 관측(이상치 포함)",
    "지역 미입력·대응 지수 없음·데이터 부족(stale 포함) 자산은 제외하고 나머지 금액으로 가중"
   ],
   "lookback_source": "rule",

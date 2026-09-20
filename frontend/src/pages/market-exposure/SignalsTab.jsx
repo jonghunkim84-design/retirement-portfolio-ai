@@ -23,7 +23,7 @@ function SeriesCard({ card, selected, onSelect }) {
         <div>1개월 <b className="tabular-nums" title={card.change1mReason || undefined}>{card.change1m}</b></div>
         <div>3개월 <b className="tabular-nums">{card.change3m}</b></div>
         {card.drawdown != null && (
-          <div className="col-span-2">고점 대비 하락 <b className="tabular-nums" title={card.drawdownReason || undefined}>{card.drawdown}</b></div>
+          <div className="col-span-2">고점 대비 하락 <b className="tabular-nums" title={card.drawdownReason || undefined}>{card.drawdown}</b>{card.drawdownNote && <span className="text-yellow-700 ml-1.5">({card.drawdownNote})</span>}</div>
         )}
         {card.yoy != null && <div className="col-span-2">전년 동월 대비 <b className="tabular-nums">{card.yoy}</b></div>}
       </div>
@@ -53,7 +53,7 @@ function HistoryPanel({ code, name }) {
           ))}
         </div>
       }
-      note={flagged.length ? `이상치 의심 관측 ${flagged.length}건이 있습니다 (${flagged.slice(0, 3).map(p => p.date).join(', ')}${flagged.length > 3 ? ' …' : ''}). 계산에는 포함됩니다.` : undefined}>
+      note={flagged.length ? `이상치 의심 관측 ${flagged.length}건이 있습니다 (${flagged.slice(0, 3).map(p => p.date).join(', ')}${flagged.length > 3 ? ' …' : ''}). 최신값·변화율에는 포함되고 고점 계산에서는 제외됩니다.` : undefined}>
       {isLoading ? <Loading /> : error ? <Banner tone="red">{errMsg(error)}</Banner> : points.length === 0 ? (
         <p className="text-sm text-gray-500">이 기간의 관측값이 없습니다.</p>
       ) : (
