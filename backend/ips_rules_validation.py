@@ -61,8 +61,10 @@ def validate_parameters(rule_code: str, params) -> list:
         _check(params, "relative", lambda v: 0 < v <= 1, "0보다 크고 1 이하여야 합니다", errors, required=relative_mode)
         _check(params, "min_abs", lambda v: 0 <= v <= 1, "0 이상 1 이하여야 합니다", errors, required=relative_mode)
     elif rule_code == "R-04":
-        _unknown_keys(params, ("drawdown_threshold",), errors)
+        _unknown_keys(params, ("drawdown_threshold", "lookback_days"), errors)
         _check(params, "drawdown_threshold", lambda v: 0 < v < 1, "0보다 크고 1보다 작아야 합니다", errors)
+        _check(params, "lookback_days", lambda v: 30 <= v <= 1095 and float(v).is_integer(),
+               "30 이상 1095 이하의 정수(일)여야 합니다", errors, required=False)     # 선택 — 없으면 365일
     elif rule_code == "R-05":
         _unknown_keys(params, ("upper_multiplier", "cut_ratio"), errors)
         _check(params, "upper_multiplier", lambda v: v > 1, "1보다 커야 합니다", errors)
