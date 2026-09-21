@@ -317,26 +317,35 @@ export function describeShock(r) {
   }
 }
 
-/** 결과의 가장 큰 표시: 1버킷 커버 연수 전후. 필수생활비 기준이 없으면 전체 기준으로 보여 주고 사유를 밝힌다. */
+/** 순인출 기준 필수 연수가 이 값(년)을 넘으면 필요액이 0에 가까운 것이라 참고로만 보여 준다. */
+export const HUGE_YEARS = 50
+
+/** 결과의 가장 큰 표시: 1버킷 커버 연수 전후.
+ *  기본은 "필수생활비 기준(정기수입 차감 전)" — 정기수입이 필수생활비를 거의 충당해도 연수가 안정적으로 나온다.
+ *  정기수입 차감 후(순) 기준은 참고로 아래 표에 두고, 값이 없거나 비정상적으로 크면 사유를 붙인다. */
 export function describeCoverage(r) {
   const b = r.before.buckets['1'], a = r.after.buckets['1']
-  const essential = isNum(b.years_essential) && isNum(a.years_essential)
+  const gross = isNum(b.years_essential_gross) && isNum(a.years_essential_gross)
   const total = isNum(b.years_total) && isNum(a.years_total)
   const row = key => ({ before: fmtYears(b[key]), after: fmtYears(a[key]), delta: isNum(b[key]) && isNum(a[key]) ? a[key] - b[key] : null })
-  const ess = row('years_essential'), tot = row('years_total')
+  const ess = row('years_essential'), essGross = row('years_essential_gross'), tot = row('years_total')
+  let netNote = ''
+  if (!isNum(b.years_essential)) netNote = '정기수입이 필수생활비를 충당해 정기수입 차감 후 기준은 계산되지 않습니다'
+  else if (b.years_essential > HUGE_YEARS) netNote = `정기수입을 차감하면 순필요액이 작아 ${fmtYears(b.years_essential)}로 매우 크게 나오므로 참고로만 표시합니다`
   let headline
-  if (essential) headline = { label: '필수생활비 기준 1버킷', ...ess, basis: 'essential' }
-  else if (total) headline = { label: '전체 생활비 기준 1버킷', ...tot, basis: 'total',
-    note: '정기수입이 필수생활비를 충당해 필수생활비 기준 연수는 계산되지 않습니다' }
+  if (gross) headline = { label: '필수생활비 기준 1버킷 (정기수입 차감 전)', ...essGross, basis: 'essential_gross', note: netNote }
+  else if (total) headline = { label: '전체 생활비 기준 1버킷 (정기수입 차감 후)', ...tot, basis: 'total',
+    note: '필수생활비 항목이 없어 전체 생활비(정기수입 차감 후) 기준으로 표시합니다' }
   else headline = { label: '1버킷 커버 연수', before: NULL_TEXT, after: NULL_TEXT, delta: null, basis: 'none',
     note: '순인출 필요액이 0원이라 연수를 계산할 수 없습니다' }
   const buckets = [1, 2, 3].map(n => {
     const x = r.before.buckets[String(n)], y = r.after.buckets[String(n)]
     return { bucket: n, valueBefore: wonPlain(x.value), valueAfter: wonPlain(y.value),
       totalBefore: fmtYears(x.years_total), totalAfter: fmtYears(y.years_total),
-      essentialBefore: fmtYears(x.years_essential), essentialAfter: fmtYears(y.years_essential) }
+      essentialBefore: fmtYears(x.years_essential), essentialAfter: fmtYears(y.years_essential),
+      grossBefore: fmtYears(x.years_essential_gross), grossAfter: fmtYears(y.years_essential_gross) }
   })
-  return { headline, essential: ess, total: tot, buckets }
+  return { headline, essential: ess, essentialGross: essGross, total: tot, netNote, buckets }
 }
 
 export const R01_LABEL = { ok: '충족', below_target: '목표 미달', below_min: '최소 미달' }

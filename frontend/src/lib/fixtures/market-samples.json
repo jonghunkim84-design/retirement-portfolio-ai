@@ -973,21 +973,25 @@
    "total_assets": 235000000.0,
    "annual_need_total": 36000000.0,
    "annual_need_essential": 24000000.0,
+   "annual_need_essential_gross": 24000000.0,
    "buckets": {
     "1": {
      "value": 40000000.0,
      "years_total": 1.1111111111111112,
-     "years_essential": 1.6666666666666667
+     "years_essential": 1.6666666666666667,
+     "years_essential_gross": 1.6666666666666667
     },
     "2": {
      "value": 85000000.0,
      "years_total": 2.361111111111111,
-     "years_essential": 3.5416666666666665
+     "years_essential": 3.5416666666666665,
+     "years_essential_gross": 3.5416666666666665
     },
     "3": {
      "value": 110000000.0,
      "years_total": 3.0555555555555554,
-     "years_essential": 4.583333333333333
+     "years_essential": 4.583333333333333,
+     "years_essential_gross": 4.583333333333333
     }
    },
    "cumulative": {
@@ -1003,21 +1007,25 @@
    "total_assets": 219990000.0,
    "annual_need_total": 36000000.0,
    "annual_need_essential": 24000000.0,
+   "annual_need_essential_gross": 24000000.0,
    "buckets": {
     "1": {
      "value": 40000000.0,
      "years_total": 1.1111111111111112,
-     "years_essential": 1.6666666666666667
+     "years_essential": 1.6666666666666667,
+     "years_essential_gross": 1.6666666666666667
     },
     "2": {
      "value": 83490000.0,
      "years_total": 2.319166666666667,
-     "years_essential": 3.47875
+     "years_essential": 3.47875,
+     "years_essential_gross": 3.47875
     },
     "3": {
      "value": 96500000.0,
      "years_total": 2.6805555555555554,
-     "years_essential": 4.020833333333333
+     "years_essential": 4.020833333333333,
+     "years_essential_gross": 4.020833333333333
     }
    },
    "cumulative": {
@@ -1170,21 +1178,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1200,21 +1212,25 @@
     "total_assets": 231800000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 81800000.0,
       "years_total": 2.272222222222222,
-      "years_essential": 3.408333333333333
+      "years_essential": 3.408333333333333,
+      "years_essential_gross": 3.408333333333333
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1311,21 +1327,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1341,21 +1361,25 @@
     "total_assets": 238200000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 88200000.0,
       "years_total": 2.45,
-      "years_essential": 3.675
+      "years_essential": 3.675,
+      "years_essential_gross": 3.675
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1467,21 +1491,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1497,21 +1525,25 @@
     "total_assets": 213000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 88000000.0,
       "years_total": 2.4444444444444446,
-      "years_essential": 3.6666666666666665
+      "years_essential": 3.6666666666666665,
+      "years_essential_gross": 3.6666666666666665
      }
     },
     "cumulative": {
@@ -1619,21 +1651,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1649,21 +1685,25 @@
     "total_assets": 219000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 94000000.0,
       "years_total": 2.611111111111111,
-      "years_essential": 3.9166666666666665
+      "years_essential": 3.9166666666666665,
+      "years_essential_gross": 3.9166666666666665
      }
     },
     "cumulative": {
@@ -1753,21 +1793,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1783,21 +1827,25 @@
     "total_assets": 231500000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 84500000.0,
       "years_total": 2.3472222222222223,
-      "years_essential": 3.5208333333333335
+      "years_essential": 3.5208333333333335,
+      "years_essential_gross": 3.5208333333333335
      },
      "3": {
       "value": 107000000.0,
       "years_total": 2.9722222222222223,
-      "years_essential": 4.458333333333333
+      "years_essential": 4.458333333333333,
+      "years_essential_gross": 4.458333333333333
      }
     },
     "cumulative": {
@@ -1864,21 +1912,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36000000.0,
     "annual_need_essential": 24000000.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.1111111111111112,
-      "years_essential": 1.6666666666666667
+      "years_essential": 1.6666666666666667,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.361111111111111,
-      "years_essential": 3.5416666666666665
+      "years_essential": 3.5416666666666665,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0555555555555554,
-      "years_essential": 4.583333333333333
+      "years_essential": 4.583333333333333,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -1894,21 +1946,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 36480000.0,
     "annual_need_essential": 24480000.0,
+    "annual_need_essential_gross": 24480000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 1.0964912280701755,
-      "years_essential": 1.6339869281045751
+      "years_essential": 1.6339869281045751,
+      "years_essential_gross": 1.6339869281045751
      },
      "2": {
       "value": 85000000.0,
       "years_total": 2.330043859649123,
-      "years_essential": 3.4722222222222223
+      "years_essential": 3.4722222222222223,
+      "years_essential_gross": 3.4722222222222223
      },
      "3": {
       "value": 110000000.0,
       "years_total": 3.0153508771929824,
-      "years_essential": 4.493464052287582
+      "years_essential": 4.493464052287582,
+      "years_essential_gross": 4.493464052287582
      }
     },
     "cumulative": {
@@ -1993,21 +2049,25 @@
     "total_assets": 235000000.0,
     "annual_need_total": 6000000.0,
     "annual_need_essential": 0.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 6.666666666666667,
-      "years_essential": null
+      "years_essential": null,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 85000000.0,
       "years_total": 14.166666666666666,
-      "years_essential": null
+      "years_essential": null,
+      "years_essential_gross": 3.5416666666666665
      },
      "3": {
       "value": 110000000.0,
       "years_total": 18.333333333333332,
-      "years_essential": null
+      "years_essential": null,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -2023,21 +2083,25 @@
     "total_assets": 231800000.0,
     "annual_need_total": 6000000.0,
     "annual_need_essential": 0.0,
+    "annual_need_essential_gross": 24000000.0,
     "buckets": {
      "1": {
       "value": 40000000.0,
       "years_total": 6.666666666666667,
-      "years_essential": null
+      "years_essential": null,
+      "years_essential_gross": 1.6666666666666667
      },
      "2": {
       "value": 81800000.0,
       "years_total": 13.633333333333333,
-      "years_essential": null
+      "years_essential": null,
+      "years_essential_gross": 3.408333333333333
      },
      "3": {
       "value": 110000000.0,
       "years_total": 18.333333333333332,
-      "years_essential": null
+      "years_essential": null,
+      "years_essential_gross": 4.583333333333333
      }
     },
     "cumulative": {
@@ -2194,21 +2258,25 @@
    "total_assets": 235000000.0,
    "annual_need_total": 36000000.0,
    "annual_need_essential": 24000000.0,
+   "annual_need_essential_gross": 24000000.0,
    "buckets": {
     "1": {
      "value": 40000000.0,
      "years_total": 1.1111111111111112,
-     "years_essential": 1.6666666666666667
+     "years_essential": 1.6666666666666667,
+     "years_essential_gross": 1.6666666666666667
     },
     "2": {
      "value": 85000000.0,
      "years_total": 2.361111111111111,
-     "years_essential": 3.5416666666666665
+     "years_essential": 3.5416666666666665,
+     "years_essential_gross": 3.5416666666666665
     },
     "3": {
      "value": 110000000.0,
      "years_total": 3.0555555555555554,
-     "years_essential": 4.583333333333333
+     "years_essential": 4.583333333333333,
+     "years_essential_gross": 4.583333333333333
     }
    },
    "cumulative": {
@@ -2224,21 +2292,25 @@
    "total_assets": 235000000.0,
    "annual_need_total": 36000000.0,
    "annual_need_essential": 24000000.0,
+   "annual_need_essential_gross": 24000000.0,
    "buckets": {
     "1": {
      "value": 40000000.0,
      "years_total": 1.1111111111111112,
-     "years_essential": 1.6666666666666667
+     "years_essential": 1.6666666666666667,
+     "years_essential_gross": 1.6666666666666667
     },
     "2": {
      "value": 85000000.0,
      "years_total": 2.361111111111111,
-     "years_essential": 3.5416666666666665
+     "years_essential": 3.5416666666666665,
+     "years_essential_gross": 3.5416666666666665
     },
     "3": {
      "value": 110000000.0,
      "years_total": 3.0555555555555554,
-     "years_essential": 4.583333333333333
+     "years_essential": 4.583333333333333,
+     "years_essential_gross": 4.583333333333333
     }
    },
    "cumulative": {
@@ -2493,21 +2565,25 @@
    "total_assets": 235000000.0,
    "annual_need_total": 36000000.0,
    "annual_need_essential": 24000000.0,
+   "annual_need_essential_gross": 24000000.0,
    "buckets": {
     "1": {
      "value": 40000000.0,
      "years_total": 1.1111111111111112,
-     "years_essential": 1.6666666666666667
+     "years_essential": 1.6666666666666667,
+     "years_essential_gross": 1.6666666666666667
     },
     "2": {
      "value": 85000000.0,
      "years_total": 2.361111111111111,
-     "years_essential": 3.5416666666666665
+     "years_essential": 3.5416666666666665,
+     "years_essential_gross": 3.5416666666666665
     },
     "3": {
      "value": 110000000.0,
      "years_total": 3.0555555555555554,
-     "years_essential": 4.583333333333333
+     "years_essential": 4.583333333333333,
+     "years_essential_gross": 4.583333333333333
     }
    },
    "cumulative": {
@@ -2523,21 +2599,25 @@
    "total_assets": 235000000.0,
    "annual_need_total": 36000000.0,
    "annual_need_essential": 24000000.0,
+   "annual_need_essential_gross": 24000000.0,
    "buckets": {
     "1": {
      "value": 40000000.0,
      "years_total": 1.1111111111111112,
-     "years_essential": 1.6666666666666667
+     "years_essential": 1.6666666666666667,
+     "years_essential_gross": 1.6666666666666667
     },
     "2": {
      "value": 85000000.0,
      "years_total": 2.361111111111111,
-     "years_essential": 3.5416666666666665
+     "years_essential": 3.5416666666666665,
+     "years_essential_gross": 3.5416666666666665
     },
     "3": {
      "value": 110000000.0,
      "years_total": 3.0555555555555554,
-     "years_essential": 4.583333333333333
+     "years_essential": 4.583333333333333,
+     "years_essential_gross": 4.583333333333333
     }
    },
    "cumulative": {

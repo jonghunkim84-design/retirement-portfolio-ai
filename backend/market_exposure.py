@@ -464,12 +464,18 @@ def validate_scenario(kind: str, params: dict) -> dict:
 
 
 def _coverage(check: dict) -> dict:
+    """충격 전후 비교용 커버 연수.
+    years_total / years_essential = 02 점검과 같은 정기수입 차감 후(순) 기준.
+    years_essential_gross = 정기수입 차감 전 필수생활비 총액 기준(수입이 필수를 거의 충당해도 연수가 안정적으로 나온다)."""
     b = {x["bucket"]: x for x in check["buckets"]}
+    gross_e = check["net_need"]["gross"]["essential_annual"]
     return {
         "total_assets": check["total_assets"],
         "annual_need_total": check["net_need"]["annual_total"],
         "annual_need_essential": check["net_need"]["annual_essential"],
-        "buckets": {k: {"value": v["value"], "years_total": v["years_total"], "years_essential": v["years_essential"]}
+        "annual_need_essential_gross": gross_e,
+        "buckets": {k: {"value": v["value"], "years_total": v["years_total"], "years_essential": v["years_essential"],
+                        "years_essential_gross": (v["value"] / gross_e) if gross_e > 0 else None}
                     for k, v in b.items()},
         "cumulative": check["cumulative"],
         "r01_status": check["rules"]["R-01"]["status"], "r01_reason": check["rules"]["R-01"]["reason"],

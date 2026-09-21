@@ -429,6 +429,32 @@ def test_scenario_before_equals_direct_withdrawal_check_and_essential_years_pres
     assert s["after"]["buckets"][2]["value"] == pytest.approx(57_000_000)
 
 
+def test_scenario_reports_essential_years_before_income_deduction():
+    # 필수생활비 총액 연 2,400만 원 기준(정기수입 차감 전): 1버킷 4,000만 원 = 1.667년
+    s = scen("rate", {"delta_pp": 1.0})
+    assert s["before"]["annual_need_essential_gross"] == 24_000_000
+    assert s["before"]["buckets"][1]["years_essential_gross"] == pytest.approx(40_000_000 / 24_000_000)
+    # 정기수입이 필수생활비 이상이어도 차감 전 기준은 계산된다 (차감 후 기준은 None)
+    income = {"item_type": "income_regular", "name": "연금", "monthly_amount": 2_500_000, "start_date": None, "end_date": None}
+    s2 = scen("rate", {"delta_pp": 1.0}, cashflow=CASH + [income])
+    assert s2["before"]["buckets"][1]["years_essential"] is None
+    assert s2["before"]["buckets"][1]["years_essential_gross"] == pytest.approx(40_000_000 / 24_000_000)
+    # 정기수입이 필수를 거의 충당해 순 필요액이 아주 작아도 차감 전 기준은 안정적이다
+    almost = {**income, "monthly_amount": 1_990_000}
+    s3 = scen("rate", {"delta_pp": 1.0}, cashflow=CASH + [almost])
+    assert s3["before"]["buckets"][1]["years_essential"] > 300                  # 순 기준은 폭주
+    assert s3["before"]["buckets"][1]["years_essential_gross"] == pytest.approx(40_000_000 / 24_000_000)
+    # 필수생활비 항목이 없으면 None
+    s4 = scen("rate", {"delta_pp": 1.0}, cashflow=[CASH[1]])
+    assert s4["before"]["buckets"][1]["years_essential_gross"] is None
+
+
+def test_scenario_inflation_lowers_gross_essential_years():
+    s = scen("inflation", {"delta_pp": 2.0})
+    b, a = s["before"]["buckets"][1]["years_essential_gross"], s["after"]["buckets"][1]["years_essential_gross"]
+    assert a == pytest.approx(b / 1.02)                                         # 연동 필수 항목이 2% 늘어 연수가 줄어든다
+
+
 def test_scenario_asset_value_never_negative():
     s = scen("equity", {"mode": "uniform", "pct": 1.0})
     assert all(x["after"] >= 0 for x in s["change"]["by_asset"])

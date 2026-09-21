@@ -162,20 +162,39 @@ test('시나리오 충격 문구', () => {
   assert.equal(describeShock(S.inflation), '물가 +2.0%p (1년)')
 })
 
-test('시나리오 결과: 1버킷 연수 전후를 가장 크게, 필수 기준이 없으면 전체 기준 + 사유', () => {
+test('시나리오 결과: 1버킷 연수는 필수생활비(정기수입 차감 전) 기준을 가장 크게 보여 준다', () => {
   const infl = describeCoverage(F.scenarios.inflation)
-  assert.equal(infl.headline.basis, 'essential')
-  assert.match(infl.headline.label, /필수생활비 기준/)
+  assert.equal(infl.headline.basis, 'essential_gross')
+  assert.match(infl.headline.label, /필수생활비 기준.*정기수입 차감 전/)
   assert.notEqual(infl.headline.before, infl.headline.after)            // 물가 충격: 연수만 줄어든다
   assert.ok(infl.headline.delta < 0)
   const rate = describeCoverage(F.scenarios.rate_up)
   assert.ok(rate.headline.delta < 0 || rate.headline.delta === 0)
+  // 정기수입이 필수생활비를 충당하는 경우: 차감 전 기준은 정상 표시, 차감 후 기준은 '-'(0년 아님) + 사유
   const cover = describeCoverage(F.scenarios.rate_up_income_covers_essential)
-  assert.equal(cover.headline.basis, 'total')
-  assert.match(cover.headline.note, /정기수입이 필수생활비를 충당/)
-  assert.equal(cover.essential.before, '-')                              // 0년이 아니라 '-'
+  assert.equal(cover.headline.basis, 'essential_gross')
+  assert.match(cover.headline.before, /^\d+\.\d년$/)
+  assert.match(cover.headline.note, /차감 후 기준은 계산되지 않습니다/)
+  assert.equal(cover.essential.before, '-')
   assert.equal(cover.buckets.length, 3)
+  assert.match(cover.buckets[0].grossBefore, /년$/)
   noBad(cover)
+})
+
+test('시나리오 결과: 순 필요액이 작아 연수가 폭주하면(120.9년) 차감 전 기준을 앞세우고 사유를 붙인다', () => {
+  const r = JSON.parse(JSON.stringify(F.scenarios.rate_up))
+  for (const side of [r.before, r.after]) { side.buckets['1'].years_essential = 120.9; side.buckets['1'].years_essential_gross = 11.0 }
+  const c = describeCoverage(r)
+  assert.equal(c.headline.basis, 'essential_gross')
+  assert.equal(c.headline.before, '11.0년')                              // 120.9년이 아니라 차감 전 기준
+  assert.match(c.headline.note, /120\.9년로 매우 크게 나오므로 참고로만/)
+  assert.equal(c.buckets[0].essentialBefore, '120.9년')                 // 차감 후 값은 표의 참고 열에만
+  // 50년 이하이면 사유를 붙이지 않는다
+  for (const side of [r.before, r.after]) side.buckets['1'].years_essential = 30
+  assert.equal(describeCoverage(r).headline.note, '')
+  // 필수생활비 항목이 없으면 전체 생활비 기준으로 대체
+  for (const side of [r.before, r.after]) side.buckets['1'].years_essential_gross = null
+  assert.equal(describeCoverage(r).headline.basis, 'total')
 })
 
 test('시나리오 결과: 금액 변화·물가는 자산 그대로·환헤지 영향 없음·상태 변화', () => {
