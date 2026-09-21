@@ -52,17 +52,18 @@ function Result({ r }) {
         {reasons.map(t => <p key={t} className="text-xs text-yellow-700 mt-2">{t}</p>)}
       </Section>
 
-      <Section title="버킷별 커버 연수" note="연수 = 버킷 금액 ÷ 연 순인출 필요액. 02 점검과 같은 계산(수익률 0%, 물가 미반영)을 충격 반영 입력으로 다시 계산한 결과입니다.">
+      <Section title="버킷별 커버 연수" note="연수 = 버킷 금액 ÷ 연 필요액. '수입 차감 전'은 정기수입을 빼기 전 필수생활비 총액, '수입 차감 후'는 02 점검과 같은 순인출 필요액 기준입니다. 수익률 0%·물가 미반영 계산을 충격 반영 입력으로 다시 계산한 결과입니다.">
         <div className="overflow-x-auto">
           <table>
-            <thead><tr><th>버킷</th><th className="text-right">금액 (전 → 후)</th><th className="text-right">전체 생활비 기준</th><th className="text-right">필수생활비 기준</th></tr></thead>
+            <thead><tr><th>버킷</th><th className="text-right">금액 (전 → 후)</th><th className="text-right">필수생활비 (수입 차감 전)</th><th className="text-right">필수생활비 (수입 차감 후)</th><th className="text-right">전체 생활비 (수입 차감 후)</th></tr></thead>
             <tbody>
               {cov.buckets.map(b => (
                 <tr key={b.bucket}>
                   <td className="font-medium">{b.bucket}버킷</td>
                   <td className="text-right tabular-nums text-xs">{b.valueBefore} → {b.valueAfter}</td>
-                  <td className="text-right tabular-nums">{b.totalBefore} → {b.totalAfter}</td>
-                  <td className="text-right tabular-nums">{b.essentialBefore} → {b.essentialAfter}</td>
+                  <td className="text-right tabular-nums font-medium">{b.grossBefore} → {b.grossAfter}</td>
+                  <td className="text-right tabular-nums text-gray-500">{b.essentialBefore} → {b.essentialAfter}</td>
+                  <td className="text-right tabular-nums text-gray-500">{b.totalBefore} → {b.totalAfter}</td>
                 </tr>
               ))}
             </tbody>
