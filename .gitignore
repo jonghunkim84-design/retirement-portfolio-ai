@@ -45,3 +45,6 @@ backend/*.pyc
 # Vercel
 .vercel/
 .vercel
+
+# 월간 업데이트 원본 파일 (개인 금융 정보)
+monthly update data/
