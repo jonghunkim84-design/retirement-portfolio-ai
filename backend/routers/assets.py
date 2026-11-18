@@ -51,6 +51,79 @@ def list_assets():
     return res.data or []
 
 
+class AssetExportIn(BaseModel):
+    ids: list[int]
+
+
+@router.post("/export")
+def export_assets_xlsx(body: AssetExportIn):
+    """화면에 조회된 자산(ids 순서 그대로)을 Excel로 내보낸다."""
+    import io
+    import openpyxl
+    from openpyxl.styles import PatternFill, Font
+    from openpyxl.utils import get_column_letter
+    from fastapi.responses import StreamingResponse
+
+    type_ko = {'cash': '현금성', 'bond': '채권', 'tdf': 'TDF', 'fund': '펀드',
+               'equity': '주식형', 'income': '리츠/인컴'}
+    tax_ko = {'pension_savings': '연금저축', 'retirement_pension': '퇴직연금(IRP)',
+              'isa': 'ISA', 'regular': '일반'}
+
+    rows = []
+    if body.ids:
+        data = supabase.table("assets").select("*").in_("id", body.ids).execute().data or []
+        by_id = {a["id"]: a for a in data}
+        rows = [by_id[i] for i in body.ids if i in by_id]
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "자산 관리"
+    header = ["계좌", "자산명", "유형", "세제분류", "티커", "수량", "현재가",
+              "입금액", "평가액", "매입일", "만기일", "상태"]
+    ws.append(header)
+    for c in ws[1]:
+        c.fill = PatternFill(start_color="185FA5", end_color="185FA5", fill_type="solid")
+        c.font = Font(color="FFFFFF", bold=True)
+    for a in rows:
+        ws.append([
+            a.get("account_name") or "",
+            a.get("asset_name") or "",
+            type_ko.get(a.get("asset_type"), a.get("asset_type") or ""),
+            tax_ko.get(a.get("tax_account_type") or "", "미분류"),
+            a.get("ticker") or "",
+            float(a.get("quantity") or 0),
+            float(a.get("unit_price") or 0),
+            float(a["investment_amount"]) if a.get("investment_amount") is not None else None,
+            float(a.get("current_value") or 0),
+            a.get("purchase_date") or "",
+            a.get("maturity_date") or "",
+            "활성" if a.get("is_active") else "비활성",
+        ])
+    n = len(rows)
+    if n:
+        # 합계는 활성 자산 기준 (화면의 합계와 동일)
+        active_sum = sum(float(a.get("current_value") or 0) for a in rows if a.get("is_active"))
+        ws.append([])
+        ws.append(["합계(활성)", "", "", "", "", "", "", "", active_sum])
+        for c in ws[ws.max_row]:
+            c.font = Font(bold=True)
+    for r in ws.iter_rows(min_row=2, min_col=6, max_col=9):
+        for c in r:
+            c.number_format = '#,##0.##'
+    for col in ws.columns:
+        w = max((len(str(c.value)) if c.value is not None else 0) for c in col)
+        ws.column_dimensions[get_column_letter(col[0].column)].width = min(w + 4, 50)
+    ws.freeze_panes = "A2"
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return StreamingResponse(
+        buf,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    )
+
+
 @router.post("")
 def create_asset(body: AssetIn):
     data = body.model_dump()
