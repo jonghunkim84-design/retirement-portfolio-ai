@@ -264,6 +264,27 @@ export default function Assets() {
     tax_account_type: form.tax_account_type || null,
   })
 
+  const [exporting, setExporting] = useState(false)
+  const handleExport = async () => {
+    setExporting(true)
+    try {
+      const res = await api.post('/assets/export', { ids: filtered.map(a => a.id) }, { responseType: 'blob' })
+      const stamp = new Date().toISOString().slice(0, 10).replace(/-/g, '')
+      const url = URL.createObjectURL(res.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = `자산관리_${stamp}.xlsx`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch {
+      alert('Excel 내보내기에 실패했습니다.')
+    } finally {
+      setExporting(false)
+    }
+  }
+
   const handleSave = (form) => {
     setSaveErr('')
     const body = cleanForm(form)
@@ -283,6 +304,14 @@ export default function Assets() {
             title="만기일이 지난 자산을 자동으로 비활성 처리합니다"
           >
             {expireMut.isPending ? '처리 중...' : '🔄 만기 자산 정리'}
+          </button>
+          <button
+            className="btn-secondary text-sm flex items-center gap-1"
+            onClick={handleExport}
+            disabled={exporting || filtered.length === 0}
+            title="현재 필터로 조회된 자산을 Excel 파일로 내려받습니다"
+          >
+            {exporting ? '내보내는 중...' : '📥 Excel 다운로드'}
           </button>
           <button className="btn-primary" onClick={() => setModal({ mode: 'add', data: EMPTY })}>
             + 자산 추가
